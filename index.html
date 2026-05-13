@@ -2651,7 +2651,7 @@ window.addEventListener('beforeunload', function() { saveDraft(); });
 
 // ─── CLOUD URL & 資料常數 ────────────────────────────────
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwxT-I2err4twsbrLDVQpyeV9hNdPL6xNlM4DsWfLINr3AC-69DXFX7tVrYUGHTXH4r/exec";
-const CLOUD_TOKEN = '*8p#H$o@dr%#Xu*^_^$7#8p#ro&26me@_@99@20%*'; // ✅ 請修改成你自己的秘密字串，GAS 端要一致
+const CLOUD_TOKEN = 'HomeDr_Pro_2026_Key'; // ✅ 請修改成你自己的秘密字串，GAS 端要一致
 
 // ✅ 統一的 POST helper，自動帶入 token
 function cloudPost(data) {
@@ -2681,7 +2681,7 @@ async function fetchProductData() {
   }
   // 永遠從 Sheets 更新（確保資料最新）
   try {
-    const res = await fetch(CLOUD_URL + '?action=getProducts&token=' + CLOUD_TOKEN);
+    const res = await fetch(CLOUD_URL + '?action=getProducts&token=' + encodeURIComponent(CLOUD_TOKEN));
     const r   = await res.json();
     if (r.success && r.products.length > 0) {
       allParams = r.products;
@@ -2759,7 +2759,7 @@ async function fetchUnitData() {
 
   // ✅ 背景靜默更新（有無快取都執行，確保資料始終最新）
   try {
-    const res = await fetch(CLOUD_URL+'?action=getUnits&token='+CLOUD_TOKEN);
+    const res = await fetch(CLOUD_URL+'?action=getUnits&token='+encodeURIComponent(CLOUD_TOKEN));
     const raw = await res.json();
     allUnits = raw.filter(u => u.code !== '' && u.name !== '');
     localStorage.setItem('unit_data_cache', JSON.stringify(allUnits));
