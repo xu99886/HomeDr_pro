@@ -97,6 +97,7 @@
 
     .side-menu-header {
       padding: 20px;
+      padding-top: calc(20px + env(safe-area-inset-top)); /* ✅ 避開狀態列 */
       background-color: #121d31;
       display: flex;
       justify-content: space-between;
