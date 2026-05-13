@@ -1,0 +1,3609 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- 告知 iOS Safari 此頁面支援深色模式，讓原生 input/select 自動適配 -->
+  <meta name="color-scheme" content="light dark">
+
+  <title>Home Dr. 雲端出單系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+  
+  <style>
+
+    :root {
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --border: #dbe2e8;
+      --text: #2d3436;
+      --muted: #636e72;
+      --radius: 14px;
+      --radius-md: 12px;  /* 卡片、彈窗等中型元素 */
+      --radius-sm: 10px;  /* 按鈕、輸入框等小型元素 */
+      --color-cust: #DDA15E;
+      --color-std:  #6BCB77;
+      --color-man:  #FF6B6B;
+      --color-reply: #4D96FF;
+      --header-bg: linear-gradient(135deg, #003366 0%, #004691 100%);
+      --nav-inactive: rgba(0, 0, 0, 0.25);
+      --sidebar-bg: #1a2a44;
+      --action-width: 122px; /* 數量控制區 & 報價按鈕統一寬度，確保視覺對齊 */
+  /* ✅ 語義色變數（取代散落的硬編碼顏色）*/
+  --primary:          #004691; /* 主要按鈕、強調元素 */
+  --danger:           #FF3B30; /* iOS System Red light */
+  --btn-sec-bg:       #f1f3f5; /* 次要按鈕背景 */
+  --btn-sec-color:    #495057; /* 次要按鈕文字 */
+  --danger-light:     #fff1f0; /* 刪除按鈕淺色背景 */
+  --danger-border:    #ffccc7; /* 刪除按鈕邊框 */
+    }
+
+    /* ✅ 全局：消除 iOS 點擊藍框 */
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    /* ✅ UI：所有 button 彈簧回彈動效基底 */
+    button {
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  filter 0.12s ease,
+                  box-shadow 0.15s ease,
+                  background 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+    }
+    /* ✅ UI：按壓縮放 + 亮度提升 */
+    button:active {
+      transform: scale(0.92) !important;
+      filter: brightness(1.15);
+    }
+
+    /* ✅ UI：白色光暈動畫（Style B，Apple Pay 風格） */
+    @keyframes btnGlow {
+      0%   { box-shadow: 0 0 0px 0px rgba(255,255,255,0.0); }
+      30%  { box-shadow: 0 0 10px 4px rgba(255,255,255,0.50); }
+      100% { box-shadow: 0 0 0px 0px rgba(255,255,255,0.0); }
+    }
+    /* ✅ UI：JS touchstart 動態加上此 class 觸發光暈，350ms 後移除 */
+    .btn-pressed { animation: btnGlow 0.35s ease-out forwards; }
+
+    body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 180px; -webkit-user-select: none; user-select: none; }
+    input, textarea, select, .print-area, .allow-select { -webkit-user-select: text !important; user-select: text !important; }
+
+    /* ════════════════════════════════
+       側邊選單
+       ✅ UI：寬度 280px → 250px（微收窄，不壓縮內容）
+       ════════════════════════════════ */
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -250px;       /* ✅ 改：原 -280px */
+      width: 250px;       /* ✅ 改：原 280px */
+      height: 100%;
+      background-color: var(--sidebar-bg);
+      color: white;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+    }
+    .side-menu.active { transform: translateX(250px); } /* ✅ 改：原 translateX(280px) */
+
+    .side-menu-header {
+      padding: 20px;
+      background-color: #121d31;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .side-menu-header button { background: none; border: none; color: white; font-size: 24px; }
+
+    /* ✅ UI：側邊欄選單項目加入彈簧縮放 */
+    .side-menu-content { padding: 10px 0; }
+    .side-menu-content a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      color: #ecf0f1;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  filter 0.12s ease,
+                  background-color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .side-menu-content a:active { background-color: #2980b9; transform: scale(0.97); filter: brightness(1.1); }
+
+    /* ✅ iOS修正：選單遮罩補上 -webkit-backdrop-filter */
+    .menu-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 9998;
+    }
+    .menu-overlay.active { display: block; }
+
+    /* 啟動遮罩 */
+    #loadingOverlay {
+      position: fixed; inset: 0; background: #001f3f; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #fff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .loading-text { color: #fff; font-weight: 700; letter-spacing: 2px; font-size: 16px; }
+
+    /* ✅ 同步毛玻璃遮罩：同步進行中禁止用戶操作任何元素 */
+    #syncMask {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      z-index: 1500;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      pointer-events: none; /* 隱藏時不攔截任何點擊 */
+    }
+    #syncMask.active {
+      opacity: 1; visibility: visible;
+      pointer-events: all; /* 顯示時攔截全部點擊，防止用戶誤操作 */
+    }
+    .sync-mask-spinner {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .sync-mask-text {
+      color: #fff; font-size: 15px;
+      font-weight: 700; letter-spacing: 1px;
+    }
+
+    /* Header */
+    .header { background: var(--header-bg); color: #fff; padding: 12px 5%; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .header h1 { font-size: 20px; font-weight: 900; letter-spacing: 1px; }
+    .sync-trigger { text-align: right; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.3); transition: 0.3s; }
+    .sync-trigger span { font-size: 11px; display: block; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2; }
+    .sync-success { border-color: #fff !important; background: rgba(82,196,26,0.6) !important; box-shadow: 0 0 15px #52c41a; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); object-fit: cover; }
+
+    /* ✅ UI：模式切換按鈕 → 全圓角膠囊型 */
+    .mode-toggle { display: flex; gap: 6px; margin-top: 12px; width: 100%; }
+    .mode-btn {
+      flex: 1; padding: 10px 8px; border: none; border-radius: 999px; /* ✅ 改：原 10px */
+      font-size: 13px; font-weight: 700;
+      color: rgba(255,255,255,0.5); background: var(--nav-inactive);
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  filter 0.12s ease,
+                  background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.3s ease,
+                  color 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mode-btn.active-cust   { background: var(--color-cust);  color: #fff; box-shadow: 0 4px 12px rgba(221,161,94,0.4); }
+    .mode-btn.active-std    { background: var(--color-std);   color: #fff; box-shadow: 0 4px 12px rgba(107,203,119,0.4); }
+    .mode-btn.active-manual { background: var(--color-man);   color: #fff; box-shadow: 0 4px 12px rgba(255,107,107,0.4); }
+    .mode-btn.active-quick  { background: var(--color-reply); color: #fff; box-shadow: 0 4px 12px rgba(77,150,255,0.4); }
+
+    .section { padding: 15px 5%; width: 100%; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: relative; }
+    .card-title { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
+
+    .form-group { margin-bottom: 14px; position: relative; }
+    .form-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 700; }
+    .form-control { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 15px; outline: none; transition: 0.2s; background: #fff; }
+    .form-control:focus { border-color: var(--color-reply); background: #fcfdfe; }
+    /* ✅ 修正：iOS fillUnitFields 批量填入時 WebKit 套橘色自動填入動畫
+       用 var(--card) / var(--text) CSS 變數，淺色深色模式自動切換，不需要兩套規則
+       -webkit-box-shadow inset 蓋掉橘色背景；transition 9999s 讓動畫慢到消失 */
+    .form-control:-webkit-autofill,
+    .form-control:-webkit-autofill:hover,
+    .form-control:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px var(--card) inset !important;
+      box-shadow: 0 0 0 1000px var(--card) inset !important;
+      -webkit-text-fill-color: var(--text) !important;
+      caret-color: var(--text) !important;
+      transition: background-color 9999s ease-in-out 0s !important;
+    }
+    /* ✅ 防呆：未填必填欄位時的紅框樣式 */
+    .form-control.field-error { border-color: var(--danger) !important; background: #fff2f0 !important; }
+    /* ✅ 必填標記 * */
+    .required-mark { color: var(--danger); font-weight: 900; margin-left: 2px; }
+
+    .unit-suggestions {
+      position: absolute; top: 100%; left: 0; right: 0; background: #fff;
+      border: 1.5px solid var(--color-cust); border-radius: var(--radius-sm); z-index: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; margin-top: 5px;
+    }
+    .suggestion-item { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; display: flex; flex-direction: column; }
+    .suggestion-name { font-weight: 700; color: #003366; font-size: 14px; }
+    .suggestion-code { font-size: 11px; color: var(--color-cust); font-weight: 900; margin-top: 2px; }
+
+    /* ════════════════════════════════
+       ✅ UI新增：左滑刪除容器
+       - .swipe-wrapper 包住每個品項卡片
+       - .swipe-action-bg 是左滑後露出的紅色刪除背景
+       ════════════════════════════════ */
+    .swipe-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      margin-bottom: 10px;
+    }
+    .swipe-action-bg {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 88px;
+      background: var(--danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      gap: 4px;
+      border-radius: var(--radius-md);
+      pointer-events: auto; /* ✅ 改：開啟點擊，讓第二段確認刪除可運作 */
+      cursor: pointer;
+    }
+
+    /* ✅ 新增：桌機 hover ✕ 刪除按鈕（手機上 opacity:0 + pointer-events:none，完全不干擾） */
+    .delete-btn-hover {
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 28px; height: 28px;
+      background: var(--danger-light);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: bold;
+      opacity: 0;
+      pointer-events: none; /* 預設不可點，桌機 hover 後才開啟 */
+      transition: opacity 0.18s ease, background 0.15s ease;
+      cursor: pointer;
+      z-index: 10;
+    }
+    /* ✅ 只在滑鼠裝置（hover: hover）才顯示，觸控裝置完全看不到 */
+    @media (hover: hover) and (pointer: fine) {
+      .swipe-wrapper:hover .delete-btn-hover { opacity: 1; pointer-events: auto; }
+      .delete-btn-hover:hover { background: var(--danger); color: #fff; }
+      /* 桌機不需要紅色滑動背景，隱藏避免誤解 */
+      .swipe-action-bg { display: none; }
+    }
+
+    .order-item {
+      position: relative; background: #fff; border-radius: var(--radius-md); padding: 15px;
+      margin-bottom: 0;   /* ✅ 改：margin 移至 .swipe-wrapper */
+      border: 1px solid var(--border); border-left: 6px solid #546e7a;
+      display: flex; flex-direction: column;
+      touch-action: pan-y; /* ✅ 允許垂直滾動，水平由 JS 接管 */
+      will-change: transform;
+    }
+    .order-item.color-red    { border-left-color: var(--color-man); }
+    .order-item.color-green  { border-left-color: var(--color-std); }
+    .order-item.color-blue   { border-left-color: var(--color-reply); }
+    .order-item.color-yellow { border-left-color: var(--color-cust); }
+
+    /* ✅ 新版品項排版：單行 [品名 flex] [金額 fixed] [- qty + fixed] */
+    .item-main-row { display: flex; align-items: center; gap: 8px; }
+    /* 品名：flex:1 + overflow ellipsis，不論多長都不影響右側按鈕位置 */
+    .item-name-text {
+      flex: 1; min-width: 0;
+      font-weight: 700; font-size: 15px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* 金額：固定 shrink:0，右對齊 */
+    .item-price-tag {
+      flex-shrink: 0;
+      font-weight: 900; font-size: 17px; color: var(--primary);
+      white-space: nowrap; text-align: right;
+    }
+    /* ✅ UI：✕ 刪除按鈕已移除，以左滑取代 */
+
+    /* ✅ 新版：qty-control 固定寬度 = var(--action-width)，與報價按鈕對齊 */
+    .qty-control { flex-shrink: 0; width: var(--action-width); margin-left: 16px; margin-right: 10px; display: flex; align-items: center; background: #f8f9fa; border-radius: 8px; padding: 2px; border: 1px solid #eee; }
+    .qty-btn { width: 32px; height: 38px; border: none; background: #fff; border-radius: 6px; font-size: 18px; color: var(--color-reply); flex-shrink: 0; }
+    /* ✅ qty-input flex:1 填滿中間空間，min-width:0 防止撐破容器 */
+    .qty-input {
+      flex: 1; min-width: 0; text-align: center; font-weight: 900; font-size: 15px;
+      border: none; background: transparent;
+      -webkit-user-select: text !important; user-select: text !important;
+    }
+    .qty-input:focus { background: rgba(77,150,255,0.08); border-radius: 4px; outline: none; }
+
+    /* ✅ 新版底部欄：單行設計，所有元素並排 */
+    .summary-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(255,255,255,0.95);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      padding: 10px 5% 28px; /* 28px 保留 iPhone Home Bar 空間 */
+      z-index: 90;
+    }
+    /* 單行 flex 容器 */
+    .summary-inner { display: flex; align-items: center; gap: 8px; }
+    /* 共?項 badge */
+    /* ✅ 共幾項：外框改成與按鈕一致的方形圓角，移除膠囊 */
+    .item-count-badge {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      white-space: nowrap; background: transparent;
+      border: 1.5px solid var(--border);
+      padding: 4px 8px; border-radius: var(--radius-sm); flex-shrink: 0;
+    }
+    /* 合計金額 label */
+    .total-label { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+    /* 金額數字（flex:1 吸收剩餘空間，右對齊） */
+    .total-amount { flex: 1; font-size: 21px; font-weight: 900; color: #003366; text-align: right; white-space: nowrap; min-width: 0; }
+    /* ✅ summary-actions：精算對齊
+          width(150) + margin-left(13) + gap(8) + bar-padding(19.5) = 190.5px from right
+          = 199.5px from left = 品項金額右緣（紅線）✓
+          gap:16px = 原5px + 約一個中文字元間距，防止誤觸 */
+    .summary-actions {
+      flex-shrink: 0;
+      width: 150px;
+      margin-left: 13px;
+      display: flex;
+      gap: 16px;
+    }
+    .btn-clear-sm {
+      flex: 1; padding: 9px 0; text-align: center;
+      background: var(--btn-sec-bg); color: var(--btn-sec-color);
+      border: none; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 11px;
+    }
+    .btn-quote-sm {
+      flex: 1.6; padding: 9px 0; text-align: center;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 11px;
+    }
+    /* ✅ 桌機版：進一步縮小底部欄 */
+    @media (hover: hover) and (pointer: fine) {
+      .summary-bar { padding: 8px 5% 10px; }
+      .total-amount { font-size: 18px; }
+      .btn-clear-sm { font-size: 10px; padding: 6px 0; }
+      .btn-quote-sm { font-size: 10px; padding: 6px 0; }
+      .order-item { padding-right: 44px; } /* 桌機加右 padding 避免 hover ✕ 遮住 qty-control */
+    }
+    .btn-primary   { background: var(--primary); color: #fff; border: none; border-radius: var(--radius-md); font-weight: 700; font-size: 16px; }
+    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); border-radius: var(--radius-md); font-weight: 700; font-size: 16px; }
+    .btn-danger    { background: var(--danger); color: #fff; border: none; border-radius: var(--radius-md); font-weight: 700; font-size: 16px; }
+
+    /* ✅ iOS修正：confirm-overlay 補上 -webkit-backdrop-filter */
+    .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,20,40,0.75); z-index: 1100; align-items: center; justify-content: center; padding: 20px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .confirm-box { background: #fff; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 320px; text-align: center; }
+    .confirm-box h3 { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 10px; }
+    .confirm-box p { font-size: 14px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+    .confirm-btns { display: flex; gap: 12px; }
+
+    /* ✅ iOS修正：modal-overlay 補上 -webkit-backdrop-filter */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,20,40,0.8); z-index: 1000; align-items: center; justify-content: center; padding: 20px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .modal { background: #fff; border-radius: 24px; width: 100%; max-width: 500px; padding: 25px; }
+    .print-area { white-space: pre-wrap; font-size: 14px; background: #f8f9fa; padding: 18px; border-radius: var(--radius-md); border: 1px solid #eee; max-height: 50vh; overflow-y: auto; }
+
+    #toast { position: fixed; bottom: 180px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 2000; pointer-events: none; white-space: nowrap; }
+    #toast.show { opacity: 1; }
+
+    .quick-btn { width: 100%; padding: 18px; margin-bottom: 12px; border: 1.5px solid var(--color-cust); border-radius: var(--radius-md); background: #fff; font-weight: 700; text-align: left; font-size: 15px; }
+    .quick-btn:active { background: #fff9f0; }
+
+    /* ✅ iOS修正：sales-picker-overlay 補上 -webkit-backdrop-filter */
+    .sales-picker-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,20,40,0.8); z-index: 1200;
+      align-items: center; justify-content: center;
+      padding: 20px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .sales-picker-overlay.active { display: flex; }
+    .sales-picker-box { background: #fff; border-radius: 24px; width: 100%; max-width: 320px; padding: 28px 24px; }
+    .sales-picker-box h3 { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 6px; text-align: center; }
+    .sales-picker-box p  { font-size: 13px; color: var(--muted); margin-bottom: 18px; text-align: center; }
+    .sales-picker-box select { width: 100%; padding: 13px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 16px; font-weight: 700; margin-bottom: 18px; outline: none; }
+    .sales-picker-box select:focus { border-color: var(--color-reply); }
+    .sales-picker-btns { display: flex; gap: 10px; }
+    .sales-picker-btns button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
+    .btn-confirm-sales { background: var(--primary); color: #fff; }
+    .btn-cancel-sales  { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+
+    /* ════════════════════════════════
+       ✅ 今日業績結果（升級版：明細表格）
+       - max-width 320 → 360px，容納表格
+       - 移除舊的 result-amount / result-unit 大字樣式
+       - 新增 sales-detail-table、sales-summary-row
+       ════════════════════════════════ */
+    .sales-result-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,20,40,0.8); z-index: 1200;
+      align-items: center; justify-content: center;
+      padding: 20px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .sales-result-overlay.active { display: flex; }
+    .sales-result-box { background: #fff; border-radius: 24px; width: 100%; max-width: 360px; padding: 24px 20px; }
+    .sales-result-box .result-label { font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; text-align: center; }
+    .sales-result-box .result-name  { font-size: 15px; font-weight: 900; color: #003366; margin-bottom: 14px; text-align: center; }
+    /* ✅ 新增：明細表格容器（最高 38vh，超過可捲動） */
+    .sales-detail-wrap { max-height: 38vh; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; }
+    .sales-detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .sales-detail-table th { background: #003366; color: #fff; padding: 8px 12px; text-align: left; font-weight: 700; position: sticky; top: 0; }
+    .sales-detail-table th:last-child { text-align: right; }
+    .sales-detail-table td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; }
+    .sales-detail-table td:last-child { text-align: right; }
+    .sales-detail-table tr:last-child td { border-bottom: none; }
+    /* ✅ 新增：合計列（筆數 + 總額） */
+    .sales-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; margin-bottom: 16px; border-top: 2px solid var(--primary); font-weight: 900; color: #003366; font-size: 14px; }
+    .sales-result-btns { display: flex; gap: 10px; }
+    .sales-result-btns button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
+    .btn-close-sales { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+    .btn-copy-sales  { background: var(--primary); color: #fff; }
+
+    /* ✅ 新增：複製業績確認彈窗 */
+    .copy-sales-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,20,40,0.8); z-index: 1200;
+      align-items: center; justify-content: center;
+      padding: 20px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .copy-sales-overlay.active { display: flex; }
+    .copy-sales-box { background: #fff; border-radius: 24px; width: 100%; max-width: 320px; padding: 28px 24px; text-align: center; }
+    .copy-sales-box .copy-sales-icon { font-size: 36px; margin-bottom: 12px; }
+    .copy-sales-box h3 { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 8px; }
+    .copy-sales-box p  { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    .copy-sales-btns { display: flex; gap: 10px; }
+    .copy-sales-btns button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
+    .btn-cancel-copy  { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+    .btn-confirm-copy { background: var(--primary); color: #fff; }
+
+    /* ✅ iOS修正：weekly-overlay 補上 -webkit-backdrop-filter */
+    .weekly-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,20,40,0.85); z-index: 1200;
+      align-items: flex-start; justify-content: center;
+      padding: 16px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      overflow-y: auto;
+    }
+    .weekly-overlay.active { display: flex; }
+    .weekly-box { background: #fff; border-radius: 24px; width: 100%; max-width: 420px; padding: 24px 20px; margin: auto; }
+    .weekly-box h3  { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 4px; text-align: center; }
+    .weekly-box .sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 18px; }
+    .weekly-box .weekly-person-select { width: 100%; padding: 13px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 15px; font-weight: 700; margin-bottom: 16px; outline: none; background: #fff; color: var(--text); }
+    .weekly-box .weekly-person-select:focus { border-color: var(--primary); }
+
+    .weekly-preset-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .weekly-preset-btn { flex: 1; padding: 9px 4px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: #fff; font-size: 12px; font-weight: 700; text-align: center; color: var(--text); transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    .weekly-preset-btn:active  { background: #e8f0fe; border-color: var(--primary); }
+    /* ✅ 選中狀態：持續顯示藍底白字，讓用戶知道目前選的是哪個範圍 */
+    .weekly-preset-btn.selected { background: var(--color-reply); border-color: var(--color-reply); color: #fff; }
+
+    .weekly-cal-wrap { display: flex; gap: 10px; margin-bottom: 14px; overflow-x: auto; }
+    .weekly-cal { flex: 1; min-width: 155px; background: #f8f9fa; border-radius: var(--radius-md); padding: 10px 8px; border: 1px solid var(--border); }
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .cal-nav button { background: none; border: none; font-size: 16px; color: var(--primary); padding: 0 4px; }
+    .cal-nav span   { font-size: 13px; font-weight: 900; color: #003366; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-dow  { font-size: 10px; font-weight: 700; color: var(--muted); text-align: center; padding: 2px 0; }
+    .cal-day  { font-size: 12px; text-align: center; padding: 5px 0; border-radius: 6px; cursor: pointer; transition: 0.15s; color: var(--text); }
+    .cal-day:hover    { background: #e8f0fe; }
+    .cal-day.empty    { cursor: default; }
+    .cal-day.today    { font-weight: 900; color: var(--primary); }
+    .cal-day.in-range { background: #cfe2ff; border-radius: 0; }
+    .cal-day.range-start, .cal-day.range-end { background: var(--primary) !important; color: #fff !important; border-radius: 6px !important; font-weight: 900; }
+    .cal-day.range-start { border-radius: 6px 0 0 6px !important; }
+    .cal-day.range-end   { border-radius: 0 6px 6px 0 !important; }
+
+    .weekly-manual-row { display: flex; gap: 6px; align-items: center; margin-bottom: 18px; box-sizing: border-box; }
+    .weekly-manual-row input { flex: 1; min-width: 0; padding: 9px 6px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 13px; outline: none; text-align: center; box-sizing: border-box; }
+    .weekly-manual-row input:focus { border-color: var(--primary); }
+    .weekly-manual-row span { font-size: 13px; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+
+    .weekly-action-row { display: flex; gap: 10px; }
+    .weekly-action-row button { flex: 1; padding: 14px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
+    .btn-gen-report    { background: var(--primary); color: #fff; }
+    .btn-cancel-report { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+
+    /* ✅ iOS修正：weekly-result-overlay 補上 -webkit-backdrop-filter */
+    .weekly-result-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,20,40,0.85); z-index: 1300;
+      align-items: flex-start; justify-content: center;
+      padding: 16px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      overflow-y: auto;
+    }
+    .weekly-result-overlay.active { display: flex; }
+    .weekly-result-box { background: #fff; border-radius: 24px; width: 100%; max-width: 480px; padding: 24px 20px; margin: auto; }
+    .weekly-result-box h3 { font-size: 17px; font-weight: 900; color: #003366; margin-bottom: 4px; text-align: center; }
+    .weekly-result-box .result-meta { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 16px; }
+    .weekly-table-wrap { overflow-x: auto; max-height: 52vh; overflow-y: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 16px; }
+    .weekly-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .weekly-table th { background: #003366; color: #fff; padding: 10px; text-align: left; font-weight: 700; position: sticky; top: 0; }
+    .weekly-table th:nth-child(2), .weekly-table th:nth-child(3) { text-align: right; }
+    .weekly-table td { padding: 9px 10px; border-bottom: 1px solid #f0f0f0; }
+    .weekly-table td:nth-child(2), .weekly-table td:nth-child(3) { text-align: right; }
+    .weekly-table tr:last-child td { border-bottom: none; }
+    .weekly-table .total-row td { background: #f0f4ff; font-weight: 900; color: #003366; border-top: 2px solid var(--primary); }
+    .weekly-result-btns { display: flex; gap: 10px; }
+    .weekly-result-btns button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
+    .btn-close-report { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+    .btn-copy-report  { background: var(--primary); color: #fff; }
+
+
+    /* ════════════════════════════════════════════════════════
+       💀 骨架屏（Skeleton Screen）+ 角落載入指示器
+       ════════════════════════════════════════════════════════ */
+    @keyframes shimmer {
+      0%   { background-position: -468px 0; }
+      100% { background-position:  468px 0; }
+    }
+    /* 套在 unitName input 上，模擬資料載入中的閃爍條 */
+    .skeleton-input {
+      background: linear-gradient(90deg, #e8eaed 25%, #d0d3d8 50%, #e8eaed 75%) !important;
+      background-size: 468px 100% !important;
+      animation: shimmer 1.4s ease-in-out infinite !important;
+      color: transparent !important;
+      pointer-events: none !important;
+      border-color: transparent !important;
+    }
+    /* 右上角小型載入指示器 */
+    /* ✅ 修正：移入 header flex 容器，不再用 position:fixed */
+    .loading-indicator {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      padding: 4px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      display: none;           /* 預設隱藏，不佔空間 */
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .loading-indicator.visible { display: flex; } /* showIndicator(true) 時加上 */
+    /* 指示器的小圓點動畫 */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .loading-dot {
+      width: 6px; height: 6px;
+      background: #fff;
+      border-radius: 50%;
+      animation: pulse 1s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       🏷️ 優惠資格功能樣式
+       ════════════════════════════════════════════════════════ */
+    .overlay-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      z-index: 800;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px 5%;
+    }
+    .elig-box {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: 22px 20px 18px;
+      width: 100%; max-width: 400px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .elig-box h3 { font-size: 17px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+    .elig-sub    { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .elig-field  { margin-bottom: 13px; }
+    .elig-label  { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; display: block; }
+
+    /* 查詢結果列表 */
+    .elig-query-box { padding-bottom: 12px; }
+    .elig-list  { max-height: 52vh; overflow-y: auto; margin: 12px 0; }
+    /* 分組容器：每個 group 之間有分隔線（不同單位） */
+    .elig-row   {
+      display: flex; flex-direction: column;
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text);
+      width: 100%;
+    }
+    .elig-row-info { flex: 1; min-width: 0; }
+    .elig-row-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .elig-row-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .elig-row-date  { font-size: 13px; color: var(--color-reply); font-weight: 700; white-space: nowrap; }
+    .elig-void-btn  {
+      flex-shrink: 0; background: transparent;
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 8px; font-size: 13px; color: var(--muted); cursor: pointer;
+    }
+    .elig-query-btns {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; margin-top: 8px;
+      position: sticky; bottom: 0;       /* 永遠貼底，不隨清單滾動消失 */
+      background: var(--card);
+      padding-top: 8px;
+      padding-bottom: 2px;
+      z-index: 10;
+    }
+    /* 品項列：品名靠左 flex:1，日期+🚫靠右，同單位品項間無分隔線 */
+    .elig-item-row {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 4px 0;
+    }
+    .elig-item-product { font-size: 14px; color: var(--text); flex: 1; }
+    /* iOS date input 強制 100% 寬度，明確高度確保未選日期前也正常顯示 */
+    .elig-date-input {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      min-width: 0;
+      min-height: 46px !important; /* 確保空白時與其他 form-control 等高 */
+      padding: 12px !important;
+      line-height: 1.4;
+      text-align: center; /* 與到期日期欄位對齊 */
+    }
+    /* 加入按鈕（對齊輸入框高度） */
+    .elig-add-btn {
+      flex-shrink: 0; padding: 0 16px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700;
+      align-self: stretch; white-space: nowrap;
+    }
+    /* 已選中通訊處清單容器 */
+    .elig-selected-container {
+      min-height: 38px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px 0;
+      overflow: hidden;
+    }
+    /* 每個已選通訊處 - 滑動外層 */
+    .elig-sel-wrapper {
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .elig-sel-wrapper:last-child { border-bottom: none; }
+    /* 左滑露出的紅色移除區 */
+    .elig-sel-bg {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 80px; background: var(--danger);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+    }
+    /* 可滑動的項目 */
+    .elig-sel-item {
+      position: relative; background: var(--card);
+      padding: 9px 12px;
+      display: flex; align-items: center;
+      transition: transform 0.2s ease;
+      font-size: 13px; color: var(--text);
+    }
+    /* 查詢結果：多通訊處 tags */
+    .elig-unit-tags {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;
+    }
+    .elig-unit-tag {
+      font-weight: 700; font-size: 15px; color: var(--color-reply);
+    }
+    .elig-unit-tag:not(:last-child)::after { content: "　"; }
+    .elig-expand-btn {
+      background: transparent; border: none;
+      font-size: 14px; cursor: pointer; padding: 2px 4px; line-height: 1;
+    }
+    /* 固定右側，垂直對齊第一行文字中線
+       font-size:15px line-height:~21px → 文字中線在 ~10px
+       按鈕高度 ~18px → top:1px 讓按鈕中線在 ~10px，對齊文字 */
+    .elig-expand-fixed {
+      position: absolute;
+      right: 4px;           /* 距右邊 4px，不受通訊處字數影響 */
+      top: 1px;             /* 垂直對齊第一行文字中線 */
+      display: flex;
+      align-items: center;
+      height: 21px;         /* 等於一行文字高度，確保垂直置中 */
+    }
+    .elig-unit-line { font-weight: 700; font-size: 15px; color: var(--color-reply); display: block; margin-bottom: 2px; }
+    /* 桌機 hover 刪除按鈕（複用主列表設計） */
+    .elig-sel-delete-btn {
+      position: absolute; top: 50%; right: 10px;
+      transform: translateY(-50%);
+      width: 24px; height: 24px;
+      background: var(--danger-light); color: var(--danger);
+      border: 1px solid var(--danger-border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: bold;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.18s ease, background 0.15s ease;
+      cursor: pointer; z-index: 10;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .elig-sel-wrapper:hover .elig-sel-delete-btn { opacity: 1; pointer-events: auto; }
+      .elig-sel-delete-btn:hover { background: var(--danger); color: #fff; }
+    }
+    /* 區塊標題 */
+    .elig-section-label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    /* 快查結果區（限高，不擠壓資格清單）*/
+    .elig-search-list { max-height: 160px; }
+    /* 搜尋結果狀態標籤 */
+    .elig-status-valid   { font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .elig-status-expired { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+    /* ✉️ LINE 回報 */
+    .line-report-box { max-height: 88vh; }
+    .line-item-row {
+      display: flex; gap: 6px; align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .line-item-row .form-control { font-size: 13px; padding: 9px 10px; }
+    .line-unit-wrap { flex: 1.2; min-width: 0; }
+    .line-type-sel  { flex: 1.3; min-width: 0; }
+    .line-note-inp  { flex: 2.2; min-width: 0; }                    /* 備註拉寬 */
+    /* 桌機 hover 刪除（複用主列表設計）*/
+    .line-hover-delete {
+      position: absolute; top: 50%; right: 8px;
+      transform: translateY(-50%);
+      width: 22px; height: 22px;
+      background: var(--danger-light); color: var(--danger);
+      border: 1px solid var(--danger-border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: bold;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.18s ease;
+      cursor: pointer; z-index: 5;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .line-swipe-wrapper:hover .line-hover-delete { opacity: 1; pointer-events: auto; }
+      .line-hover-delete:hover { background: var(--danger); color: #fff; }
+    }
+    /* 左滑刪除 wrapper */
+    .line-swipe-wrapper {
+      position: relative; overflow: hidden;
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+    .line-swipe-bg {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 72px; background: var(--danger);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+    }
+    .line-swipe-content {
+      position: relative; background: var(--card);
+      transition: transform 0.2s ease;
+    }
+    .line-item-row {
+      padding: 0; margin-bottom: 0; /* 間距移到 wrapper 控制 */
+    }
+    .line-add-btn {
+      font-size: 12px; font-weight: 700; color: var(--color-reply);
+      background: transparent; border: 1.5px dashed var(--color-reply);
+      border-radius: var(--radius-sm); padding: 6px 12px;
+      width: 100%; margin-top: 4px; cursor: pointer;
+    }
+    /* 📥 檔案下載 */
+    .file-dl-box { max-width: 420px; }
+    .file-select-all {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 4px 10px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+    .file-dl-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-dl-row:last-child { border-bottom: none; }
+    .file-dl-name { flex: 1; font-size: 13px; color: var(--text); }
+    .file-dl-btn-single {
+      flex-shrink: 0; padding: 6px 12px;
+      background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 12px;
+      color: var(--color-reply); font-weight: 700; cursor: pointer;
+    }
+    .file-dl-checkbox {
+      width: 18px; height: 18px; flex-shrink: 0; cursor: pointer;
+      accent-color: var(--primary);
+    }
+    .progress-bar-wrap {
+      background: var(--border); border-radius: 2px;
+      height: 4px; margin-top: 10px; overflow: hidden;
+    }
+    .elig-tab-btn { flex: 1; padding: 13px 0; font-size: 15px; font-weight: 700; border: none; border-radius: var(--radius-md); }
+    .elig-tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* 深色模式補充 */
+    @media (prefers-color-scheme: dark) {
+      .elig-box { background: var(--card); }
+    }
+
+    /* ════════════════════════════════════════════════════════
+       🌙 深色模式：自動跟隨系統設定（prefers-color-scheme: dark）
+       所有覆寫集中在此區塊，不影響淺色模式任何代碼
+       ════════════════════════════════════════════════════════ */
+    @media (prefers-color-scheme: dark) {
+
+      /* ── CSS 變數全面覆寫 ── */
+      :root {
+        --bg:           #1c1c1e;   /* iOS 深色主背景 */
+        --card:         #2c2c2e;   /* iOS 深色卡片 */
+        --border:       #3a3a3c;   /* 深色邊框 */
+        --text:         #f2f2f7;   /* 主要文字（淺） */
+        --muted:        #aeaeb2;   /* 次要文字 */
+        --header-bg:    linear-gradient(135deg, #001a33 0%, #002d5a 100%);
+        --nav-inactive: rgba(255, 255, 255, 0.15);
+        --sidebar-bg:   #0d1929;
+        /* ✅ iOS 標準深色語義色 */
+        --primary:      #0A84FF;   /* iOS System Blue dark */
+        --danger:       #FF453A;   /* iOS System Red dark */
+        --btn-sec-bg:   #3a3a3c;   /* iOS System Gray 5 dark */
+        --btn-sec-color: #f2f2f7;
+      }
+
+      /* ── 表單控制項 ── */
+      .form-control             { background: #1c1c1e; color: var(--text); }
+      .form-control:focus       { background: #252528; }
+      .form-control.field-error { background: #2a1515 !important; }
+
+      /* ── 通訊處建議清單 ── */
+      .unit-suggestions         { background: #2c2c2e; }
+      .suggestion-item          { border-bottom-color: var(--border); }
+      .suggestion-name          { color: #6aadff; }
+
+      /* ── 品項卡片 ── */
+      .order-item               { background: #2c2c2e; border-left-color: #8896a5; }
+      .delete-btn-hover         { background: #3a1515; border-color: #5a2020; }
+      .item-price-tag           { color: #6aadff; }
+
+      /* ── 數量控制 ── */
+      .qty-control              { background: #3a3a3c; border-color: #48484a; }
+      .qty-btn                  { background: #2c2c2e; color: var(--color-reply); }
+
+      /* ── 底部欄 ── */
+      .summary-bar              { background: rgba(28, 28, 30, 0.96); }
+      .total-amount             { color: #a0c0ff; }
+      .btn-clear-sm             { background: #3a3a3c; color: #f2f2f7; }
+
+      /* ── 通用灰色按鈕（取消/關閉系列）── btn-secondary 已由 --btn-sec-bg 變數統一 ── */
+      .btn-cancel-sales         { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
+      .btn-cancel-copy          { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
+      .btn-cancel-report        { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
+      .btn-close-sales          { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
+      .btn-close-report         { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
+
+      /* ── 確認彈窗 ── */
+      .confirm-box              { background: #2c2c2e; }
+      .confirm-box h3           { color: var(--text); }
+
+      /* ── 報價預覽彈窗 ── */
+      .modal                    { background: #2c2c2e; }
+      .print-area               { background: #1c1c1e; border-color: var(--border); color: var(--text); }
+
+      /* ── 快速回覆按鈕 ── */
+      .quick-btn                { background: #2c2c2e; color: var(--text); }
+      .quick-btn:active         { background: #3a2a15; }
+
+      /* ── 今日業績：選人彈窗 ── */
+      .sales-picker-box         { background: #2c2c2e; }
+      .sales-picker-box h3      { color: var(--text); }
+      .sales-picker-box select  { background: #1c1c1e; color: var(--text); }
+
+      /* ── 今日業績：結果彈窗 ── */
+      .sales-result-box                { background: #2c2c2e; }
+      .sales-result-box .result-name   { color: #6aadff; }
+      .sales-detail-table td           { border-bottom-color: var(--border); }
+      .sales-summary-row               { color: #a0c0ff; border-top-color: var(--color-reply); }
+
+      /* ── 複製業績確認彈窗 ── */
+      .copy-sales-box           { background: #2c2c2e; }
+      .copy-sales-box h3        { color: var(--text); }
+
+      /* ── 業績週報：查詢條件 ── */
+      .weekly-box               { background: #2c2c2e; }
+      .weekly-box h3            { color: var(--text); }
+      .weekly-box .weekly-person-select { background: #1c1c1e; color: var(--text); }
+      .weekly-preset-btn          { background: #3a3a3c; border-color: var(--border); color: var(--text); }
+      .weekly-preset-btn:active   { background: #1a2a44; border-color: var(--color-reply); }
+      .weekly-preset-btn.selected { background: var(--color-reply); border-color: var(--color-reply); color: #fff; }
+      .weekly-cal               { background: #3a3a3c; border-color: var(--border); }
+      .cal-nav span             { color: #a0c0ff; }
+      .cal-nav button           { color: var(--color-reply); }
+      .cal-day:hover            { background: #2a3a4a; }
+      .cal-day.today            { color: #6aadff; }
+      .cal-day.in-range         { background: #1a2a40; }
+      .weekly-manual-row input  { background: #1c1c1e; color: var(--text); }
+      .weekly-manual-row input:focus { border-color: var(--color-reply); }
+
+      /* ── 業績週報：結果表格 ── */
+      .weekly-result-box               { background: #2c2c2e; }
+      .weekly-result-box h3            { color: #a0c0ff; }
+      .weekly-table th                 { background: #002d5a; }
+      .weekly-table td                 { border-bottom-color: var(--border); color: var(--text); }
+      .weekly-table .total-row td      { background: #1a2a44; color: #a0c0ff; border-top-color: var(--color-reply); }
+
+      /* ── Toast 通知：深色模式反轉為白底深字，與背景形成最大反差 ── */
+      #toast                    { background: rgba(242, 242, 247, 0.95); color: #1c1c1e; }
+      /* ── 骨架屏深色版 ── */
+      .skeleton-input {
+        background: linear-gradient(90deg, #3a3a3c 25%, #4a4a4c 50%, #3a3a3c 75%) !important;
+        background-size: 468px 100% !important;
+      }
+
+    }
+
+    </style>
+</head>
+<body>
+
+<!-- 啟動遮罩 -->
+<div id="loadingOverlay">
+  <div class="loader"></div>
+  <div class="loading-text">系統啟動中...</div>
+</div>
+
+<div class="header">
+  <div class="header-top">
+    <h1 id="menuTrigger" onclick="toggleSidebar()" style="cursor:pointer;-webkit-user-select:none;user-select:none;">💊 Home Dr Pro</h1>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <!-- ✅ 訊號連接中指示器：坐在快樂上班/效率出單左邊 -->
+      <div id="loadingIndicator" class="loading-indicator">
+        <span class="loading-dot"></span>訊號連接中
+      </div>
+      <div id="syncTrigger" class="sync-trigger" onclick="handleSync()"><span>快樂上班</span><span>效率出單</span></div>
+      <img id="userAvatar" src="https://drive.google.com/thumbnail?id=13fgS3zOP_whu0f9NEAEzqgEPzzgFCKj6&sz=w200" class="avatar" loading="lazy" onerror="this.style.display='none'">
+    </div>
+  </div>
+  <div class="mode-toggle">
+    <!-- ✅ UI：emoji 圖示 + 全圓角膠囊 -->
+    <button class="mode-btn inactive"  id="btnCust"   onclick="setMode('customer')">👤 客戶</button>
+    <button class="mode-btn active-std" id="btnStd"   onclick="setMode('standard')">📋 標準</button>
+    <button class="mode-btn inactive"  id="btnManual" onclick="setMode('manual')">✏️ 手動</button>
+    <button class="mode-btn inactive"  id="btnQuick"  onclick="setMode('quick')">💬 回覆</button>
+  </div>
+</div>
+
+<!-- 側邊滑入選單 -->
+<div id="sideMenu" class="side-menu">
+  <div class="side-menu-header">
+    <span>功能選單</span>
+    <button onclick="toggleSidebar()">&times;</button>
+  </div>
+  <div class="side-menu-content">
+    <a onclick="handleMenuAction('copySales')"><span>📈</span> 複製業績</a>
+    <a onclick="handleMenuAction('clearSales')"><span>🗑️</span> 清除業績</a>
+    <!-- ✅ iOS修正：檔案列表改為原生 <a> 標籤 -->
+    <a href="https://drive.google.com/drive/folders/1X_l5QwBpHqaxMRfW3cpcNp0JQTp3u7qF?usp=drive_link" target="_blank" rel="noopener noreferrer" onclick="forceCloseOverlay()"><span>☁️</span> 雲端列表</a>
+    <a onclick="handleMenuAction('fileDownload')"><span>📥</span> 檔案下載</a>
+    <a onclick="handleMenuAction('todayPerformance')"><span>💰</span> 今日業績</a>
+    <a onclick="handleMenuAction('weeklyReport')"><span>📊</span> 業績週報</a>
+    <a onclick="handleMenuAction('eligibilityRegister')"><span>🏷️</span> 優惠登記</a>
+    <a onclick="handleMenuAction('eligibilityQuery')"><span>🔍</span> 優惠資格</a>
+    <a onclick="handleMenuAction('lineReport')"><span>✉️</span> LINE 回報</a>
+  </div>
+</div>
+
+<!-- 黑色半透明遮罩 -->
+<div id="menuOverlay" class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- 今日業績 Step1：選擇銷售人員 -->
+<div id="salesPickerOverlay" class="sales-picker-overlay">
+  <div class="sales-picker-box">
+    <h3>💰 今日業績查詢</h3>
+    <p>請選擇要查詢的銷售人員</p>
+    <select id="salesPersonSelect">
+      <option value="王惠宣">王惠宣</option>
+      <option value="徐琬晴">徐琬晴</option>
+      <option value="張詠甯">張詠甯</option>
+      <option value="李孟哲">李孟哲</option>
+      <option value="其他">其他</option>
+    </select>
+    <div class="sales-picker-btns">
+      <button class="btn-cancel-sales" onclick="closeSalesPicker()">取消</button>
+      <button class="btn-confirm-sales" onclick="confirmSalesPerson()">確認查詢</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 升級：今日業績 Step2 → 明細表格顯示 -->
+<div id="salesResultOverlay" class="sales-result-overlay">
+  <div class="sales-result-box">
+    <div class="result-label">今日出單明細</div>
+    <div class="result-name" id="resultPersonName"></div>
+    <div class="sales-detail-wrap">
+      <table class="sales-detail-table">
+        <thead>
+          <tr>
+            <th>收件人</th>
+            <th>金額</th>
+          </tr>
+        </thead>
+        <tbody id="salesDetailBody"></tbody>
+      </table>
+    </div>
+    <!-- 今日共 X 筆 + 合計金額 -->
+    <div class="sales-summary-row">
+      <span id="salesCountText">今日共 0 筆</span>
+      <span id="resultAmount">合計 $0</span>
+    </div>
+    <div class="sales-result-btns">
+      <!-- 關閉(左) / 複製金額(右) -->
+      <button class="btn-close-sales" onclick="closeSalesResult()">關閉</button>
+      <button class="btn-copy-sales"  onclick="copySalesResult()">複製金額</button>
+    </div>
+  </div>
+</div>
+
+<!-- 複製業績確認彈窗 -->
+<div id="copySalesOverlay" class="copy-sales-overlay">
+  <div class="copy-sales-box">
+    <div class="copy-sales-icon">📋</div>
+    <h3>業績資料已載入</h3>
+    <p>點擊「確認複製」將業績資料<br>寫入您的剪貼簿</p>
+    <div class="copy-sales-btns">
+      <button class="btn-cancel-copy"  onclick="cancelCopySales()">取消</button>
+      <button class="btn-confirm-copy" onclick="confirmCopySales()">確認複製</button>
+    </div>
+  </div>
+</div>
+
+<!-- 業績週報 Step1：查詢條件 -->
+<div id="weeklyOverlay" class="weekly-overlay">
+  <div class="weekly-box">
+    <h3>📊 業績週報產出</h3>
+    <div class="sub">選擇銷售人員與日期範圍</div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:1px;">銷售人員</div>
+    <select id="weeklyPersonSelect" class="weekly-person-select" onchange="weeklySelectedPerson = this.value">
+      <option value="王惠宣">王惠宣</option>
+      <option value="徐琬晴">徐琬晴</option>
+      <option value="張詠甯">張詠甯</option>
+      <option value="李孟哲">李孟哲</option>
+      <option value="全部人員">全部人員</option>
+    </select>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:1px;">快速選擇</div>
+    <div class="weekly-preset-row">
+      <button id="presetThisWeek" class="weekly-preset-btn" onclick="setWeeklyPreset('thisWeek')">本週</button>
+      <button id="presetLastWeek" class="weekly-preset-btn" onclick="setWeeklyPreset('lastWeek')">上週</button>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:1px;">日期範圍</div>
+    <div class="weekly-cal-wrap">
+      <div class="weekly-cal" id="calLeft">
+        <div class="cal-nav">
+          <button onclick="shiftCal('left',-1)">&#8249;</button>
+          <span id="calLeftTitle"></span>
+          <button onclick="shiftCal('left',1)">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="calLeftGrid"></div>
+      </div>
+      <div class="weekly-cal" id="calRight">
+        <div class="cal-nav">
+          <button onclick="shiftCal('right',-1)">&#8249;</button>
+          <span id="calRightTitle"></span>
+          <button onclick="shiftCal('right',1)">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="calRightGrid"></div>
+      </div>
+    </div>
+    <!-- ✅ UI：手動日期輸入改為 inputmode="numeric"，oninput 改為 autoFormatDate -->
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:1px;">或手動輸入（自動補斜線）</div>
+    <div class="weekly-manual-row">
+      <input type="text" id="manualStart" inputmode="numeric" placeholder="開始 MMDD" maxlength="5" oninput="autoFormatDate(this,'start')">
+      <span>→</span>
+      <input type="text" id="manualEnd"   inputmode="numeric" placeholder="結束 MMDD"  maxlength="5" oninput="autoFormatDate(this,'end')">
+    </div>
+    <div class="weekly-action-row">
+      <button class="btn-cancel-report" onclick="closeWeeklyReport()">取消</button>
+      <button class="btn-gen-report"    onclick="generateWeeklyReport()">產出週報</button>
+    </div>
+  </div>
+</div>
+
+<!-- 業績週報 Step2：樞紐結果 -->
+<div id="weeklyResultOverlay" class="weekly-result-overlay">
+  <div class="weekly-result-box">
+    <h3>📊 業績週報</h3>
+    <div class="result-meta" id="weeklyResultMeta"></div>
+    <div class="weekly-table-wrap">
+      <table class="weekly-table">
+        <thead>
+          <tr>
+            <th>商品名稱</th>
+            <th style="text-align:right;">數量</th>
+            <th style="text-align:right;">銷售額</th>
+          </tr>
+        </thead>
+        <tbody id="weeklyTableBody"></tbody>
+      </table>
+    </div>
+    <div class="weekly-result-btns">
+      <button class="btn-close-report" onclick="closeWeeklyResult()">關閉</button>
+      <button class="btn-copy-report"  onclick="copyWeeklyReport()">複製</button>
+    </div>
+  </div>
+</div>
+
+<!-- 客戶資料區 -->
+<div id="customerSection" class="section" style="display:none;">
+  <div class="card">
+    <div class="card-title">👤 客戶詳細資訊</div>
+    <div style="display:flex;gap:12px;margin-bottom:15px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <!-- ✅ 防呆：必填標記 * -->
+        <label class="form-label">單位代號<span class="required-mark">*</span></label>
+        <input type="text" id="unitCode" class="form-control allow-select" placeholder="自動帶入" oninput="clearConnectedFields()">
+      </div>
+      <div class="form-group" id="nameGroup" style="flex:2.5;margin-bottom:0;position:relative;">
+        <label class="form-label">中文通訊處<span class="required-mark">*</span></label>
+        <input type="text" id="unitName" class="form-control allow-select" placeholder="輸入名稱搜尋處名" autocomplete="off" oninput="clearConnectedFields()">
+        <div id="unitSuggestions" class="unit-suggestions" style="display:none;"></div>
+      </div>
+    </div>
+    <!-- ✅ 防呆：平台訂單號碼加 inputmode="numeric" 跳出數字鍵盤 -->
+    <div class="form-group"><label class="form-label">平台訂單號碼<span class="required-mark">*</span></label><input type="text" id="platformOrderNo" class="form-control allow-select" placeholder="平台單號" inputmode="numeric" oninput="clearFieldError(this)"></div>
+    <div class="form-group"><label class="form-label">性質</label><select id="orderType" class="form-control"><option value="單位早會">單位早會</option><option value="處經理會議">處經理會議</option><option value="營管場">營管場</option><option value="區部場">區部場</option><option value="回購">回購</option></select></div>
+    <div class="form-group"><label class="form-label">收件人<span class="required-mark">*</span></label><input type="text" id="customerName" class="form-control allow-select" placeholder="收件人姓名" oninput="clearFieldError(this)"></div>
+    <div class="form-group">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <label class="form-label" style="margin-bottom:0;">寄件人</label>
+        <label style="font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="syncSender" onclick="syncSenderField()"> 與收件人相同
+        </label>
+      </div>
+      <input type="text" id="senderName" class="form-control allow-select" placeholder="寄件人姓名">
+    </div>
+    <div class="form-group"><label class="form-label">送貨地址<span class="required-mark">*</span></label><input type="text" id="shippingAddress" class="form-control allow-select" placeholder="送貨地址" autocomplete="off" oninput="clearFieldError(this)"></div>
+    <div class="form-group"><label class="form-label">連絡電話<span class="required-mark">*</span></label><input type="tel" id="contactPhone" class="form-control allow-select" placeholder="聯絡電話" maxlength="10" inputmode="numeric" oninput="clearFieldError(this)"></div>
+    <div class="form-group"><label class="form-label">營管</label><input type="text" id="managerUnit" class="form-control allow-select" placeholder="營管名稱" autocomplete="off"></div>
+    <div class="form-group"><label class="form-label">區部</label><input type="text" id="districtUnit" class="form-control allow-select" placeholder="區部名稱" autocomplete="off"></div>
+    <div style="display:flex;gap:12px;margin-top:15px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label class="form-label">出單人員</label>
+        <select id="issuerName" class="form-control"><option value="王惠宣">王惠宣</option></select>
+      </div>
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label class="form-label">銷售人員</label>
+        <select id="salesName" class="form-control">
+          <option value="">— 選擇銷售人員 —</option>
+          <option value="王惠宣">王惠宣</option>
+          <option value="徐琬晴">徐琬晴</option>
+          <option value="張詠甯">張詠甯</option>
+          <option value="李孟哲">李孟哲</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pricingSection" class="section">
+  <div class="card">
+    <div class="card-title">🔍 選擇品項</div>
+    <select id="productSelect" class="form-control" onchange="onSelectProduct(this.value)"><option value="">— 點擊選擇品項 —</option></select>
+  </div>
+  <div id="orderItems"></div>
+</div>
+
+<div id="quickReplySection" class="section" style="display:none;">
+  <div class="card">
+    <div class="card-title">⚡ 快速複製區塊</div>
+    <div id="quickBtnContainer"></div>
+  </div>
+</div>
+
+<!-- ✅ 新版底部欄：單行五欄 [共?項] [合計金額] [$金額] [清空] [報價文案] -->
+<div class="summary-bar" id="summaryBar">
+  <div class="summary-inner">
+    <span class="item-count-badge" id="itemCountBadge">共 0 項</span>
+    <span class="total-label">合計</span>
+    <span class="total-amount" id="totalAmount">$0</span>
+    <div class="summary-actions">
+      <button class="btn-clear-sm" onclick="confirmClear()">清空</button>
+      <button class="btn-quote-sm" onclick="showSummary()">報價文案</button>
+    </div>
+  </div>
+</div>
+
+<!-- 清空清單 確認彈窗 -->
+<div class="confirm-overlay" id="confirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 確認清空？</h3>
+    <p>品項清單與客戶資料將全部清除，<br>此動作無法還原。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doClrAll()">確認清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- 清除業績 確認彈窗 -->
+<div class="confirm-overlay" id="clearSalesOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 確認清除今日業績？</h3>
+    <p>業績回報 今日業績將全部清除，<br>此動作無法還原。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeClearSalesConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doClrSales()">確認清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 新增：同步失敗重試彈窗 -->
+<div class="confirm-overlay" id="syncFailOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 同步失敗</h3>
+    <p id="syncFailMsg">伺服器連線異常，請確認網路後重試。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeSyncFail()">取消</button>
+      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="retrySyncOrder()">重試</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 新增：草稿還原彈窗 -->
+<div class="confirm-overlay" id="draftRestoreOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>📝 發現未完成草稿</h3>
+    <p>偵測到上次未送出的出單資料，<br>是否還原繼續編輯？</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="discardDraft()">捨棄</button>
+      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="restoreDraft()">還原草稿</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 防呆：客戶欄位未填提示彈窗 -->
+<div class="confirm-overlay" id="validationOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 請填寫必填欄位</h3>
+    <p id="validationMsg" style="text-align:left;line-height:1.9;"></p>
+    <div class="confirm-btns">
+      <button class="btn-primary" style="flex:1;padding:14px;" onclick="closeValidation()">返回填寫</button>
+    </div>
+  </div>
+</div>
+
+<!-- 報價/快速回覆 預覽彈窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle" style="color:#004691;margin-bottom:10px;">📋 內容預覽</h3>
+    <div class="print-area allow-select" id="printContent"></div>
+    <div style="margin-top:20px;display:flex;gap:12px;">
+      <button class="btn-secondary" style="flex:1;padding:16px;" onclick="closeModal()">關閉</button>
+      <button id="copyBtn" class="btn-primary" style="flex:2;padding:16px;" onclick="copyOrder()">複製內容</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     🏷️ 優惠登記 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="eligibilityRegisterOverlay" style="display:none;">
+  <div class="elig-box">
+    <h3>🏷️ 優惠登記</h3>
+    <p class="elig-sub">登記通訊處大組價優惠資格（有效期 90 天）</p>
+
+    <!-- 代號 + 通訊處 並排（1:2.5），加入按鈕靠右 -->
+    <div style="display:flex;gap:10px;margin-bottom:13px;">
+      <div style="flex:1;min-width:0;">
+        <label class="elig-label">單位代號</label>
+        <input type="text" id="eligUnitCode" class="form-control" placeholder="輸入代號"
+               autocomplete="off" oninput="onEligCodeInput(this.value)">
+      </div>
+      <div style="flex:2.5;min-width:0;position:relative;">
+        <label class="elig-label">中文通訊處</label>
+        <div style="display:flex;gap:6px;align-items:stretch;">
+          <div style="flex:1;min-width:0;position:relative;">
+            <input type="text" id="eligUnitName" class="form-control" placeholder="輸入名稱搜尋"
+                   autocomplete="off" oninput="onEligNameInput(this.value)">
+            <div id="eligSuggestions" class="unit-suggestions" style="display:none;"></div>
+          </div>
+          <button class="elig-add-btn" onclick="addEligUnit()">加入</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已選中通訊處 -->
+    <div class="elig-field">
+      <label class="elig-label">已選中通訊處</label>
+      <div id="eligSelectedList" class="elig-selected-container">
+        <p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何通訊處</p>
+      </div>
+    </div>
+
+    <!-- 達標品項 -->
+    <div class="elig-field">
+      <label class="elig-label">達標品項</label>
+      <select id="eligProduct" class="form-control">
+        <option value="">— 載入中 —</option>
+      </select>
+    </div>
+
+    <!-- 達標日期：隱藏 date picker 負責選擇，顯示欄位格式化為 YYYY/MM/DD -->
+    <div class="elig-field">
+      <label class="elig-label">達標日期</label>
+      <div style="position:relative;">
+        <input type="date" id="eligStartDatePicker"
+               style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;z-index:1;"
+               onchange="onEligDateChange()">
+        <input type="text" id="eligStartDate" class="form-control elig-date-input"
+               placeholder="選擇達標日期" readonly
+               style="pointer-events:none;text-align:center;">
+      </div>
+    </div>
+
+    <!-- 到期日期（自動計算） -->
+    <div class="elig-field">
+      <label class="elig-label">到期日期（自動 +90 天）</label>
+      <input type="text" id="eligEndDate" class="form-control" placeholder="請先選擇達標日期" readonly
+             style="background:var(--bg);color:var(--muted);text-align:center;">
+    </div>
+
+    <div class="confirm-btns" style="margin-top:16px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeEligibilityRegister()">取消</button>
+      <button class="btn-primary"   style="flex:1;padding:13px;" onclick="submitEligibility()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     🔍 優惠資格查詢 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="eligibilityQueryOverlay" style="display:none;">
+  <div class="elig-box elig-query-box">
+    <h3>🔍 優惠資格查詢</h3>
+
+    <!-- ① 第一區塊：快查（代號帶名稱 + 名稱模糊建議，與客戶頁邏輯相同）-->
+    <div class="elig-section-label">快查</div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <div style="flex:1;min-width:0;">
+        <input type="text" id="eligSearchCode" class="form-control" placeholder="代號"
+               autocomplete="off" style="padding:9px 10px;font-size:13px;"
+               oninput="onSearchCodeInput(this.value)">
+      </div>
+      <div style="flex:2.5;min-width:0;position:relative;">
+        <input type="text" id="eligSearchName" class="form-control" placeholder="中文通訊處"
+               autocomplete="off" style="padding:9px 10px;font-size:13px;"
+               oninput="onSearchNameInput(this.value)">
+        <div id="eligSearchSuggestions" class="unit-suggestions" style="display:none;"></div>
+      </div>
+      <button class="btn-primary" style="flex-shrink:0;padding:9px 14px;font-size:13px;font-weight:700;border-radius:var(--radius-sm);"
+              onclick="searchEligibility()">搜尋</button>
+    </div>
+    <!-- 快查結果（初始提示，有搜尋才顯示） -->
+    <div id="eligSearchList" class="elig-list elig-search-list">
+      <p style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">輸入代號或名稱後按搜尋</p>
+    </div>
+
+    <!-- ② 第二區塊：資格清單（有效/失效切換） -->
+    <div class="elig-section-label" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">資格清單</div>
+    <div id="eligQueryList" class="elig-list">
+      <p style="text-align:center;color:var(--muted);padding:24px;">載入中...</p>
+    </div>
+
+    <!-- 底部按鈕：關閉(1) 失效(1) 有效(2)，1:1:2 比例 -->
+    <div class="elig-query-btns">
+      <button class="btn-secondary elig-tab-btn" style="flex:1;"
+              onclick="closeEligibilityQuery()">關閉</button>
+      <button id="eligBtnExpired" class="btn-secondary elig-tab-btn" style="flex:1;"
+              onclick="loadEligibilityData('失效')">失效</button>
+      <button id="eligBtnValid" class="btn-secondary elig-tab-btn active" style="flex:2;"
+              onclick="loadEligibilityData('有效')">有效</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     ✅ 作廢確認彈窗
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="voidConfirmOverlay" style="display:none;z-index:900;">
+  <div class="elig-box" style="max-width:320px;">
+    <h3 style="color:var(--danger);">⚠️ 確認作廢</h3>
+    <p id="voidConfirmMsg" style="color:var(--muted);font-size:13px;margin:12px 0 16px;line-height:1.7;"></p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeVoidConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="executeMarkVoid()">確認作廢</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     ✉️ LINE 回報 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="lineReportOverlay" style="display:none;">
+  <div class="elig-box line-report-box">
+    <h3>✉️ LINE 回報</h3>
+    <p class="elig-sub">自動帶入業績，產出每日回報文案</p>
+
+    <!-- 今日業績 + 月累積 並排 -->
+    <div style="display:flex;gap:10px;margin-bottom:13px;">
+      <div style="flex:1;min-width:0;">
+        <label class="elig-label">今日業績</label>
+        <input type="text" id="lineReportTodayAmt" class="form-control"
+               placeholder="查詢中..." style="text-align:right;padding:8px 10px;">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <label class="elig-label">截至目前月累積</label>
+        <input type="text" id="lineReportMonthAmt" class="form-control"
+               placeholder="查詢中..." style="text-align:right;padding:8px 10px;">
+      </div>
+    </div>
+
+    <!-- 下個工作日安排 -->
+    <div class="elig-field">
+      <label class="elig-label" id="lineArrangeLabel">明日安排</label>
+      <div id="lineArrangeList"></div>
+      <button class="line-add-btn" onclick="addLineItem('arrange')">＋ 新增安排</button>
+    </div>
+
+    <!-- 今日拜訪單位 -->
+    <div class="elig-field">
+      <label class="elig-label">今日拜訪單位</label>
+      <div id="lineVisitList"></div>
+      <button class="line-add-btn" onclick="addLineItem('visit')">＋ 新增拜訪</button>
+    </div>
+
+    <div class="confirm-btns" style="margin-top:16px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeLineReport()">關閉</button>
+      <button class="btn-primary"   style="flex:2;padding:13px;" onclick="generateLineReport()">產出文案</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     ✉️ 文案編輯 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="lineReportTextOverlay" style="display:none;z-index:850;">
+  <div class="elig-box" style="max-width:420px;">
+    <h3>✉️ 回報文案</h3>
+    <p class="elig-sub">可手動編輯後再複製</p>
+    <textarea id="lineReportTextarea"
+              style="width:100%;min-height:220px;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;line-height:1.8;resize:vertical;box-sizing:border-box;"></textarea>
+    <div class="confirm-btns" style="margin-top:12px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeLineReportText()">關閉</button>
+      <button class="btn-primary"   style="flex:2;padding:13px;" onclick="copyLineReport()">複製</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     📥 檔案下載 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="fileDownloadOverlay" style="display:none;">
+  <div class="elig-box file-dl-box">
+    <h3>📥 檔案下載</h3>
+    <p class="elig-sub" id="fileDownloadDateLabel">今日檔案</p>
+
+    <!-- 全選（iOS 隱藏）-->
+    <label class="file-select-all" id="fileSelectAllRow">
+      <input type="checkbox" class="file-dl-checkbox" id="fileSelectAll"
+             onchange="toggleFileSelectAll(this)">
+      全選
+    </label>
+
+    <!-- 檔案清單 -->
+    <div id="fileDownloadList" style="min-height:60px;">
+      <p style="text-align:center;color:var(--muted);padding:24px;">載入中...</p>
+    </div>
+
+    <!-- 進度（下載時顯示）-->
+    <div id="fileDownloadProgress" style="display:none;margin-top:8px;">
+      <div class="progress-bar-wrap">
+        <div id="fileProgressBar" style="height:4px;background:#004691;width:0%;transition:width 0.4s;border-radius:2px;"></div>
+      </div>
+      <p id="fileProgressText" style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px;"></p>
+    </div>
+
+    <div class="confirm-btns" style="margin-top:16px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeFileDownload()">關閉</button>
+      <button class="btn-primary" id="fileDlSelectedBtn" style="flex:2;padding:13px;" onclick="downloadSelectedFiles()">⬇️ 下載選取</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 同步毛玻璃遮罩（同步進行中全屏鎖定，防止誤操作）-->
+<div id="syncMask">
+  <div class="sync-mask-spinner"></div>
+  <span class="sync-mask-text">同步中...</span>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── 基礎 Toast / Alert ───────────────────────────────────
+window.alert   = function(msg) { showGlobalToast(msg); };
+// window.confirm 已由自訂 overlay 取代，不需覆蓋
+
+function showGlobalToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.innerText = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── 通用剪貼簿函數（async）─────────────────────────────────
+// 優先使用 navigator.clipboard.writeText（現代標準，iOS 13.4+ 完整支援）
+// 失敗時 fallback 到 execCommand（舊裝置保底）
+async function iosCompatibleCopy(text) {
+  // ✅ 第一優先：Clipboard API（iOS 13.4+、HTTPS 環境、用戶手勢下可用）
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch(e) {
+      // 權限被拒或環境不支援，fallback 到 execCommand
+    }
+  }
+  // ✅ Fallback：execCommand（iOS 16+ 可能失效，作為最後保底）
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  // opacity:0.01 而非 0，部分 iOS 拒絕對完全透明元素執行複製
+  // font-size:16px 防止 iOS 自動放大
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0.01;border:none;outline:none;resize:none;font-size:16px;';
+  ta.readOnly = false;
+  ta.contentEditable = 'true';
+  document.body.appendChild(ta);
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (isIOS) {
+    const range = document.createRange();
+    range.selectNodeContents(ta);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    ta.setSelectionRange(0, ta.value.length);
+  } else { ta.select(); }
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  return ok;
+}
+
+// ─── ✅ UI：數量輸入框點擊全選（iOS 需 setTimeout 50ms）───
+function selectOnFocus(el) {
+  setTimeout(function() {
+    try { el.select(); } catch(e) {}
+    try { el.setSelectionRange(0, String(el.value).length); } catch(e) {}
+  }, 50);
+}
+
+// ─── ✅ UI：全域觸控回饋（touchstart）────────────────────
+// Android → navigator.vibrate(15)
+// iOS + Android → .btn-pressed 白色光暈動畫
+document.addEventListener('touchstart', function(e) {
+  const btn = e.target.closest('button, .side-menu-content a, .cal-day:not(.empty)');
+  if (!btn) return;
+  if (navigator.vibrate) navigator.vibrate(15);
+  btn.classList.remove('btn-pressed');
+  void btn.offsetWidth; // force reflow
+  btn.classList.add('btn-pressed');
+  setTimeout(() => btn.classList.remove('btn-pressed'), 350);
+}, { passive: true });
+
+// ─── ✅ UI：側邊欄左滑關閉 ───────────────────────────────
+let sidebarTouchStartX = 0;
+document.getElementById('sideMenu').addEventListener('touchstart', function(e) {
+  sidebarTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+document.getElementById('sideMenu').addEventListener('touchend', function(e) {
+  const deltaX = e.changedTouches[0].clientX - sidebarTouchStartX;
+  if (deltaX < -50) forceCloseOverlay(); // 左滑 50px 以上關閉
+}, { passive: true });
+
+// ─── 寄件人同步 ──────────────────────────────────────────
+function syncSenderField() {
+  if (document.getElementById('syncSender').checked)
+    document.getElementById('senderName').value = document.getElementById('customerName').value;
+}
+document.getElementById('customerName').addEventListener('input', function() {
+  if (document.getElementById('syncSender').checked)
+    document.getElementById('senderName').value = this.value;
+});
+
+// ─── 側邊選單控制 ─────────────────────────────────────────
+function toggleSidebar() {
+  const isOpening = !document.getElementById('sideMenu').classList.contains('active');
+  document.getElementById('sideMenu').classList.toggle('active');
+  document.getElementById('menuOverlay').classList.toggle('active');
+  // ✅ 側邊欄開啟瞬間預載優惠資格（有效+失效），用戶點進去時資料已就緒
+  if (isOpening) preloadEligibilityCache();
+}
+
+// 預載優惠資格快取（背景靜默，不影響 UI）
+function preloadEligibilityCache() {
+  if (!eligCache.valid)   _fetchEligInBackground('有效',  'valid');
+  if (!eligCache.expired) _fetchEligInBackground('失效', 'expired');
+}
+function forceCloseOverlay() {
+  document.getElementById('sideMenu').classList.remove('active');
+  document.getElementById('menuOverlay').classList.remove('active');
+}
+
+// ─── 清除業績 ─────────────────────────────────────────────
+function openClearSalesConfirm()  { document.getElementById('clearSalesOverlay').style.display = 'flex'; }
+function closeClearSalesConfirm() { document.getElementById('clearSalesOverlay').style.display = 'none'; }
+
+async function doClrSales() {
+  closeClearSalesConfirm();
+  showGlobalToast('🗑️ 清除中，請稍候...');
+  try {
+    const res = await cloudPost({action:'clearSalesData'});
+    const r = await res.json();
+    showGlobalToast(r.success ? '✅ '+r.message : '⚠️ '+r.message);
+  } catch(e) { showGlobalToast('⚠️ 伺服器連線異常'); }
+}
+
+// ─── 複製業績（三步驟流程） ───────────────────────────────
+let pendingSalesData = '';
+
+async function docopySales() {
+  showGlobalToast('📋 讀取業績資料中...');
+  try {
+    const res = await cloudPost({action:'getSalesDataForCopy'});
+    const r = await res.json();
+    if (r.success && r.data) {
+      pendingSalesData = r.data;
+      document.getElementById('copySalesOverlay').classList.add('active');
+    } else if (r.success && !r.data) {
+      showGlobalToast('ℹ️ 目前業績回報無資料');
+    } else {
+      showGlobalToast('⚠️ '+(r.message||'讀取失敗'));
+    }
+  } catch(e) { showGlobalToast('⚠️ 伺服器連線異常'); }
+}
+function cancelCopySales() {
+  document.getElementById('copySalesOverlay').classList.remove('active');
+  pendingSalesData = '';
+}
+async function confirmCopySales() {
+  if (!pendingSalesData) { showGlobalToast('⚠️ 無資料可複製'); return; }
+  const ok = await iosCompatibleCopy(pendingSalesData);
+  document.getElementById('copySalesOverlay').classList.remove('active');
+  showGlobalToast(ok ? '✅ 業績已複製至剪貼簿！' : '⚠️ 複製失敗，請重試');
+  pendingSalesData = '';
+}
+
+// ─── 側邊選單功能入口 ─────────────────────────────────────
+function handleMenuAction(type) {
+  forceCloseOverlay();
+  if (type === 'copySales')             docopySales();
+  else if (type === 'clearSales')       openClearSalesConfirm();
+  else if (type === 'todayPerformance') showSalesPersonPicker();
+  else if (type === 'weeklyReport')     openWeeklyReport();
+  else if (type === 'eligibilityRegister') openEligibilityRegister();
+  else if (type === 'eligibilityQuery')    openEligibilityQuery();
+  else if (type === 'lineReport')            openLineReport();
+  else if (type === 'fileDownload')          openFileDownload();
+}
+
+// ════════════════════════════════════════════════════════
+// 🏷️ 優惠登記功能
+// ════════════════════════════════════════════════════════
+let eligProducts    = [];  // 快取 K=Y 的商品清單
+let eligSelectedUnits = []; // 已選中通訊處清單 [{code, name}, ...]
+let eligSwipeTouchStartX = 0;
+let eligSwipeActiveItem  = null;
+
+async function openEligibilityRegister() {
+  document.getElementById('eligibilityRegisterOverlay').style.display = 'flex';
+  // 清空所有欄位和選中清單
+  eligSelectedUnits = [];
+  document.getElementById('eligUnitCode').value  = '';
+  document.getElementById('eligUnitName').value  = '';
+  document.getElementById('eligStartDatePicker').value = '';
+  document.getElementById('eligStartDate').value = '';
+  document.getElementById('eligEndDate').value   = '';
+  document.getElementById('eligSuggestions').style.display = 'none';
+  renderEligSelectedList();
+  await loadEligibleProducts();
+}
+
+function closeEligibilityRegister() {
+  document.getElementById('eligibilityRegisterOverlay').style.display = 'none';
+}
+
+async function loadEligibleProducts() {
+  const sel = document.getElementById('eligProduct');
+  sel.innerHTML = '<option value="">— 載入中 —</option>';
+  try {
+    const res = await cloudPost({ action: 'getEligibleProducts' });
+    const r = await res.json();
+    if (r.success && r.products.length > 0) {
+      eligProducts = r.products;
+      sel.innerHTML = '<option value="">— 選擇達標品項 —</option>' +
+        r.products.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    } else { sel.innerHTML = '<option value="">無資料</option>'; }
+  } catch(e) { sel.innerHTML = '<option value="">載入失敗</option>'; }
+}
+
+// ── 輸入代號自動帶入名稱 ──
+function onEligCodeInput(code) {
+  const c = code.trim().toUpperCase();
+  if (c.length < 2) return;
+  const match = allUnits.find(u => u.code === c);
+  if (match) {
+    document.getElementById('eligUnitName').value = match.name;
+    document.getElementById('eligSuggestions').style.display = 'none';
+  }
+}
+
+// ── 名稱模糊搜尋 ──
+function onEligNameInput(val) {
+  const query = val.trim();
+  const box   = document.getElementById('eligSuggestions');
+  if (query.length < 1) { box.style.display = 'none'; return; }
+  const hits = allUnits.filter(u =>
+    (u.name && u.name.includes(query)) || (u.code && u.code.includes(query))
+  ).slice(0, 8);
+  if (hits.length === 0) { box.style.display = 'none'; return; }
+  box.innerHTML = hits.map(u =>
+    `<div class="suggestion-item" onclick="fillEligUnit('${u.code}','${encodeURIComponent(u.name)}')">
+       <span class="suggestion-name">${u.name}</span>
+       <span class="suggestion-code">${u.code}</span>
+     </div>`).join('');
+  box.style.display = 'block';
+}
+
+function fillEligUnit(code, encodedName) {
+  const name = decodeURIComponent(encodedName);
+  document.getElementById('eligUnitCode').value = code;
+  document.getElementById('eligUnitName').value = name;
+  document.getElementById('eligSuggestions').style.display = 'none';
+}
+
+// ── 加入通訊處（防重複）──
+function addEligUnit() {
+  const code = document.getElementById('eligUnitCode').value.trim().toUpperCase();
+  const name = document.getElementById('eligUnitName').value.trim();
+  if (!code || !name) { showGlobalToast('⚠️ 請先輸入通訊處代號與名稱'); return; }
+  if (eligSelectedUnits.some(u => u.code === code)) {
+    showGlobalToast('⚠️ ' + name + ' 已加入'); return;
+  }
+  eligSelectedUnits.push({ code, name });
+  // 清空輸入欄，準備加入下一個
+  document.getElementById('eligUnitCode').value = '';
+  document.getElementById('eligUnitName').value = '';
+  renderEligSelectedList();
+}
+
+// ── 移除已選通訊處（手機左滑 / 桌機 hover X 共用）──
+function removeEligUnit(idx) {
+  eligSelectedUnits.splice(idx, 1);
+  renderEligSelectedList();
+}
+
+// ── 渲染已選清單 ──
+// 手機：左滑兩段式刪除　桌機：滑鼠 hover 顯示右上 X（複用主列表設計）
+function renderEligSelectedList() {
+  const container = document.getElementById('eligSelectedList');
+  if (eligSelectedUnits.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何通訊處</p>';
+    return;
+  }
+  container.innerHTML = eligSelectedUnits.map((u, i) =>
+    `<div class="elig-sel-wrapper" data-idx="${i}" style="position:relative;">
+       <div class="elig-sel-bg">移除</div>
+       <div class="elig-sel-item">
+         ${u.code} ${u.name}
+         <button class="elig-sel-delete-btn" onclick="event.stopPropagation();removeEligUnit(${i})">✕</button>
+       </div>
+     </div>`
+  ).join('');
+  // 掛載左滑事件（手機觸控）
+  container.querySelectorAll('.elig-sel-wrapper').forEach(wrapper => {
+    const item = wrapper.querySelector('.elig-sel-item');
+    let startX = 0;
+    wrapper.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      container.querySelectorAll('.elig-sel-item').forEach(el => {
+        if (el !== item) el.style.transform = '';
+      });
+    }, { passive: true });
+    wrapper.addEventListener('touchend', e => {
+      const delta = e.changedTouches[0].clientX - startX;
+      if (delta < -50)     item.style.transform = 'translateX(-80px)';
+      else if (delta > 20) item.style.transform = '';
+    }, { passive: true });
+    wrapper.querySelector('.elig-sel-bg').addEventListener('click', () => {
+      removeEligUnit(parseInt(wrapper.dataset.idx));
+    });
+  });
+}
+
+// ── date picker 變更時：格式化顯示為 YYYY/MM/DD 並計算到期日 ──
+function onEligDateChange() {
+  const picker = document.getElementById('eligStartDatePicker');
+  const display = document.getElementById('eligStartDate');
+  if (picker.value) {
+    const [y, m, d] = picker.value.split('-');
+    display.value = `${y}/${m}/${d}`;   // 顯示 2026/05/05 格式
+  } else {
+    display.value = '';
+  }
+  calcEligEndDate();
+}
+
+// ── 計算到期日（+90 天）──
+function calcEligEndDate() {
+  const val = document.getElementById('eligStartDatePicker').value; // YYYY-MM-DD
+  if (!val) { document.getElementById('eligEndDate').value = ''; return; }
+  const start = new Date(val);
+  const end   = new Date(start);
+  end.setDate(end.getDate() + 90);
+  const fmtD = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('eligEndDate').value = fmtD(end);
+}
+
+// ── 儲存（合併多個通訊處為 + 分隔）──
+async function submitEligibility() {
+  if (eligSelectedUnits.length === 0) { showGlobalToast('⚠️ 請至少加入一個通訊處'); return; }
+  const product   = document.getElementById('eligProduct').value;
+  const startDate = document.getElementById('eligStartDatePicker').value; // YYYY-MM-DD 格式
+  if (!product)   { showGlobalToast('⚠️ 請選擇達標品項'); return; }
+  if (!startDate) { showGlobalToast('⚠️ 請選擇達標日期'); return; }
+
+  // 合併多個通訊處為 + 分隔
+  const unitCode = eligSelectedUnits.map(u => u.code).join('+');
+  const unitName = eligSelectedUnits.map(u => u.name).join('+');
+
+  showSyncMask('儲存中...');
+  try {
+    const res = await cloudPost({ action: 'saveEligibility', unitCode, unitName, product, startDate });
+    const r = await res.json();
+    if (r.success) {
+      eligCache = { valid: null, expired: null }; // ✅ 清除快取，確保下次查詢取得最新資料
+      showGlobalToast('✅ 優惠資格已登記');
+      closeEligibilityRegister();
+    }
+    else           { showGlobalToast('⚠️ 儲存失敗：' + r.message); }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
+  } finally { hideSyncMask(); }
+}
+
+// ════════════════════════════════════════════════════════
+// 🔍 優惠資格查詢功能
+// ════════════════════════════════════════════════════════
+let currentEligFilter  = '有效';
+// ✅ Cache（stale-while-revalidate）
+let eligCache          = { valid: null, expired: null }; // 快取資料
+// ✅ 分頁
+let eligAllRecords     = [];   // 目前篩選的完整資料
+let eligDisplayCount   = 5;    // 初始顯示 5 筆
+
+async function openEligibilityQuery() {
+  document.getElementById('eligibilityQueryOverlay').style.display = 'flex';
+  // 清空搜尋欄及建議清單
+  document.getElementById('eligSearchCode').value = '';
+  document.getElementById('eligSearchName').value = '';
+  document.getElementById('eligSearchSuggestions').style.display = 'none';
+  currentEligFilter = '有效';
+  document.getElementById('eligBtnValid').classList.add('active');
+  document.getElementById('eligBtnExpired').classList.remove('active');
+  await loadEligibilityData('有效');
+}
+
+function closeEligibilityQuery() {
+  document.getElementById('eligibilityQueryOverlay').style.display = 'none';
+  pendingVoidRowIndex = null; // ✅ 清除殘留的作廢索引
+}
+
+// ════════════════════════════════════════════════════════
+// 🔍 優惠資格快查
+// ════════════════════════════════════════════════════════
+
+// 快查：輸入代號自動帶入通訊處名稱（與客戶頁邏輯相同）
+function onSearchCodeInput(code) {
+  const c = code.trim().toUpperCase();
+  if (c.length < 2) return;
+  const match = allUnits.find(u => u.code === c);
+  if (match) {
+    document.getElementById('eligSearchName').value = match.name;
+    document.getElementById('eligSearchSuggestions').style.display = 'none';
+  }
+}
+
+// 快查：通訊處名稱模糊搜尋建議清單
+function onSearchNameInput(val) {
+  const query = val.trim();
+  const box   = document.getElementById('eligSearchSuggestions');
+  if (query.length < 1) { box.style.display = 'none'; return; }
+  const hits  = allUnits.filter(u =>
+    (u.name && u.name.includes(query)) || (u.code && u.code.includes(query))
+  ).slice(0, 8);
+  if (hits.length === 0) { box.style.display = 'none'; return; }
+  box.innerHTML = hits.map(u =>
+    `<div class="suggestion-item" onclick="fillSearchUnit('${u.code}','${encodeURIComponent(u.name)}')">
+       <span class="suggestion-name">${u.name}</span>
+       <span class="suggestion-code">${u.code}</span>
+     </div>`).join('');
+  box.style.display = 'block';
+}
+
+// 快查：點選建議後填入代號和名稱
+function fillSearchUnit(code, encodedName) {
+  const name = decodeURIComponent(encodedName);
+  document.getElementById('eligSearchCode').value = code;
+  document.getElementById('eligSearchName').value = name;
+  document.getElementById('eligSearchSuggestions').style.display = 'none';
+}
+
+async function searchEligibility() {
+  const codeQ = document.getElementById('eligSearchCode').value.trim().toUpperCase();
+  const nameQ = document.getElementById('eligSearchName').value.trim();
+  if (!codeQ && !nameQ) { showGlobalToast('⚠️ 請輸入代號或通訊處名稱'); return; }
+
+  // 搜尋結果顯示在第一區塊，資格清單第二區塊不受影響
+  const list = document.getElementById('eligSearchList');
+  list.innerHTML = '<p style="text-align:center;color:var(--muted);padding:8px;font-size:12px;">搜尋中...</p>';
+
+  try {
+    // 取全部記錄（有效 + 失效 + 作廢）
+    const res = await cloudPost({ action: 'getEligibility', statusFilter: 'all' });
+    const r = await res.json();
+    if (!r.success) { list.innerHTML = `<p style="text-align:center;color:var(--muted);padding:8px;font-size:12px;">⚠️ ${r.message}</p>`; return; }
+
+    const fmt = d => String(d).split("T")[0];
+
+    // 1. 篩選：unitCode 或 unitName 的任一分段包含搜尋詞
+    const matched = r.records.filter(rec => {
+      const codes = rec.unitCode.split('+').map(s => s.trim().toUpperCase());
+      const names = rec.unitName.split('+').map(s => s.trim());
+      if (codeQ && codes.some(c => c.includes(codeQ))) return true;
+      if (nameQ && names.some(n => n.includes(nameQ)))  return true;
+      return false;
+    });
+
+    if (matched.length === 0) {
+      list.innerHTML = '<p style="text-align:center;color:var(--muted);padding:8px;font-size:12px;">查無此通訊處的優惠資格</p>';
+      return;
+    }
+
+    // 2. 去重：同一組合（unitCode + product）只保留最新一筆（最晚到期日）
+    const latestMap = {};
+    matched.forEach(rec => {
+      const key = rec.unitCode + '___' + rec.product;
+      if (!latestMap[key]) { latestMap[key] = rec; return; }
+      const existEnd = new Date(fmt(latestMap[key].endDate).replace(/\//g, '-'));
+      const thisEnd  = new Date(fmt(rec.endDate).replace(/\//g, '-'));
+      if (thisEnd > existEnd) latestMap[key] = rec;
+    });
+
+    // 3. 過濾作廢（只保留有效/失效），再按到期日由近到遠排序
+    const deduped = Object.values(latestMap)
+      .filter(rec => rec.status !== '作廢')
+      .sort((a, b) =>
+        new Date(fmt(a.endDate).replace(/\//g, '-')) - new Date(fmt(b.endDate).replace(/\//g, '-'))
+      );
+
+    renderSearchResults(deduped);
+
+  } catch(e) {
+    list.innerHTML = '<p style="text-align:center;color:var(--muted);padding:8px;font-size:12px;">⚠️ 網路異常，請重試</p>';
+  }
+}
+
+// 渲染搜尋結果（不顯示 ❌，改顯示有效/失效標籤）
+function renderSearchResults(records) {
+  const list = document.getElementById('eligSearchList');
+  const fmt  = d => String(d).split("T")[0];
+
+  // 用與 renderEligibilityList 相同的分組邏輯
+  const groups = [];
+  const keyMap = {};
+  records.forEach(rec => {
+    const key = rec.unitCode + '|' + fmt(rec.endDate);
+    if (keyMap[key] === undefined) {
+      keyMap[key] = groups.length;
+      groups.push({ unitCode: rec.unitCode, unitName: rec.unitName, endDate: fmt(rec.endDate), items: [] });
+    }
+    groups[keyMap[key]].items.push({ product: rec.product, status: rec.status });
+  });
+
+  list.innerHTML = groups.map((group, gi) => {
+    const codes   = group.unitCode.split('+');
+    const names   = group.unitName.split('+');
+    const isMulti = codes.length > 1;
+    const first   = `${codes[0]} ${names[0] || ''}`;
+
+    const unitHtml = isMulti
+      ? `<div style="position:relative;padding-right:34px;width:100%;">
+           <div id="esrch-col-${gi}">
+             <span class="elig-unit-tag">${first}</span>
+           </div>
+           <div id="esrch-exp-${gi}" style="display:none;">
+             ${codes.map((c, i) => `<span class="elig-unit-line">${c} ${names[i] || ''}</span>`).join('')}
+           </div>
+           <button id="esrch-btn-${gi}" class="elig-expand-btn elig-expand-fixed"
+                   onclick="toggleSearchGroup(${gi})">🔒</button>
+         </div>`
+      : `<span class="elig-unit-tag">${first}</span>`;
+
+    const itemsHtml = group.items.map(item => {
+      const isValid   = item.status === '有效';
+      const statusTag = `<span class="${isValid ? 'elig-status-valid' : 'elig-status-expired'}">${item.status}</span>`;
+      return `<div class="elig-item-row">
+        <span class="elig-item-product">${item.product}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="elig-row-date">${group.endDate}</span>
+          ${statusTag}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="elig-row">
+      <div class="elig-unit-tags">${unitHtml}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+}
+
+// 搜尋結果的折疊/展開
+function toggleSearchGroup(gi) {
+  const col = document.getElementById('esrch-col-' + gi);
+  const exp = document.getElementById('esrch-exp-' + gi);
+  const btn = document.getElementById('esrch-btn-' + gi);
+  if (!col || !exp || !btn) return;
+  const isExpanded = col.style.display === 'none';
+  col.style.display = isExpanded ? '' : 'none';
+  exp.style.display = isExpanded ? 'none' : '';
+  btn.textContent   = isExpanded ? '🔒' : '🔓';
+}
+
+async function loadEligibilityData(statusFilter) {
+  currentEligFilter = statusFilter;
+  eligDisplayCount  = 5; // ✅ 切換篩選時重置分頁
+
+  // 切換按鈕樣式
+  const btnValid   = document.getElementById('eligBtnValid');
+  const btnExpired = document.getElementById('eligBtnExpired');
+  if (statusFilter === '有效') {
+    btnValid.classList.add('active');  btnExpired.classList.remove('active');
+  } else {
+    btnExpired.classList.add('active'); btnValid.classList.remove('active');
+  }
+
+  const cacheKey = statusFilter === '有效' ? 'valid' : 'expired';
+
+  if (eligCache[cacheKey]) {
+    // ✅ stale-while-revalidate：有快取立刻顯示，同時背景靜默更新
+    eligAllRecords = eligCache[cacheKey];
+    renderEligibilityPage();
+    _fetchEligInBackground(statusFilter, cacheKey); // 背景更新，不 await
+  } else {
+    // 無快取：顯示載入中，等待 API 回應
+    document.getElementById('eligQueryList').innerHTML =
+      '<p style="text-align:center;color:var(--muted);padding:24px;">查詢中...</p>';
+    await _fetchEligInBackground(statusFilter, cacheKey);
+  }
+}
+
+// 背景靜默取得資料（有快取時不擋 UI）
+async function _fetchEligInBackground(statusFilter, cacheKey) {
+  try {
+    const res = await cloudPost({ action: 'getEligibility', statusFilter });
+    const r = await res.json();
+    if (r.success) {
+      eligCache[cacheKey] = r.records; // 寫入快取
+      if (currentEligFilter === statusFilter) {
+        // 只有用戶還停在同一個 tab 才更新畫面
+        eligAllRecords = r.records;
+        renderEligibilityPage();
+      }
+    } else if (!eligCache[cacheKey]) {
+      document.getElementById('eligQueryList').innerHTML =
+        `<p style="text-align:center;color:var(--muted);padding:24px;">⚠️ ${r.message}</p>`;
+    }
+  } catch(e) {
+    if (!eligCache[cacheKey]) {
+      document.getElementById('eligQueryList').innerHTML =
+        '<p style="text-align:center;color:var(--muted);padding:24px;">⚠️ 網路異常</p>';
+    }
+  }
+}
+
+// ✅ 分頁渲染：顯示前 eligDisplayCount 筆，並附上「載入更多」按鈕
+function renderEligibilityPage() {
+  const sliced = eligAllRecords.slice(0, eligDisplayCount);
+  renderEligibilityList(sliced, currentEligFilter);
+
+  // 附加「載入更多」或「已顯示全部」提示
+  const list      = document.getElementById('eligQueryList');
+  const remaining = eligAllRecords.length - eligDisplayCount;
+  if (remaining > 0) {
+    list.insertAdjacentHTML('beforeend',
+      `<div style="text-align:center;padding:10px 0 4px;">
+         <button class="btn-secondary"
+                 style="padding:10px 24px;font-size:13px;font-weight:700;"
+                 onclick="loadMoreEligibility()">
+           載入更多（還有 ${remaining} 筆）
+         </button>
+       </div>`);
+  } else if (eligAllRecords.length > 5) {
+    list.insertAdjacentHTML('beforeend',
+      `<p style="text-align:center;font-size:11px;color:var(--muted);padding:8px 0 4px;">
+         已顯示全部 ${eligAllRecords.length} 筆
+       </p>`);
+  }
+}
+
+// ✅ 載入更多：每次多顯示 10 筆
+function loadMoreEligibility() {
+  eligDisplayCount += 10;
+  renderEligibilityPage();
+}
+
+function renderEligibilityList(records, statusFilter) {
+  const list = document.getElementById('eligQueryList');
+  if (records.length === 0) {
+    list.innerHTML = `<p style="text-align:center;color:var(--muted);padding:24px;">目前無${statusFilter}資格</p>`;
+    return;
+  }
+  const isValid = statusFilter === '有效';
+  // 格式化日期為 YYYY/MM/DD（處理 ISO 格式和 yyyy/MM/dd 兩種輸入）
+  const fmt = d => {
+    const s = String(d).split("T")[0];          // 處理 ISO: 2026-05-05T16:00:00Z → 2026-05-05
+    return s.replace(/-/g, '/');                 // 統一轉為 2026/05/05
+  };
+
+  // ✅ 步驟一：日期格式化 + 由近到遠排序
+  records.sort((a, b) => new Date(fmt(a.endDate)) - new Date(fmt(b.endDate)));
+
+  // ✅ 步驟二：依「unitCode + endDate」分組（兩者都相同才合併顯示）
+  const groups = [];
+  const keyMap = {};
+  records.forEach(rec => {
+    const key = rec.unitCode + '|' + fmt(rec.endDate);
+    if (keyMap[key] === undefined) {
+      keyMap[key] = groups.length;
+      groups.push({ unitCode: rec.unitCode, unitName: rec.unitName, endDate: fmt(rec.endDate), items: [] });
+    }
+    groups[keyMap[key]].items.push({ product: rec.product, rowIndex: rec.rowIndex, status: rec.status });
+  });
+
+  // ✅ 步驟三：渲染
+  // - 單一通訊處：直接顯示，不加折疊按鈕
+  // - 多通訊處：預設收合只顯示第一個 + 🔒，點擊展開全部
+  list.innerHTML = groups.map((group, gi) => {
+    const codes      = group.unitCode.split('+');
+    const names      = group.unitName.split('+');
+    const isMulti    = codes.length > 1;
+    const firstUnit  = `${codes[0]} ${names[0] || ''}`;
+
+    // 收合狀態：只顯示第一個通訊處 + 🔒
+    // 多通訊處：容器設 position:relative + padding-right:26px（為按鈕留空間）
+    // 🔒/🔓 按鈕用 position:absolute right:4px top:6px，不隨文字長度移動
+    const collapsedHtml = isMulti
+      ? `<div style="position:relative;padding-right:34px;width:100%;">
+           <div id="elig-col-${gi}">
+             <span class="elig-unit-tag">${firstUnit}</span>
+           </div>
+           <div id="elig-exp-${gi}" style="display:none;">
+             ${codes.map((c, i) => `<span class="elig-unit-line">${c} ${names[i] || ''}</span>`).join('')}
+           </div>
+           <button id="elig-btn-${gi}" class="elig-expand-btn elig-expand-fixed"
+                   onclick="toggleEligGroup(${gi})">🔒</button>
+         </div>`
+      : `<span class="elig-unit-tag">${firstUnit}</span>`;
+
+    const itemsHtml = group.items.map(item => {
+      const voidBtn = isValid
+        ? `<button class="elig-void-btn" onclick="confirmMarkVoid(${item.rowIndex},'${encodeURIComponent(group.unitName)}','${encodeURIComponent(item.product)}')">❌</button>`
+        : `<span style="font-size:11px;color:var(--muted);">${item.status}</span>`;
+      return `<div class="elig-item-row">
+        <span class="elig-item-product">${item.product}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="elig-row-date">${group.endDate}</span>
+          ${voidBtn}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="elig-row">
+      <div class="elig-unit-tags">${collapsedHtml}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+}
+
+// 折疊/展開單一群組（🔒=收合 / 🔓=展開）
+function toggleEligGroup(gi) {
+  const col = document.getElementById('elig-col-' + gi);
+  const exp = document.getElementById('elig-exp-' + gi);
+  const btn = document.getElementById('elig-btn-' + gi);
+  if (!col || !exp || !btn) return;
+  const isExpanded = col.style.display === 'none';
+  col.style.display = isExpanded ? '' : 'none';
+  exp.style.display = isExpanded ? 'none' : '';
+  btn.textContent   = isExpanded ? '🔒' : '🔓'; // 收合=🔒 展開=🔓
+}
+
+
+// 作廢確認流程（自訂 overlay，取代 window.confirm）
+let pendingVoidRowIndex = null;
+
+function confirmMarkVoid(rowIndex, encodedName, encodedProduct) {
+  const name    = decodeURIComponent(encodedName);
+  const product = decodeURIComponent(encodedProduct);
+  pendingVoidRowIndex = rowIndex;
+
+  // 多通訊處時，+ 分隔顯示為多行
+  const namesDisplay = name.split('+').join('<br>');
+  document.getElementById('voidConfirmMsg').innerHTML =
+    `確定要將以下資格標記為作廢？<br><br><span style="color:var(--color-reply);font-weight:700;font-size:16px;line-height:2;">${namesDisplay}</span><br><span style="color:var(--text);font-size:13px;">${product}</span>`;
+  document.getElementById('voidConfirmOverlay').style.display = 'flex';
+}
+
+function closeVoidConfirm() {
+  document.getElementById('voidConfirmOverlay').style.display = 'none';
+  pendingVoidRowIndex = null;
+}
+
+async function executeMarkVoid() {
+  if (pendingVoidRowIndex === null) return;
+  const rowIndex = pendingVoidRowIndex;
+  closeVoidConfirm();
+  await markEligibilityVoid(rowIndex);
+}
+
+async function markEligibilityVoid(rowIndex) {
+  showSyncMask('處理中...');
+  try {
+    const res = await cloudPost({ action: 'markEligibilityVoid', rowIndex });
+    const r = await res.json();
+    if (r.success) {
+      eligCache = { valid: null, expired: null }; // ✅ 清除快取
+      showGlobalToast('✅ 已標記作廢');
+      await loadEligibilityData(currentEligFilter);
+    } else {
+      showGlobalToast('⚠️ 操作失敗：' + r.message);
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常');
+  } finally {
+    hideSyncMask();
+  }
+}
+
+// ─── 今日業績 ─────────────────────────────────────────────
+let todaySalesTotal = 0; // ✅ 新增：暫存總金額供複製使用
+
+function showSalesPersonPicker() { document.getElementById('salesPickerOverlay').classList.add('active'); }
+function closeSalesPicker()      { document.getElementById('salesPickerOverlay').classList.remove('active'); }
+
+async function confirmSalesPerson() {
+  const person = document.getElementById('salesPersonSelect').value;
+  closeSalesPicker();
+  showSyncMask('查詢中...'); // ✅ 毛玻璃遮罩取代 Toast，查詢期間鎖定全頁面
+  try {
+    const res = await cloudPost({action:'getTodaySales',salesName:person});
+    const r = await res.json();
+    if (r.success) {
+      todaySalesTotal = r.total;
+      document.getElementById('resultPersonName').textContent = person;
+      const records = r.records || [];
+      let tbody = '';
+      records.forEach(rec => {
+        tbody += `<tr>
+          <td>${rec.customer}</td>
+          <td>$${rec.amount.toLocaleString()}</td>
+        </tr>`;
+      });
+      if (records.length === 0) tbody = '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:16px;">今日尚無出單紀錄</td></tr>';
+      document.getElementById('salesDetailBody').innerHTML = tbody;
+      document.getElementById('salesCountText').textContent = `今日共 ${records.length} 筆`;
+      document.getElementById('resultAmount').textContent   = `合計 $${r.total.toLocaleString()}`;
+      document.getElementById('salesResultOverlay').classList.add('active');
+    } else {
+      showGlobalToast('⚠️ 查詢失敗：'+r.message);
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 伺服器連線異常');
+  } finally {
+    hideSyncMask(); // ✅ 無論成功或失敗，解除遮罩
+  }
+}
+
+function closeSalesResult() { document.getElementById('salesResultOverlay').classList.remove('active'); }
+
+// ✅ 複製總金額數字
+async function copySalesResult() {
+  const ok = await iosCompatibleCopy(String(todaySalesTotal));
+  if (ok) { showGlobalToast('✅ 已複製金額'); setTimeout(() => closeSalesResult(), 1200); }
+  else     showGlobalToast('⚠️ 複製失敗，請重試');
+}
+
+// ─── 業績週報 ─────────────────────────────────────────────
+let weeklySelectedPerson = '王惠宣';
+let weeklyRangeStart = null, weeklyRangeEnd = null;
+let calLeftYear, calLeftMonth, calRightYear, calRightMonth;
+let weeklyReportData = [];
+
+function openWeeklyReport() {
+  const now = new Date();
+  calLeftYear = now.getFullYear(); calLeftMonth = now.getMonth();
+  calRightYear = now.getFullYear(); calRightMonth = now.getMonth() + 1;
+  if (calRightMonth > 11) { calRightMonth = 0; calRightYear++; }
+  weeklySelectedPerson = '王惠宣'; weeklyRangeStart = null; weeklyRangeEnd = null;
+  document.getElementById('weeklyPersonSelect').value = '王惠宣';
+  document.getElementById('manualStart').value = '';
+  document.getElementById('manualEnd').value   = '';
+  renderCal('left'); renderCal('right');
+  document.getElementById('weeklyOverlay').classList.add('active');
+}
+function closeWeeklyReport()  {
+  document.getElementById('weeklyOverlay').classList.remove('active');
+  // ✅ 關閉視窗時清除選中狀態，下次開啟恢復預設
+  const tw = document.getElementById('presetThisWeek');
+  const lw = document.getElementById('presetLastWeek');
+  if (tw) tw.classList.remove('selected');
+  if (lw) lw.classList.remove('selected');
+}
+function closeWeeklyResult()  { document.getElementById('weeklyResultOverlay').classList.remove('active'); }
+
+function setWeeklyPreset(type) {
+  const now = new Date(), day = now.getDay();
+  let start, end;
+  if (type === 'thisWeek') {
+    const diff = day === 0 ? -6 : 1-day;
+    start = new Date(now); start.setDate(now.getDate()+diff);
+    end   = new Date(start); end.setDate(start.getDate()+6);
+  } else {
+    const diff = day === 0 ? -6 : 1-day;
+    start = new Date(now); start.setDate(now.getDate()+diff-7);
+    end   = new Date(start); end.setDate(start.getDate()+6);
+  }
+  weeklyRangeStart = clearTime(start); weeklyRangeEnd = clearTime(end);
+  syncCalFromRange(); syncManualFromRange(); renderCal('left'); renderCal('right');
+  // ✅ 持續選中狀態：移除兩個按鈕的 selected，再加到被點的那個
+  const tw = document.getElementById('presetThisWeek');
+  const lw = document.getElementById('presetLastWeek');
+  if (tw) tw.classList.remove('selected');
+  if (lw) lw.classList.remove('selected');
+  const target = document.getElementById(type === 'thisWeek' ? 'presetThisWeek' : 'presetLastWeek');
+  if (target) target.classList.add('selected');
+}
+
+function shiftCal(side, delta) {
+  if (side === 'left') {
+    calLeftMonth += delta;
+    if (calLeftMonth > 11)  { calLeftMonth = 0;  calLeftYear++;  }
+    if (calLeftMonth < 0)   { calLeftMonth = 11; calLeftYear--;  }
+  } else {
+    calRightMonth += delta;
+    if (calRightMonth > 11) { calRightMonth = 0;  calRightYear++; }
+    if (calRightMonth < 0)  { calRightMonth = 11; calRightYear--; }
+  }
+  renderCal(side);
+}
+
+function renderCal(side) {
+  const year  = side === 'left' ? calLeftYear  : calRightYear;
+  const month = side === 'left' ? calLeftMonth : calRightMonth;
+  const titleId = side === 'left' ? 'calLeftTitle' : 'calRightTitle';
+  const gridId  = side === 'left' ? 'calLeftGrid'  : 'calRightGrid';
+  const mn = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById(titleId).textContent = year+'年 '+mn[month];
+  const dows = ['日','一','二','三','四','五','六'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const dim = new Date(year, month+1, 0).getDate();
+  const today = clearTime(new Date());
+  let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for (let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
+  for (let d=1;d<=dim;d++) {
+    const dt = new Date(year,month,d); let cls='cal-day';
+    if (dt.getTime()===today.getTime()) cls+=' today';
+    if (weeklyRangeStart && weeklyRangeEnd) {
+      if (dt.getTime()===weeklyRangeStart.getTime()) cls+=' range-start';
+      else if (dt.getTime()===weeklyRangeEnd.getTime()) cls+=' range-end';
+      else if (dt>weeklyRangeStart && dt<weeklyRangeEnd) cls+=' in-range';
+    } else if (weeklyRangeStart && dt.getTime()===weeklyRangeStart.getTime()) cls+=' range-start';
+    html+=`<div class="${cls}" onclick="pickCalDay(${dt.getTime()})">${d}</div>`;
+  }
+  document.getElementById(gridId).innerHTML = html;
+}
+
+function pickCalDay(ts) {
+  const dt = new Date(ts);
+  if (!weeklyRangeStart||(weeklyRangeStart&&weeklyRangeEnd)) { weeklyRangeStart=dt; weeklyRangeEnd=null; }
+  else { if(dt<weeklyRangeStart){weeklyRangeEnd=weeklyRangeStart;weeklyRangeStart=dt;}else{weeklyRangeEnd=dt;} }
+  syncManualFromRange(); renderCal('left'); renderCal('right');
+}
+
+function syncManualFromRange() {
+  const fmt=dt=>dt?(String(dt.getMonth()+1).padStart(2,'0')+'/'+String(dt.getDate()).padStart(2,'0')):'';
+  document.getElementById('manualStart').value = weeklyRangeStart?fmt(weeklyRangeStart):'';
+  document.getElementById('manualEnd').value   = weeklyRangeEnd  ?fmt(weeklyRangeEnd)  :'';
+}
+
+// ✅ UI新增：MM/DD 自動格式化（輸入 4 位數字自動插入斜線，並跳轉至結束欄位）
+function autoFormatDate(el, which) {
+  let raw = el.value.replace(/\D/g,''); // 濾除所有非數字
+  if (raw.length > 4) raw = raw.slice(0,4);
+  // 超過 2 位時自動插入 /
+  let formatted = raw.length > 2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
+  el.value = formatted;
+  // 開始日期填滿 (MM/DD) 自動跳轉到結束日期欄位
+  if (which==='start' && formatted.length===5) {
+    const endEl = document.getElementById('manualEnd');
+    endEl.focus();
+    endEl.setSelectionRange(0,0);
+  }
+  syncManualInput(); // 同步到行事曆
+}
+
+function syncManualInput() {
+  const now = new Date();
+  const parse = str => {
+    const p = str.split('/'); if(p.length!==2) return null;
+    const m=parseInt(p[0])-1, d=parseInt(p[1]);
+    if(isNaN(m)||isNaN(d)||m<0||m>11||d<1||d>31) return null;
+    return clearTime(new Date(now.getFullYear(),m,d));
+  };
+  const s=parse(document.getElementById('manualStart').value);
+  const e=parse(document.getElementById('manualEnd').value);
+  if(s) weeklyRangeStart=s; if(e) weeklyRangeEnd=e;
+  if(s||e){renderCal('left');renderCal('right');}
+}
+
+function syncCalFromRange() {
+  if (weeklyRangeStart) {
+    calLeftYear=weeklyRangeStart.getFullYear(); calLeftMonth=weeklyRangeStart.getMonth();
+    calRightYear=calLeftYear; calRightMonth=calLeftMonth+1;
+    if(calRightMonth>11){calRightMonth=0;calRightYear++;}
+  }
+}
+function clearTime(dt) { const d=new Date(dt); d.setHours(0,0,0,0); return d; }
+
+async function generateWeeklyReport() {
+  if(!weeklyRangeStart||!weeklyRangeEnd){showGlobalToast('⚠️ 請先選擇日期範圍');return;}
+  weeklySelectedPerson=document.getElementById('weeklyPersonSelect').value;
+  closeWeeklyReport();
+  showSyncMask('資料讀取中...'); // ✅ 毛玻璃遮罩取代 Toast，讀取期間鎖定全頁面
+  const fmt=dt=>`${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
+  try {
+    const res=await cloudPost({action:'getWeeklyReport',salesName:weeklySelectedPerson,startDate:fmt(weeklyRangeStart),endDate:fmt(weeklyRangeEnd)});
+    const r=await res.json();
+    if(r.success) renderWeeklyResult(r.rows,weeklySelectedPerson,fmt(weeklyRangeStart),fmt(weeklyRangeEnd));
+    else showGlobalToast('⚠️ 查詢失敗：'+r.message);
+  } catch(e){
+    showGlobalToast('⚠️ 伺服器連線異常');
+  } finally {
+    hideSyncMask(); // ✅ 無論成功或失敗，解除遮罩
+  }
+}
+
+function renderWeeklyResult(rows,person,start,end) {
+  weeklyReportData=rows;
+  document.getElementById('weeklyResultMeta').textContent=`${person}　${start} ～ ${end}`;
+  let tq=0,ta=0,tbody='';
+  rows.forEach(r=>{tq+=r.qty;ta+=r.amt;tbody+=`<tr><td>${r.name}</td><td style="text-align:right;">${r.qty}</td><td style="text-align:right;">${r.amt.toLocaleString()}</td></tr>`;});
+  tbody+=`<tr class="total-row"><td>合計</td><td style="text-align:right;">${tq}</td><td style="text-align:right;">${ta.toLocaleString()}</td></tr>`;
+  document.getElementById('weeklyTableBody').innerHTML=tbody;
+  document.getElementById('weeklyResultOverlay').classList.add('active');
+}
+
+async function copyWeeklyReport() {
+  let lines=weeklyReportData.map(r=>`${r.name}\t${r.qty}\t${r.amt}`);
+  lines.push(`合計\t${weeklyReportData.reduce((s,r)=>s+r.qty,0)}\t${weeklyReportData.reduce((s,r)=>s+r.amt,0)}`);
+  const ok=await iosCompatibleCopy(lines.join('\n'));
+  if(ok){showGlobalToast('✅ 週報已複製至剪貼簿');setTimeout(()=>closeWeeklyResult(),1200);}
+  else showGlobalToast('⚠️ 複製失敗，請重試');
+}
+
+// ─── ✅ 同步失敗重試機制 ──────────────────────────────────
+let lastSyncPayload = null;
+let isSyncing = false; // 防止快速連點送出重複訂單
+
+function showSyncFailDialog(msg) {
+  document.getElementById('syncFailMsg').textContent = msg;
+  document.getElementById('syncFailOverlay').style.display = 'flex';
+}
+// ✅ 防呆：關閉驗證彈窗
+function closeValidation() {
+  document.getElementById('validationOverlay').style.display = 'none';
+}
+// ✅ 防呆：輸入時清除單一欄位紅框（oninput 觸發）
+function clearFieldError(el) {
+  el.classList.remove('field-error');
+}
+// ✅ 防呆：unitCode / unitName 連動清除三個欄位紅框
+//    因為這三個欄位（單位代號、中文通訊處、送貨地址）資料互相帶入
+//    輸入任何一個，另外兩個也視為開始處理，一起清除紅框
+function clearConnectedFields() {
+  ['unitCode', 'unitName', 'shippingAddress'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('field-error');
+  });
+}
+
+// ✅ 毛玻璃遮罩：顯示/隱藏（text 可自訂中間文字，預設「同步中...」）
+function showSyncMask(text) {
+  const el = document.querySelector('.sync-mask-text');
+  if (el) el.textContent = text || '同步中...';
+  document.getElementById('syncMask').classList.add('active');
+}
+function hideSyncMask() {
+  document.getElementById('syncMask').classList.remove('active');
+}
+
+function closeSyncFail() {
+  document.getElementById('syncFailOverlay').style.display = 'none';
+  document.getElementById('syncTrigger').innerHTML = '<span>快樂上班</span><span>效率出單</span>';
+}
+async function retrySyncOrder() {
+  document.getElementById('syncFailOverlay').style.display = 'none';
+  if (lastSyncPayload) await executeSyncWithPayload(lastSyncPayload);
+}
+
+// ✅ 拆分：同步執行邏輯，方便重試呼叫
+async function executeSyncWithPayload(payload) {
+  isSyncing = true;
+  showSyncMask(); // ✅ 顯示毛玻璃遮罩，鎖定全頁面
+  const tr = document.getElementById('syncTrigger');
+  tr.innerHTML = '<span>同步中...</span>';
+  try {
+    const res = await cloudPost(payload);
+    const r = await res.json();
+    if (r.success) {
+      hideSyncMask(); // ✅ 成功：解除遮罩
+      tr.innerHTML = '<span>同步成功</span>';
+      tr.classList.add('sync-success');
+      showGlobalToast('✅ 雲端同步完成');
+      localStorage.removeItem(DRAFT_KEY);
+      setTimeout(() => { tr.classList.remove('sync-success'); tr.innerHTML='<span>快樂上班</span><span>效率出單</span>'; }, 3000);
+    } else {
+      hideSyncMask(); // ✅ 失敗：解除遮罩，再顯示重試彈窗
+      tr.innerHTML = '<span>快樂上班</span><span>效率出單</span>';
+      showSyncFailDialog('同步失敗：' + r.message);
+    }
+  } catch(e) {
+    hideSyncMask(); // ✅ 異常：解除遮罩，再顯示重試彈窗
+    tr.innerHTML = '<span>快樂上班</span><span>效率出單</span>';
+    showSyncFailDialog('⚠️ 網路連線異常，請確認後重試');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+// ─── ✅ 本地草稿自動儲存（每 30 秒） ─────────────────────
+const DRAFT_KEY = 'homedr_draft';
+
+function saveDraft() {
+  // ✅ 有品項 OR 有任何欄位填寫，才值得儲存
+  const fields = {
+    unitCode:        document.getElementById('unitCode').value,
+    unitName:        document.getElementById('unitName').value,
+    customerName:    document.getElementById('customerName').value,
+    senderName:      document.getElementById('senderName').value,
+    shippingAddress: document.getElementById('shippingAddress').value,
+    contactPhone:    document.getElementById('contactPhone').value,
+    platformOrderNo: document.getElementById('platformOrderNo').value,
+    managerUnit:     document.getElementById('managerUnit').value,
+    districtUnit:    document.getElementById('districtUnit').value,
+    orderType:       document.getElementById('orderType').value,
+    issuerName:      document.getElementById('issuerName').value,
+    salesName:       document.getElementById('salesName').value
+  };
+  const hasItems  = orderItems.length > 0;
+  const hasFields = Object.values(fields).some(v => v && v.trim() !== '');
+  if (!hasItems && !hasFields) return; // 完全空白才不存
+  const draft = { mode, orderItems, fields, savedAt: Date.now() };
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
+}
+
+function checkDraftOnLoad() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    // 超過 24 小時自動丟棄
+    if (Date.now() - draft.savedAt > 24*60*60*1000) { localStorage.removeItem(DRAFT_KEY); return; }
+    // ✅ 有品項 OR 有任何欄位填寫，就彈出詢問
+    const hasItems  = draft.orderItems && draft.orderItems.length > 0;
+    const hasFields = draft.fields && Object.values(draft.fields).some(v => v && v.trim() !== '');
+    if (hasItems || hasFields)
+      document.getElementById('draftRestoreOverlay').style.display = 'flex';
+  } catch(e) { localStorage.removeItem(DRAFT_KEY); }
+}
+
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    orderItems = draft.orderItems || [];
+    idCounter  = orderItems.length > 0 ? Math.max(...orderItems.map(i=>i.id))+1 : 0;
+    const f = draft.fields || {};
+    Object.keys(f).forEach(id => { const el=document.getElementById(id); if(el) el.value=f[id]; });
+    localStorage.removeItem(DRAFT_KEY);
+    document.getElementById('draftRestoreOverlay').style.display = 'none';
+    setMode(draft.mode || 'standard');
+    showGlobalToast('✅ 草稿已還原');
+  } catch(e) { discardDraft(); }
+}
+
+function discardDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  document.getElementById('draftRestoreOverlay').style.display = 'none';
+}
+
+// 每 30 秒自動儲存
+setInterval(saveDraft, 30000);
+// ✅ 修正：關閉/離開頁面瞬間強制存一次草稿
+// 解決「填完資料在 30 秒內關閉瀏覽器，下次開啟找不到草稿」的問題
+window.addEventListener('beforeunload', function() { saveDraft(); });
+
+// ─── CLOUD URL & 資料常數 ────────────────────────────────
+const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwxT-I2err4twsbrLDVQpyeV9hNdPL6xNlM4DsWfLINr3AC-69DXFX7tVrYUGHTXH4r/exec";
+const CLOUD_TOKEN = '123456'; // ✅ 請修改成你自己的秘密字串，GAS 端要一致
+
+// ✅ 統一的 POST helper，自動帶入 token
+function cloudPost(data) {
+  return fetch(CLOUD_URL, {
+    method: 'POST',
+    body: JSON.stringify({ ...data, token: CLOUD_TOKEN }),
+    headers: { 'Content-Type': 'text/plain' }
+  });
+}
+let allUnits = [];
+let mode = 'standard', orderItems = [], idCounter = 0;
+let isComposing = false, isAutoFilling = false;
+
+// ✅ 商品參數：從 Google Sheets 動態載入，取代硬編碼
+// 維護只需在試算表「商品參數」分頁新增/修改，無需改代碼
+let allParams = []; // 動態載入後填入
+const PRODUCT_CACHE_KEY = 'product_data_cache';
+
+// 載入商品資料（stale-while-revalidate：有快取立刻用，背景靜默更新）
+async function fetchProductData() {
+  const cached = localStorage.getItem(PRODUCT_CACHE_KEY);
+  if (cached) {
+    try {
+      allParams = JSON.parse(cached);
+      initSelect(); // 有快取立刻初始化下拉選單
+    } catch(e) {}
+  }
+  // 永遠從 Sheets 更新（確保資料最新）
+  try {
+    const res = await fetch(CLOUD_URL + '?action=getProducts&token=' + CLOUD_TOKEN);
+    const r   = await res.json();
+    if (r.success && r.products.length > 0) {
+      allParams = r.products;
+      localStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify(allParams));
+      initSelect(); // 以最新資料重新初始化
+    }
+  } catch(e) {
+    if (allParams.length === 0) showGlobalToast('⚠️ 商品資料載入失敗，請重新整理');
+  }
+}
+
+const QUICK_REPLIES = [
+  { id:'received',      title:'✅ 收到訂單',    content:'謝謝您，即刻為您處理訂單' },
+  { id:'shipping',      title:'🚚 運費說明',     content:'我們滿千出貨免運費(本島)' },
+  { id:'order_process', title:'📦 訂單處理流程', content:'' }
+];
+
+// ─── 通訊處資料載入 ───────────────────────────────────────
+function dismissOverlay() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (!overlay) return;
+  overlay.style.opacity = '0';
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
+}
+
+// 骨架屏輔助：顯示/隱藏 unitName 輸入框的 shimmer
+function showUnitSkeleton(show) {
+  const el = document.getElementById('unitName');
+  if (!el) return;
+  if (show) {
+    el.classList.add('skeleton-input');
+    el.setAttribute('placeholder', '');
+  } else {
+    el.classList.remove('skeleton-input');
+    el.setAttribute('placeholder', '輸入名稱搜尋處名');
+  }
+}
+// 指示器顯示/隱藏（使用 .visible class 控制 display:flex/none）
+function showIndicator(show) {
+  const ind = document.getElementById('loadingIndicator');
+  if (!ind) return;
+  if (show) ind.classList.add('visible');
+  else      ind.classList.remove('visible');
+}
+
+async function fetchUnitData() {
+  const loadStart = Date.now();
+
+  // ✅ 安全保護：10 秒強制結束（全域計時器，不受後續錯誤影響）
+  const safetyTimer = setTimeout(() => {
+    dismissOverlay();
+    showUnitSkeleton(false);
+    showIndicator(false);
+    showGlobalToast('⚠️ 載入逾時，通訊處搜尋暫不可用');
+  }, 10000);
+
+  // ✅ stale-while-revalidate：有快取就立刻用，無論新舊
+  const cachedRaw = localStorage.getItem('unit_data_cache');
+  let hasCache = false;
+  if (cachedRaw) {
+    try { allUnits = JSON.parse(cachedRaw); hasCache = true; } catch(e) {}
+  }
+
+  if (hasCache) {
+    // 有快取：0.5s 後淡出全屏遮罩，不顯示骨架屏和指示器
+    setTimeout(() => { clearTimeout(safetyTimer); dismissOverlay(); }, 500);
+  } else {
+    // 無快取：0.5s 後淡出遮罩，顯示骨架屏 + 角落指示器
+    setTimeout(() => {
+      dismissOverlay();
+      showUnitSkeleton(true);
+      showIndicator(true);
+    }, 500);
+  }
+
+  // ✅ 背景靜默更新（有無快取都執行，確保資料始終最新）
+  try {
+    const res = await fetch(CLOUD_URL+'?action=getUnits&token='+CLOUD_TOKEN);
+    const raw = await res.json();
+    allUnits = raw.filter(u => u.code !== '' && u.name !== '');
+    localStorage.setItem('unit_data_cache', JSON.stringify(allUnits));
+    localStorage.setItem('unit_data_cache_ts', String(Date.now()));
+  } catch(err) {
+    if (!hasCache) showGlobalToast('⚠️ 通訊處資料載入失敗，其他功能正常使用');
+  }
+
+  // ✅ 最短骨架顯示 400ms（防止極快網路造成視覺閃跳）
+  if (!hasCache) {
+    const elapsed = Date.now() - loadStart;
+    if (elapsed < 400) {
+      await new Promise(resolve => setTimeout(resolve, 400 - elapsed));
+    }
+  }
+
+  clearTimeout(safetyTimer);
+  showUnitSkeleton(false);
+  showIndicator(false);
+}
+
+function fillUnitFields(match) {
+  if (!match) return;
+  isAutoFilling = true;
+  document.getElementById('unitCode').value        = match.code||'';
+  document.getElementById('unitName').value        = match.name||'';
+  document.getElementById('shippingAddress').value = match.addr||'';
+  document.getElementById('managerUnit').value     = match.mgnt||'';
+  document.getElementById('districtUnit').value    = match.dist||'';
+  document.getElementById('unitSuggestions').style.display='none';
+  // ✅ 防呆：自動帶入資料時同步清除連動三欄紅框
+  clearConnectedFields();
+  // ✅ 修正：Toast 統一在此顯示，確保所有觸發路徑都有提示
+  //    （unitCode 精確匹配 / unitName 精確匹配 / 點選建議清單 三條路徑）
+  showGlobalToast('✅ 已自動帶入資料');
+  setTimeout(()=>{isAutoFilling=false;},300);
+}
+
+document.getElementById('unitCode').addEventListener('input',function(e){
+  if(isAutoFilling)return;
+  const code=e.target.value.trim().toUpperCase();
+  if(code.length<2)return;
+  const match=allUnits.find(u=>u.code===code);
+  if(match) fillUnitFields(match);
+});
+
+const unitNameEl = document.getElementById('unitName');
+unitNameEl.addEventListener('compositionstart',()=>{isComposing=true;});
+unitNameEl.addEventListener('compositionend',function(e){isComposing=false;handleNameSearch(e.target.value);});
+unitNameEl.addEventListener('input',function(e){if(isComposing||isAutoFilling)return;handleNameSearch(e.target.value);});
+
+function handleNameSearch(val) {
+  const query=val.trim(), box=document.getElementById('unitSuggestions');
+  if(query.length<1){box.style.display='none';return;}
+  const exact=allUnits.find(u=>u.name===query);
+  if(exact){fillUnitFields(exact);return;}
+  const hits=allUnits.filter(u=>(u.name&&u.name.includes(query))||(u.code&&u.code.includes(query.toUpperCase())));
+  if(!hits.length){box.style.display='none';}
+  else {
+    box.innerHTML=hits.slice(0,10).map(u=>{
+      const s=encodeURIComponent(JSON.stringify(u));
+      return `<div class="suggestion-item" onclick="selectUnit('${s}')"><div class="suggestion-name">${u.name}</div><div class="suggestion-code">${u.code}</div></div>`;
+    }).join('');
+    box.style.display='block';
+  }
+}
+window.selectUnit=function(s){fillUnitFields(JSON.parse(decodeURIComponent(s)));};
+document.addEventListener('click',e=>{const g=document.getElementById('nameGroup');if(g&&!g.contains(e.target))document.getElementById('unitSuggestions').style.display='none';});
+
+// ─── 初始化 ───────────────────────────────────────────────
+// ✅ 修正：isHoverDevice / openSwipeItemId 必須在 setMode() 之前宣告
+// 否則 setMode→renderAll→initAllSwipeDeletes 存取時觸發 ReferenceError
+const isHoverDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+let openSwipeItemId = null;
+
+// initSelect() 已由 fetchProductData() 在資料載入後呼叫，這裡不需要重複
+setMode('standard');
+fetchUnitData();
+fetchProductData(); // ✅ 動態載入商品參數（含 initSelect），stale-while-revalidate
+checkDraftOnLoad(); // ✅ 頁面載入後檢查是否有未完成草稿
+
+function initSelect() {
+  const sel = document.getElementById('productSelect');
+  sel.innerHTML = '<option value="">— 選擇商品 —</option>'; // 每次重建前清空
+  allParams.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value       = p.code;
+    opt.textContent = `${p.name} ($${p.price})`;
+    sel.appendChild(opt);
+  });
+}
+
+function setMode(m) {
+  mode=m;
+  document.getElementById('btnCust').className   = m==='customer' ?'mode-btn active-cust'  :'mode-btn inactive';
+  document.getElementById('btnStd').className    = m==='standard' ?'mode-btn active-std'   :'mode-btn inactive';
+  document.getElementById('btnManual').className = m==='manual'   ?'mode-btn active-manual':'mode-btn inactive';
+  document.getElementById('btnQuick').className  = m==='quick'    ?'mode-btn active-quick' :'mode-btn inactive';
+  document.getElementById('customerSection').style.display   = m==='customer'               ?'block':'none';
+  document.getElementById('pricingSection').style.display    = (m==='standard'||m==='manual')?'block':'none';
+  document.getElementById('quickReplySection').style.display = m==='quick'                  ?'block':'none';
+  document.getElementById('summaryBar').style.display        = m==='quick'                  ?'none' :'block';
+  if(m==='quick') renderQuickButtons(); else renderAll();
+  // ✅ 防呆修正（選A）：切換模式時保留紅框，讓用戶回到客戶頁面時仍看得到未填欄位
+}
+
+function onSelectProduct(code) {
+  if(!code)return;
+  const p=allParams.find(x=>x.code===code);
+  if(orderItems.some(x=>x.param.code===code)) showGlobalToast('🔔 此品項已在清單內');
+  else { orderItems.push({id:idCounter++,param:p,qty:1,manualMode:''}); renderAll(); }
+  document.getElementById('productSelect').value='';
+}
+
+function calcPrice(item) {
+  const p=item.param, m=item.manualMode;
+  if(mode==='manual'){
+    if(m==='🟡不計價') return 0;
+    if(m==='🔴大組價') return item.qty*p.groupPrice;
+    if(m==='🔵宣導價') return item.qty*p.promo;
+  }
+  if(p.group==='Group_1') return calcGroup1Rolling(item);
+  if(p.group==='Group_2') return calcGroup2Logic(item);
+  if(p.group===''&&p.groupQty>0&&item.qty>=p.groupQty) return item.qty*p.groupPrice;
+  if(p.buy6) return (Math.floor(item.qty/7)*p.combo)+(item.qty%7)*p.price;
+  return item.qty*p.price;
+}
+
+function calcGroup1Rolling(tgt) {
+  const gItems=orderItems.filter(x=>x.param.group==='Group_1');
+  const total=gItems.reduce((s,x)=>s+x.qty,0);
+  if(total>=100) return tgt.qty*tgt.param.groupPrice;
+  let prev=0;
+  for(let i of gItems){if(i===tgt)break;prev+=i.qty;}
+  const fc=Math.floor((prev+tgt.qty)/7)-Math.floor(prev/7);
+  return tgt.qty*tgt.param.price - fc*tgt.param.price;
+}
+
+function calcGroup2Logic(tgt) {
+  const gItems=orderItems.filter(x=>x.param.group==='Group_2');
+  const total=gItems.reduce((s,x)=>s+x.qty,0);
+  if(total>=120||tgt.qty>=tgt.param.groupQty) return tgt.qty*tgt.param.groupPrice;
+  return (Math.floor(tgt.qty/7)*tgt.param.combo)+(tgt.qty%7)*tgt.param.price;
+}
+
+// ─── ✅ renderAll：左滑刪除容器 + 移除 ✕ 按鈕 ──────────
+function renderAll() {
+  const container = document.getElementById('orderItems');
+  container.innerHTML = orderItems.map(item => {
+    const price = calcPrice(item);
+    let colorClass = '';
+    if (mode==='manual') {
+      if(item.manualMode==='🔴大組價') colorClass='color-red';
+      else if(item.manualMode==='🔵宣導價') colorClass='color-blue';
+      else if(item.manualMode==='🟡不計價') colorClass='color-yellow';
+      else if(item.manualMode==='🟢混合價') colorClass='color-green';
+    }
+    return `
+      <div class="swipe-wrapper" data-item-id="${item.id}">
+        <div class="swipe-action-bg">🗑️ 刪除</div>
+        <div class="order-item ${colorClass}">
+          <!-- ✅ 桌機 hover ✕ 按鈕（手機不可見） -->
+          <button class="delete-btn-hover" onclick="removeItem(${item.id})">✕</button>
+          <!-- ✅ 新版單行排版：[品名 flex:1] [金額 fixed] [- qty + fixed=--action-width] -->
+          <div class="item-main-row">
+            <div class="item-name-text">${item.param.name}</div>
+            <span class="item-price-tag">${price<=0?'贈送':'$'+price.toLocaleString()}</span>
+            <div class="qty-control">
+              <button class="qty-btn" onmousedown="startHold(${item.id},-1)" onmouseup="stopHold()" ontouchstart="event.preventDefault();startHold(${item.id},-1)" ontouchend="stopHold()" ontouchcancel="stopHold()">−</button>
+              <input class="qty-input" type="number" inputmode="numeric" min="0" max="999"
+                     autocomplete="off" value="${item.qty}"
+                     onfocus="selectOnFocus(this)" onclick="selectOnFocus(this)"
+                     oninput="onInputQty(${item.id},this)" onblur="renderAll()">
+              <button class="qty-btn" onmousedown="startHold(${item.id},1)" onmouseup="stopHold()" ontouchstart="event.preventDefault();startHold(${item.id},1)" ontouchend="stopHold()" ontouchcancel="stopHold()">+</button>
+            </div>
+          </div>
+          ${mode==='manual'?`
+          <select class="form-control" style="margin-top:10px;padding:8px;" onchange="onManualChange(${item.id},this.value)">
+            <option value="">— 選擇模式 —</option>
+            <option value="🔴大組價" ${item.manualMode==='🔴大組價'?'selected':''}>🔴大組價</option>
+            <option value="🔵宣導價" ${item.manualMode==='🔵宣導價'?'selected':''}>🔵宣導價</option>
+            <option value="🟢混合價" ${item.manualMode==='🟢混合價'?'selected':''}>🟢混合價</option>
+            <option value="🟡不計價" ${item.manualMode==='🟡不計價'?'selected':''}>🟡不計價</option>
+          </select>`:''}
+        </div>
+      </div>`;
+  }).join('');
+  updateSummary();
+  initAllSwipeDeletes(); // ✅ DOM 產生後立刻掛載左滑手勢
+}
+
+// 關閉所有展開中的左滑卡片（點擊其他區域時使用）
+function closeAllSwipes() {
+  openSwipeItemId = null;
+  document.querySelectorAll('.order-item').forEach(card => {
+    card.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+    card.style.transform = 'translateX(0)';
+  });
+}
+
+// ─── ✅ 左滑刪除手勢初始化（兩段式：第一滑露出按鈕，點按確認刪除）
+function initAllSwipeDeletes() {
+  // 桌機（滑鼠裝置）：改用 hover ✕ 按鈕，不需要左滑手勢
+  if (isHoverDevice) return;
+
+  document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
+    const card = wrapper.querySelector('.order-item');
+    const bg   = wrapper.querySelector('.swipe-action-bg');
+    const itemId = parseInt(wrapper.dataset.itemId);
+    let startX=0, startY=0, deltaX=0, tracking=false, dirLocked=null;
+
+    // ── 第二段確認：點擊紅色背景 → 執行刪除動畫 ──
+    bg.addEventListener('click', () => {
+      if (openSwipeItemId !== itemId) return;
+      card.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+      card.style.transform  = 'translateX(-110%)';
+      openSwipeItemId = null;
+      setTimeout(() => removeItem(itemId), 260);
+    });
+
+    // ── 點擊卡片本身（開啟狀態下）→ 彈回關閉 ──
+    card.addEventListener('click', () => {
+      if (openSwipeItemId !== itemId) return;
+      card.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+      card.style.transform  = 'translateX(0)';
+      openSwipeItemId = null;
+    });
+
+    card.addEventListener('touchstart', e => {
+      // 若其他卡片已展開，先全部關閉
+      if (openSwipeItemId !== null && openSwipeItemId !== itemId) closeAllSwipes();
+      startX=e.touches[0].clientX; startY=e.touches[0].clientY;
+      deltaX=0; tracking=true; dirLocked=null;
+      card.style.transition='none';
+    }, { passive:true });
+
+    card.addEventListener('touchmove', e => {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (dirLocked===null && (Math.abs(dx)>8||Math.abs(dy)>8))
+        dirLocked = Math.abs(dx)>Math.abs(dy) ? 'h' : 'v';
+      if (dirLocked !== 'h') return;
+      deltaX = dx;
+      if (openSwipeItemId === itemId) {
+        // 已展開狀態：右滑可關閉，限制在 -88px ~ 0px 之間
+        const pos = Math.min(0, -88 + Math.max(dx, 0));
+        card.style.transform = `translateX(${pos}px)`;
+      } else if (dx < 0) {
+        // 未展開：左滑，最多到 -90px
+        card.style.transform = `translateX(${Math.max(dx, -90)}px)`;
+      }
+    }, { passive:true });
+
+    card.addEventListener('touchend', () => {
+      if (!tracking) return;
+      tracking = false;
+      card.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+
+      if (openSwipeItemId === itemId) {
+        // 已展開：右滑超過 30px → 彈回關閉；否則維持展開
+        if (deltaX > 30) { card.style.transform='translateX(0)'; openSwipeItemId=null; }
+        else             { card.style.transform='translateX(-88px)'; }
+      } else {
+        // 未展開：左滑超過 60px → 第一段展開；否則彈回
+        if (deltaX < -60) { card.style.transform='translateX(-88px)'; openSwipeItemId=itemId; }
+        else               { card.style.transform='translateX(0)'; }
+      }
+    }, { passive:true });
+  });
+
+  // 點擊品項區域以外的地方 → 關閉所有展開卡片
+  document.addEventListener('touchstart', e => {
+    if (openSwipeItemId !== null && !e.target.closest('.swipe-wrapper'))
+      closeAllSwipes();
+  }, { passive:true });
+}
+
+// ════════════════════════════════════════════════
+// 三段加速長按（修正版）
+// 根本問題：內層 setTimeout ID 未存 → stopHold 清不掉 → 無限遞增
+// 修正一：所有 timer ID 全部存起來
+// 修正二：長按期間用 changeQtyQuiet（不重建 DOM）
+//         避免 renderAll 替換元素後 touchend 事件丟失
+// 修正三：stopHold 最後呼叫一次 renderAll 更新畫面
+// ════════════════════════════════════════════════
+let holdTimer1, holdTimer2, holdTimer3;
+let holdDelay, holdUpgrade1, holdUpgrade2; // ← 升段計時器也要存
+
+// 長按期間只更新數值和顯示，不重建整個 DOM
+function changeQtyQuiet(id, d) {
+  const it = orderItems.find(x => x.id === id);
+  if (!it) return;
+  it.qty = Math.min(999, Math.max(1, it.qty + d));
+  // 只更新該品項的 input 和金額顯示，DOM 結構不動
+  const wrapper = document.querySelector(`.swipe-wrapper[data-item-id="${id}"]`);
+  if (wrapper) {
+    const inp = wrapper.querySelector('.qty-input');
+    const tag = wrapper.querySelector('.item-price-tag');
+    if (inp) inp.value = it.qty;
+    if (tag) {
+      const p = calcPrice(it);
+      tag.textContent = p <= 0 ? '贈送' : '$' + p.toLocaleString();
+    }
+  }
+  updateSummary();
+}
+
+function startHold(id, d) {
+  changeQtyQuiet(id, d); // 立即執行一次（不重建 DOM）
+  holdDelay = setTimeout(() => {
+    holdTimer1 = setInterval(() => changeQtyQuiet(id, d), 100); // Stage 1：慢速
+    holdUpgrade1 = setTimeout(() => {                            // ← 存起來！
+      clearInterval(holdTimer1);
+      holdTimer2 = setInterval(() => changeQtyQuiet(id, d), 50); // Stage 2：中速
+      holdUpgrade2 = setTimeout(() => {                          // ← 存起來！
+        clearInterval(holdTimer2);
+        holdTimer3 = setInterval(() => changeQtyQuiet(id, d), 20); // Stage 3：快速
+      }, 1000);
+    }, 1000);
+  }, 500);
+}
+
+function stopHold() {
+  // ✅ 清除所有計時器
+  clearTimeout(holdDelay);
+  clearTimeout(holdUpgrade1);
+  clearTimeout(holdUpgrade2);
+  clearInterval(holdTimer1);
+  clearInterval(holdTimer2);
+  clearInterval(holdTimer3);
+  // ✅ 重置為 null，避免重複 clear 或殘留參考
+  holdDelay = holdUpgrade1 = holdUpgrade2 = null;
+  holdTimer1 = holdTimer2 = holdTimer3 = null;
+  renderAll(); // 長按結束後才重建一次 DOM
+}
+
+
+// ✅ 安全網：頁面切換/鎖屏/失焦時自動停止長按計時器
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopHold();
+    saveDraft();
+  }
+});
+window.addEventListener('blur', stopHold);
+// touchmove 安全網已移除：會干擾長按（手指微抖即觸發 stopHold）
+// ontouchcancel 已足夠處理捲動被系統中斷的情況
+// ✅ UI：onInputQty 上限 999，使用 parseInt
+function onInputQty(id, el) {
+  const it = orderItems.find(x => x.id === id);
+  if (it) {
+    const v = parseInt(el.value);
+    it.qty = isNaN(v) || v < 0 ? 0 : Math.min(999, v);
+    _refreshAllPriceTags(); // ✅ 更新所有金額標籤（不重建DOM，不影響 focus）
+    updateSummary();
+  }
+}
+
+// ✅ 更新所有品項金額標籤（不觸發 DOM 重建）
+// 解決：直接打數字時 Group_1 跨品項滾動計算標籤不同步問題
+function _refreshAllPriceTags() {
+  orderItems.forEach(item => {
+    const wrapper = document.querySelector(`.swipe-wrapper[data-item-id="${item.id}"]`);
+    if (!wrapper) return;
+    const tag = wrapper.querySelector('.item-price-tag');
+    if (tag) {
+      const p = calcPrice(item);
+      tag.textContent = p <= 0 ? '贈送' : '$' + p.toLocaleString();
+    }
+  });
+}
+function onManualChange(id,v){const it=orderItems.find(x=>x.id===id);if(it){it.manualMode=v;renderAll();}}
+function removeItem(id){orderItems=orderItems.filter(x=>x.id!==id);renderAll();}
+
+function updateSummary(){
+  let t=0; orderItems.forEach(i=>t+=calcPrice(i));
+  document.getElementById('totalAmount').textContent='$'+t.toLocaleString();
+  // ✅ 同步更新共?項（品項種類數）
+  const badge = document.getElementById('itemCountBadge');
+  if (badge) badge.textContent = '共 ' + orderItems.length + ' 項';
+}
+
+function confirmClear(){document.getElementById('confirmOverlay').style.display='flex';}
+function closeConfirm() {document.getElementById('confirmOverlay').style.display='none';}
+function doClrAll(){
+  orderItems=[];
+  ['unitCode','unitName','customerName','senderName','shippingAddress','contactPhone','platformOrderNo','managerUnit','districtUnit'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  const cb=document.getElementById('syncSender');if(cb)cb.checked=false;
+  // ✅ 清空時一併移除所有必填欄位的紅框提示
+  ['unitCode','unitName','platformOrderNo','customerName','shippingAddress','contactPhone']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('field-error');});
+  closeConfirm();showGlobalToast('✨ 清單已清空');renderAll();
+}
+
+function renderQuickButtons(){
+  document.getElementById('quickBtnContainer').innerHTML=QUICK_REPLIES.map(i=>`<button class="quick-btn" onclick="copyQuickText('${i.id}')">${i.title}</button>`).join('');
+}
+function copyQuickText(id){
+  const item=QUICK_REPLIES.find(x=>x.id===id);
+  const n=document.getElementById('customerName').value||'客戶';
+  let content=item.content;
+  if(id==='order_process') content=`謝謝${n}～～\n今天為您處理訂單\n那我們預計3~5個工作天(不含假日)為您送達喔!\n再幫我們留意一下收貨時間!`;
+  document.getElementById('printContent').textContent=content;
+  document.getElementById('modalTitle').textContent=item.title;
+  document.getElementById('modalOverlay').style.display='flex';
+}
+
+function showSummary(){
+  let lines=[`好的～沒問題☺️\n`],total=0;
+  orderItems.forEach(it=>{const p=calcPrice(it);total+=p;let u=(it.param.name.includes('杯')||it.param.name.includes('袋'))?'個':'盒';lines.push(`${it.qty}${u} ${it.param.name}${p===0?'':' '+p.toLocaleString()+'元'}`);});
+  lines.push(`金額總計：${total.toLocaleString()}元\n\n再請您匯款後填寫資訊謝謝☺️\n\n匯款帳戶⬇️\n戶名：富美康健股份有限公司\n台北富邦安和分行：012\n帳號：82120000050959\n\n⬇️亦請填寫出貨資訊哦！\n服務單位：\n訂購人：\n收件人：\n聯絡電話：\n寄件地址：\n郵遞區號：\n轉出帳號後五碼：`);
+  document.getElementById('modalTitle').textContent='📋 報價單預覽';
+  document.getElementById('printContent').textContent=lines.join('\n');
+  document.getElementById('modalOverlay').style.display='flex';
+}
+
+async function copyOrder(){
+  const btn=document.getElementById('copyBtn'), orig=btn.innerText;
+  const ok=await iosCompatibleCopy(document.getElementById('printContent').textContent);
+  if(ok){btn.innerText='✓ 已複製';showGlobalToast('✅ 已複製至剪貼簿！');setTimeout(()=>{btn.innerText=orig;closeModal();},1500);}
+  else showGlobalToast('⚠️ 複製失敗，請重試');
+}
+function closeModal(){document.getElementById('modalOverlay').style.display='none';}
+
+// ─── handleSync（保留綠光，失敗改為彈窗重試）──────────────
+async function handleSync() {
+  // ✅ 防重複同步：同步進行中直接返回
+  if (isSyncing) { showGlobalToast('⏳ 同步進行中，請稍候'); return; }
+  // ✅ 防呆修正：不論在哪個模式，先驗證客戶必填欄位
+  //    → 不強制跳轉，只彈窗提示 + 保留紅框，用戶自行回客戶頁補填
+  const REQUIRED_FIELDS = [
+    { id: 'platformOrderNo', label: '平台訂單號碼' },
+    { id: 'customerName',    label: '收件人姓名' },
+  ];
+  // 先清除所有舊紅框，再重新判斷
+  REQUIRED_FIELDS.forEach(f => document.getElementById(f.id).classList.remove('field-error'));
+  const missing = REQUIRED_FIELDS.filter(f => !document.getElementById(f.id).value.trim());
+  if (missing.length > 0) {
+    // 標記紅框（留在客戶頁面等待用戶補填，不捲動不跳轉）
+    missing.forEach(f => document.getElementById(f.id).classList.add('field-error'));
+    // 彈窗列出所有未填欄位
+    const items = missing.map(f => `・${f.label}`).join('<br>');
+    document.getElementById('validationMsg').innerHTML = `以下欄位尚未填寫完畢：<br>${items}`;
+    document.getElementById('validationOverlay').style.display = 'flex';
+    return;
+  }
+
+  // ✅ 客戶欄位通過後，再檢查是否有商品品項
+  if(orderItems.length===0){showGlobalToast('❌ 清單內無產品品項');return;}
+  lastSyncPayload = {
+    customer: document.getElementById('customerName').value.trim()||'一般客戶(未指名)',
+    sender:   document.getElementById('senderName').value.trim(),
+    unitCode: document.getElementById('unitCode').value.trim(),
+    unitName: document.getElementById('unitName').value.trim(),
+    managerUnit:  document.getElementById('managerUnit').value.trim(),
+    districtUnit: document.getElementById('districtUnit').value.trim(),
+    orderType:    document.getElementById('orderType').value,
+    platformOrderNo: document.getElementById('platformOrderNo').value.trim(),
+    address: document.getElementById('shippingAddress').value.trim(),
+    phone:   document.getElementById('contactPhone').value.trim(),
+    issuerName: document.getElementById('issuerName').value,
+    salesName:  document.getElementById('salesName').value,
+    items: orderItems.map(it=>({code:it.param.code,name:it.param.name,qty:it.qty,price:calcPrice(it)})),
+    totalQty: orderItems.reduce((s,x)=>s+x.qty,0),
+    totalAmount: document.getElementById('totalAmount').textContent
+  };
+  await executeSyncWithPayload(lastSyncPayload);
+}
+
+
+// ════════════════════════════════════════════════════════
+// ✉️ LINE 回報功能
+// ════════════════════════════════════════════════════════
+const LINE_TYPES = ['早會', '聯合早會', '送貨', '拜訪', '系統協助', '其他'];
+let lineArrangeItems = []; // [{unit, type, note}]
+let lineVisitItems   = []; // [{unit, type, note}]
+
+// 計算下一個工作日名稱
+function getNextWorkday() {
+  const today = new Date();
+  const dow   = today.getDay(); // 0=日,1=一,...,5=五,6=六
+  const days  = ['週日','週一','週二','週三','週四','週五','週六'];
+  // 週五→週一(+3), 週六→週一(+2), 其他→+1
+  const next  = new Date(today);
+  next.setDate(today.getDate() + (dow === 5 ? 3 : dow === 6 ? 2 : 1));
+  return days[next.getDay()];
+}
+
+async function openLineReport() {
+  document.getElementById('lineReportOverlay').style.display = 'flex';
+  // 設定下個工作日標籤
+  document.getElementById('lineArrangeLabel').textContent = getNextWorkday() + '安排';
+  // 初始化項目（預設各一筆）
+  lineArrangeItems = [{ unit: '', type: '', note: '' }];
+  lineVisitItems   = [{ unit: '', type: '', note: '' }];
+  renderLineItems('lineArrangeList', lineArrangeItems, 'arrange');
+  renderLineItems('lineVisitList',   lineVisitItems,   'visit');
+  // 自動查詢金額
+  document.getElementById('lineReportTodayAmt').value = '查詢中...';
+  document.getElementById('lineReportMonthAmt').value = '查詢中...';
+  fetchLineToday();
+  fetchLineMonthly();
+}
+
+function closeLineReport() {
+  document.getElementById('lineReportOverlay').style.display = 'none';
+}
+
+// 查今日業績（固定王惠宣）
+async function fetchLineToday() {
+  try {
+    const res = await cloudPost({ action: 'getTodaySales', salesName: '王惠宣' });
+    const r = await res.json();
+    document.getElementById('lineReportTodayAmt').value =
+      r.success ? r.total.toLocaleString() : '0';
+  } catch(e) {
+    document.getElementById('lineReportTodayAmt').value = '0';
+  }
+}
+
+// 查月累積（固定王惠宣，21~20週期）
+async function fetchLineMonthly() {
+  try {
+    const res = await cloudPost({ action: 'getMonthlyTotal' });
+    const r = await res.json();
+    document.getElementById('lineReportMonthAmt').value =
+      r.success ? r.total.toLocaleString() : '0';
+  } catch(e) {
+    document.getElementById('lineReportMonthAmt').value = '0';
+  }
+}
+
+// 渲染安排/拜訪清單（左滑兩段式刪除）
+function renderLineItems(containerId, items, section) {
+  const container = document.getElementById(containerId);
+  if (items.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = items.map((item, i) => {
+    const typeOptions = '<option value="">—</option>' + LINE_TYPES.map(t =>
+      `<option${item.type === t ? ' selected' : ''}>${t}</option>`
+    ).join('');
+    const notePlaceholder = item.type === '其他' ? '請輸入類型' : '備註（選填）';
+    return `<div class="line-swipe-wrapper" data-section="${section}" data-idx="${i}">
+      <div class="line-swipe-bg">移除</div>
+      <div class="line-swipe-content">
+        <button class="line-hover-delete" onclick="event.stopPropagation();removeLineItem('${section}',${i})">✕</button>
+        <div class="line-item-row">
+          <div class="line-unit-wrap">
+            <input type="text" class="form-control" value="${item.unit}"
+                   placeholder="通訊處" autocomplete="off"
+                   oninput="onLineUnitTextInput(this,'${section}',${i})">
+          </div>
+          <select class="form-control line-type-sel"
+                  onchange="onLineTypeChange(this,'${section}',${i})">${typeOptions}</select>
+          <input type="text" class="form-control line-note-inp"
+                 value="${item.note}" placeholder="${notePlaceholder}"
+                 oninput="onLineNoteInput(this,'${section}',${i})">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 掛載左滑事件
+  container.querySelectorAll('.line-swipe-wrapper').forEach(wrapper => {
+    const inner = wrapper.querySelector('.line-swipe-content');
+    let startX = 0;
+    wrapper.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      // 關閉其他已展開的
+      container.querySelectorAll('.line-swipe-content').forEach(el => {
+        if (el !== inner) el.style.transform = '';
+      });
+    }, { passive: true });
+    wrapper.addEventListener('touchend', e => {
+      const delta = e.changedTouches[0].clientX - startX;
+      if (delta < -50)     inner.style.transform = 'translateX(-72px)';
+      else if (delta > 20) inner.style.transform = '';
+    }, { passive: true });
+    wrapper.querySelector('.line-swipe-bg').addEventListener('click', () => {
+      const idx = parseInt(wrapper.dataset.idx);
+      removeLineItem(wrapper.dataset.section, idx);
+    });
+  });
+}
+
+// 新增一行
+function addLineItem(section) {
+  if (section === 'arrange') lineArrangeItems.push({ unit: '', type: '', note: '' });
+  else                        lineVisitItems.push({ unit: '', type: '', note: '' });
+  renderLineItems(
+    section === 'arrange' ? 'lineArrangeList' : 'lineVisitList',
+    section === 'arrange' ? lineArrangeItems : lineVisitItems,
+    section
+  );
+}
+
+// 移除一行
+function removeLineItem(section, idx) {
+  if (section === 'arrange') lineArrangeItems.splice(idx, 1);
+  else                        lineVisitItems.splice(idx, 1);
+  renderLineItems(
+    section === 'arrange' ? 'lineArrangeList' : 'lineVisitList',
+    section === 'arrange' ? lineArrangeItems : lineVisitItems,
+    section
+  );
+}
+
+// 通訊處純文字輸入（手動輸入，無模糊搜尋）
+function onLineUnitTextInput(input, section, idx) {
+  const items = section === 'arrange' ? lineArrangeItems : lineVisitItems;
+  items[idx].unit = input.value;
+}
+
+// 類型變更（更新 placeholder + state）
+function onLineTypeChange(sel, section, idx) {
+  const items = section === 'arrange' ? lineArrangeItems : lineVisitItems;
+  items[idx].type = sel.value;
+  // 更新備註欄位 placeholder
+  const noteInput = sel.parentElement.querySelector('.line-note-inp');
+  if (noteInput) noteInput.placeholder = sel.value === '其他' ? '請輸入類型' : '備註（選填）';
+}
+
+// 備註輸入（只更新 state）
+function onLineNoteInput(input, section, idx) {
+  const items = section === 'arrange' ? lineArrangeItems : lineVisitItems;
+  items[idx].note = input.value;
+}
+
+// 組成單筆文字
+function buildLineEntry(item) {
+  const unit = item.unit.trim();
+  const note = item.note.trim();
+  if (item.type === '其他') return unit + note;
+  return unit + item.type + note;
+}
+
+// 產出文案 → 開啟編輯框
+function generateLineReport() {
+  const todayRaw = document.getElementById('lineReportTodayAmt').value.replace(/,/g, '');
+  const monthRaw = document.getElementById('lineReportMonthAmt').value.replace(/,/g, '');
+  const todayAmt = Number(todayRaw) ? Number(todayRaw).toLocaleString() : todayRaw;
+  const monthAmt = Number(monthRaw) ? Number(monthRaw).toLocaleString() : monthRaw;
+  const nextDay  = getNextWorkday();
+
+  const arrangeStr = lineArrangeItems
+    .filter(it => it.unit.trim())
+    .map(buildLineEntry).join('、');
+
+  const visitStr = lineVisitItems
+    .filter(it => it.unit.trim())
+    .map(buildLineEntry).join('、');
+
+  const lines = [
+    '人員 : 宣宣',
+    `今日業績：員購單${todayAmt}元`,
+    `截至目前月累積：${monthAmt}元`,
+    `${nextDay}安排：${arrangeStr || '...'}`,   // 未填則顯示 ...
+    `今日拜訪單位：${visitStr || '...'}`,        // 未填則顯示 ...
+  ].join('\n');
+
+  document.getElementById('lineReportTextarea').value = lines;
+  document.getElementById('lineReportTextOverlay').style.display = 'flex';
+}
+
+// 複製文案
+async function copyLineReport() {
+  const text = document.getElementById('lineReportTextarea').value;
+  const ok   = await iosCompatibleCopy(text);
+  showGlobalToast(ok ? '✅ 已複製至剪貼簿！' : '⚠️ 複製失敗，請手動選取');
+}
+
+function closeLineReportText() {
+  document.getElementById('lineReportTextOverlay').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════
+// 📥 檔案下載功能
+// ════════════════════════════════════════════════════════
+let fileDownloadData = []; // 當日檔案清單快取
+
+// 開啟彈窗並自動載入今日檔案
+async function openFileDownload() {
+  document.getElementById('fileDownloadOverlay').style.display = 'flex';
+  document.getElementById('fileSelectAll').checked = false;
+  // iOS 隱藏全選列和下載選取按鈕
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  document.getElementById('fileSelectAllRow').style.display = isIOS ? 'none' : '';
+  document.getElementById('fileDlSelectedBtn').style.display = isIOS ? 'none' : '';
+  // 顯示今日日期
+  const now = new Date();
+  const label = `今日 ${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('fileDownloadDateLabel').textContent = label;
+  document.getElementById('fileDownloadProgress').style.display = 'none';
+  document.getElementById('fileDownloadList').innerHTML =
+    '<p style="text-align:center;color:var(--muted);padding:24px;">載入中...</p>';
+  await loadTodayFiles();
+}
+
+function closeFileDownload() {
+  document.getElementById('fileDownloadOverlay').style.display = 'none';
+}
+
+// 從 GAS 取得今日資料夾檔案清單
+async function loadTodayFiles() {
+  try {
+    const res = await cloudPost({ action: 'getFilesForDownload' });
+    const r = await res.json();
+    if (r.success) {
+      fileDownloadData = r.files;
+      renderFileDownloadList(r.files);
+    } else {
+      document.getElementById('fileDownloadList').innerHTML =
+        '<p style="text-align:center;color:var(--muted);padding:16px;">⚠️ 載入失敗</p>';
+    }
+  } catch(e) {
+    document.getElementById('fileDownloadList').innerHTML =
+      '<p style="text-align:center;color:var(--muted);padding:16px;">⚠️ 網路異常</p>';
+  }
+}
+
+// 渲染檔案清單（含勾選框 + 單獨下載按鈕）
+function renderFileDownloadList(files) {
+  const list = document.getElementById('fileDownloadList');
+  if (files.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;">⚠️ 今日尚無檔案</p>';
+    return;
+  }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  // iOS 提示：每次只能下載一個
+  const iosHint = isIOS
+    ? `<p style="font-size:11px;color:var(--muted);padding:4px 0 8px;margin:0;">
+         📱 iOS 限制：請逐一點擊「下載」，每次一個檔案
+       </p>` : '';
+  list.innerHTML = iosHint + files.map((f, i) => {
+    const shortName = getShortFileName(f.name, f.mimeType);
+    // iOS 不顯示 checkbox（改用個別下載按鈕）
+    const checkboxHtml = isIOS ? '' :
+      `<input type="checkbox" class="file-dl-checkbox file-check-item" data-idx="${i}">`;
+    return `<div class="file-dl-row">
+      ${checkboxHtml}
+      <span class="file-dl-name">${shortName}</span>
+      <button class="file-dl-btn-single" onclick="downloadOneFile(${i})">下載</button>
+    </div>`;
+  }).join('');
+}
+
+// 短檔名生成規則
+function getShortFileName(fullName, mimeType) {
+  const isSheets = mimeType === 'application/vnd.google-apps.spreadsheet';
+  let name = isSheets ? fullName + '.xlsx' : fullName;
+  name = name.replace(/^\(富美康健\)/, '');          // 移除開頭 (富美康健)
+  name = name.replace('DO貨主資料匯入', 'DO貨');        // DO貨主資料匯入 → DO貨
+  const lastDot = name.lastIndexOf('.');
+  const ext     = lastDot !== -1 ? name.slice(lastDot)  : '';
+  const noExt   = lastDot !== -1 ? name.slice(0, lastDot) : name;
+  const cleaned = noExt.replace(/\(.*$/, '');          // 移除 (通訊處...)日期
+  return cleaned + ext;
+}
+
+// 全選 / 取消全選
+function toggleFileSelectAll(cb) {
+  document.querySelectorAll('.file-check-item').forEach(el => el.checked = cb.checked);
+}
+
+// 下載單一檔案
+async function downloadOneFile(idx) {
+  const file = fileDownloadData[idx];
+  if (!file) return;
+  await _triggerFileDownload(file);
+}
+
+// 下載所有勾選的檔案
+async function downloadSelectedFiles() {
+  const checked = [...document.querySelectorAll('.file-check-item:checked')];
+  if (checked.length === 0) { showGlobalToast('⚠️ 請先勾選要下載的檔案'); return; }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  // iOS：navigator.share 每次必須是直接用戶點擊觸發，迴圈自動呼叫會被拒絕
+  // → 提示用戶逐一點擊個別「下載」按鈕
+  if (isIOS) {
+    showGlobalToast('📱 iOS 請逐一點擊每個檔案的「下載」按鈕');
+    return;
+  }
+
+  // 桌機：正常依序下載
+  const total    = checked.length;
+  const progress = document.getElementById('fileDownloadProgress');
+  const bar      = document.getElementById('fileProgressBar');
+  const text     = document.getElementById('fileProgressText');
+  progress.style.display = '';
+
+  for (let i = 0; i < checked.length; i++) {
+    const idx  = parseInt(checked[i].dataset.idx);
+    const file = fileDownloadData[idx];
+    bar.style.width = `${Math.round((i / total) * 100)}%`;
+    text.textContent = `下載中 ${i + 1}/${total}...`;
+    await _triggerFileDownload(file);
+    if (i < checked.length - 1) await new Promise(r => setTimeout(r, 800));
+  }
+
+  bar.style.width = '100%';
+  text.textContent = `✅ 全數下載完畢（共 ${total} 個檔案）`;
+}
+
+// 實際呼叫 GAS 取得 base64 並觸發下載
+// iOS Safari 不支援 <a download>，改用 Web Share API（系統分享表單 → 儲存到檔案）
+// 桌機繼續用 <a download>
+async function _triggerFileDownload(file) {
+  try {
+    const res = await cloudPost({ action: 'downloadFileById', fileId: file.id });
+    const r = await res.json();
+    if (!r.success) { showGlobalToast('⚠️ 下載失敗：' + r.message); return; }
+
+    // base64 → Uint8Array
+    const byteChars = atob(r.base64);
+    const byteArr   = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+
+    // ✅ iOS Safari：使用 Web Share API，不離開頁面，不會重新載入
+    if (navigator.share && navigator.canShare) {
+      const fileObj = new File([byteArr], r.fileName, { type: r.mimeType });
+      if (navigator.canShare({ files: [fileObj] })) {
+        await navigator.share({ files: [fileObj] }); // 用戶點「儲存到檔案」完成後 resolve
+        return;
+      }
+    }
+
+    // ✅ 桌機 / 其他瀏覽器：<a download> 直接儲存
+    const blob = new Blob([byteArr], { type: r.mimeType });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = r.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch(e) {
+    // AbortError = 用戶取消分享，不算錯誤
+    if (e.name !== 'AbortError') showGlobalToast('⚠️ 下載失敗，請重試');
+  }
+}
+</script>
+</body>
+</html>
