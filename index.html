@@ -180,11 +180,11 @@
     /* Header */
     .header { background: var(--header-bg); color: #fff; padding: 12px 5%; padding-top: calc(12px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
     .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-    .header h1 { font-size: 20px; font-weight: 900; letter-spacing: 1px; }
-    .sync-trigger { text-align: right; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.3); transition: 0.3s; }
+    .header h1 { font-size: 20px; font-weight: 900; letter-spacing: 1px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sync-trigger { text-align: right; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.3); transition: 0.3s; flex-shrink: 0; white-space: nowrap; }
     .sync-trigger span { font-size: 11px; display: block; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2; }
     .sync-success { border-color: #fff !important; background: rgba(82,196,26,0.6) !important; box-shadow: 0 0 15px #52c41a; }
-    .avatar { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); object-fit: cover; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); object-fit: cover; flex-shrink: 0; }
 
     /* ✅ UI：模式切換按鈕 → 全圓角膠囊型 */
     .mode-toggle { display: flex; gap: 6px; margin-top: 12px; width: 100%; }
@@ -213,6 +213,44 @@
     .form-group { margin-bottom: 14px; position: relative; }
     .form-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 700; }
     .form-control { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 15px; outline: none; transition: 0.2s; background: #fff; }
+
+    /* ✅ 自製下拉選單（取代原生 select，解決 iOS 寬度限制）*/
+    .custom-select-wrapper { position: relative; width: 100%; }
+    .custom-select-trigger {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border); font-size: 15px;
+      background: var(--card); color: var(--text);
+      cursor: pointer; user-select: none; -webkit-user-select: none;
+    }
+    .custom-select-trigger.open { border-color: var(--primary); }
+    .custom-select-arrow {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0px; line-height: 1; color: var(--muted);
+    }
+    .custom-select-arrow span { font-size: 11px; display: block; }
+    .custom-select-dropdown {
+      display: none; position: absolute; top: calc(100% + 4px); left: 24px;
+      width: calc(100% - 48px); max-height: 450px; overflow-y: auto;
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); z-index: 999;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .custom-select-dropdown.open { display: block; }
+    .custom-select-option {
+      padding: 14px 16px; font-size: 19px; color: var(--text);
+      cursor: pointer; white-space: nowrap;
+    }
+    .custom-select-option-grouped { padding-left: 28px; }
+    .custom-select-group-header {
+      padding: 14px 16px; font-size: 19px; font-weight: 400;
+      color: var(--primary); cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .custom-select-group-items { display: none; }
+    .custom-select-group-items.open { display: block; }
+    .custom-select-option:active { background: var(--btn-sec-bg); }
+    .custom-select-option.placeholder { color: var(--muted); }
     .form-control:focus { border-color: var(--color-reply); background: #fcfdfe; }
     /* ✅ 修正：iOS fillUnitFields 批量填入時 WebKit 套橘色自動填入動畫
        用 var(--card) / var(--text) CSS 變數，淺色深色模式自動切換，不需要兩套規則
@@ -580,7 +618,7 @@
       pointer-events: none;
       white-space: nowrap;
     }
-    .loading-indicator.visible { display: flex; } /* showIndicator(true) 時加上 */
+    .loading-indicator.visible { display: inline-flex; width: fit-content; } /* showIndicator(true) 時加上 */
     /* 指示器的小圓點動畫 */
     @keyframes pulse {
       0%, 100% { opacity: 1; }
@@ -970,13 +1008,12 @@
 <div class="header">
   <div class="header-top">
     <h1 id="menuTrigger" onclick="toggleSidebar()" style="cursor:pointer;-webkit-user-select:none;user-select:none;">💊 Home Dr Pro</h1>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <!-- ✅ 訊號連接中指示器：坐在快樂上班/效率出單左邊 -->
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <div id="loadingIndicator" class="loading-indicator">
-        <span class="loading-dot"></span>訊號連接中
+        <span class="loading-dot"></span>連接中
       </div>
       <div id="syncTrigger" class="sync-trigger" onclick="handleSync()"><span>快樂上班</span><span>效率出單</span></div>
-      <img id="userAvatar" src="https://drive.google.com/thumbnail?id=13fgS3zOP_whu0f9NEAEzqgEPzzgFCKj6&sz=w200" class="avatar" loading="lazy" onerror="this.style.display='none'">
+      <img id="userAvatar" src="https://xu99886.github.io/HomeDr_pro/avatar.png" class="avatar" style="flex-shrink:0;" onerror="this.style.display='none'">
     </div>
   </div>
   <div class="mode-toggle">
@@ -1203,7 +1240,15 @@
 <div id="pricingSection" class="section">
   <div class="card">
     <div class="card-title">🔍 選擇品項</div>
-    <select id="productSelect" class="form-control" onchange="onSelectProduct(this.value)"><option value="">— 點擊選擇品項 —</option></select>
+    <select id="productSelect" class="form-control" onchange="onSelectProduct(this.value)" style="display:none;"></select>
+    <!-- ✅ 自製下拉選單 -->
+    <div class="custom-select-wrapper" id="customSelectWrapper">
+      <div class="custom-select-trigger" id="customSelectTrigger" onclick="toggleCustomSelect()">
+        <span id="customSelectLabel">— 選擇商品 —</span>
+        <span class="custom-select-arrow"><span>⌃</span><span>⌄</span></span>
+      </div>
+      <div class="custom-select-dropdown" id="customSelectDropdown"></div>
+    </div>
   </div>
   <div id="orderItems"></div>
 </div>
@@ -2672,6 +2717,7 @@ function cloudPost(data) {
 let allUnits = [];
 let mode = 'standard', orderItems = [], idCounter = 0;
 let isComposing = false, isAutoFilling = false;
+let quickReplies = []; // 快速回覆資料（從 Sheets 動態載入）
 
 // ✅ 商品參數：從 Google Sheets 動態載入，取代硬編碼
 // 維護只需在試算表「商品參數」分頁新增/修改，無需改代碼
@@ -2701,11 +2747,6 @@ async function fetchProductData() {
   }
 }
 
-const QUICK_REPLIES = [
-  { id:'received',      title:'✅ 收到訂單',    content:'謝謝您，即刻為您處理訂單' },
-  { id:'shipping',      title:'🚚 運費說明',     content:'我們滿千出貨免運費(本島)' },
-  { id:'order_process', title:'📦 訂單處理流程', content:'' }
-];
 
 // ─── 通訊處資料載入 ───────────────────────────────────────
 function dismissOverlay() {
@@ -2850,15 +2891,85 @@ fetchProductData(); // ✅ 動態載入商品參數（含 initSelect），stale-
 checkDraftOnLoad(); // ✅ 頁面載入後檢查是否有未完成草稿
 
 function initSelect() {
-  const sel = document.getElementById('productSelect');
-  sel.innerHTML = '<option value="">— 選擇商品 —</option>'; // 每次重建前清空
+  const sel      = document.getElementById('productSelect');
+  const dropdown = document.getElementById('customSelectDropdown');
+  sel.innerHTML      = '<option value="">— 選擇商品 —</option>';
+  dropdown.innerHTML = '';
+
+  // 原生 select（全部商品，供計價邏輯使用）
   allParams.forEach(p => {
     const opt = document.createElement('option');
     opt.value       = p.code;
     opt.textContent = `${p.name} ($${p.price})`;
     sel.appendChild(opt);
   });
+
+  // 分組：無分類商品直接列出，有分類的收合成群組
+  const noCategory = allParams.filter(p => !p.category);
+  const categories  = {};
+  allParams.filter(p => p.category).forEach(p => {
+    if (!categories[p.category]) categories[p.category] = [];
+    categories[p.category].push(p);
+  });
+
+  // 無分類商品直接顯示
+  noCategory.forEach(p => {
+    const div = document.createElement('div');
+    div.className   = 'custom-select-option';
+    div.textContent = `${p.name}  $${p.price}`;
+    div.onclick = () => { onSelectProduct(p.code); closeCustomSelect(); };
+    dropdown.appendChild(div);
+  });
+
+  // 有分類商品：顯示可折疊群組標題
+  Object.entries(categories).forEach(([catName, items]) => {
+    // 群組標題
+    const header = document.createElement('div');
+    header.className = 'custom-select-group-header';
+    header.innerHTML = `<span>${catName}</span>`;
+    header.onclick = () => toggleSelectGroup(header, groupItems);
+    dropdown.appendChild(header);
+
+    // 群組內商品（預設隱藏）
+    const groupItems = document.createElement('div');
+    groupItems.className = 'custom-select-group-items';
+    items.forEach(p => {
+      const div = document.createElement('div');
+      div.className   = 'custom-select-option custom-select-option-grouped';
+      div.textContent = `${p.name}  $${p.price}`;
+      div.onclick = () => { onSelectProduct(p.code); closeCustomSelect(); };
+      groupItems.appendChild(div);
+    });
+    dropdown.appendChild(groupItems);
+  });
 }
+
+function toggleSelectGroup(header, groupItems) {
+  const isOpen = groupItems.classList.contains('open');
+  if (isOpen) {
+    groupItems.classList.remove('open');
+  } else {
+    groupItems.classList.add('open');
+  }
+}
+
+function toggleCustomSelect() {
+  const trigger  = document.getElementById('customSelectTrigger');
+  const dropdown = document.getElementById('customSelectDropdown');
+  if (dropdown.classList.contains('open')) { closeCustomSelect(); }
+  else { trigger.classList.add('open'); dropdown.classList.add('open'); }
+}
+
+function closeCustomSelect() {
+  document.getElementById('customSelectTrigger').classList.remove('open');
+  document.getElementById('customSelectDropdown').classList.remove('open');
+}
+
+// 點選單外部自動關閉
+document.addEventListener('click', (e) => {
+  const wrapper = document.getElementById('customSelectWrapper');
+  if (wrapper && !wrapper.contains(e.target)) closeCustomSelect();
+});
 
 function setMode(m) {
   mode=m;
@@ -3164,16 +3275,52 @@ function doClrAll(){
 }
 
 function renderQuickButtons(){
-  document.getElementById('quickBtnContainer').innerHTML=QUICK_REPLIES.map(i=>`<button class="quick-btn" onclick="copyQuickText('${i.id}')">${i.title}</button>`).join('');
+  const container = document.getElementById('quickBtnContainer');
+  if (quickReplies.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">載入中...</p>';
+    fetchQuickReplies();
+    return;
+  }
+  container.innerHTML = quickReplies.map((item, idx) =>
+    `<button class="quick-btn" onclick="copyQuickText(${idx})">${item.title}</button>`
+  ).join('');
 }
-function copyQuickText(id){
-  const item=QUICK_REPLIES.find(x=>x.id===id);
-  const n=document.getElementById('customerName').value||'客戶';
-  let content=item.content;
-  if(id==='order_process') content=`謝謝${n}～～\n今天為您處理訂單\n那我們預計3~5個工作天(不含假日)為您送達喔!\n再幫我們留意一下收貨時間!`;
-  document.getElementById('printContent').textContent=content;
-  document.getElementById('modalTitle').textContent=item.title;
-  document.getElementById('modalOverlay').style.display='flex';
+
+async function fetchQuickReplies() {
+  const CACHE_KEY = 'quick_replies_cache';
+  // ✅ 有快取先顯示（stale-while-revalidate）
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try {
+      quickReplies = JSON.parse(cached);
+      renderQuickButtons();
+    } catch(e) {}
+  }
+  // 背景更新
+  try {
+    const res  = await fetch(CLOUD_URL + '?action=getQuickReplies&token=' + encodeURIComponent(CLOUD_TOKEN));
+    const data = await res.json();
+    if (data.success && data.items.length > 0) {
+      quickReplies = data.items;
+      localStorage.setItem(CACHE_KEY, JSON.stringify(quickReplies));
+      renderQuickButtons();
+    }
+  } catch(e) {
+    if (!cached) {
+      document.getElementById('quickBtnContainer').innerHTML =
+        '<p style="color:var(--muted);text-align:center;padding:20px;">載入失敗，請重試</p>';
+    }
+  }
+}
+
+function copyQuickText(idx){
+  const item = quickReplies[idx];
+  if (!item) return;
+  const n = document.getElementById('customerName').value || '客戶';
+  const text = item.content.replace(/\{客戶\}/g, n);
+  document.getElementById('printContent').textContent = text;
+  document.getElementById('modalTitle').textContent   = item.title;
+  document.getElementById('modalOverlay').style.display = 'flex';
 }
 
 function showSummary(){
