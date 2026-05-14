@@ -2594,7 +2594,9 @@ async function executeSyncWithPayload(payload) {
 const DRAFT_KEY = 'homedr_draft';
 
 function saveDraft() {
-  // ✅ 有品項 OR 有任何欄位填寫，才值得儲存
+  const hasItems   = orderItems.length > 0;
+  const hasUnitCode = (document.getElementById('unitCode').value || '').trim() !== '';
+  if (!hasItems && !hasUnitCode) return; // ✅ 有品項 OR 有填單位代號才存草稿
   const fields = {
     unitCode:        document.getElementById('unitCode').value,
     unitName:        document.getElementById('unitName').value,
@@ -2609,9 +2611,6 @@ function saveDraft() {
     issuerName:      document.getElementById('issuerName').value,
     salesName:       document.getElementById('salesName').value
   };
-  const hasItems  = orderItems.length > 0;
-  const hasFields = Object.values(fields).some(v => v && v.trim() !== '');
-  if (!hasItems && !hasFields) return; // 完全空白才不存
   const draft = { mode, orderItems, fields, savedAt: Date.now() };
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
 }
@@ -2623,10 +2622,10 @@ function checkDraftOnLoad() {
     const draft = JSON.parse(raw);
     // 超過 24 小時自動丟棄
     if (Date.now() - draft.savedAt > 24*60*60*1000) { localStorage.removeItem(DRAFT_KEY); return; }
-    // ✅ 有品項 OR 有任何欄位填寫，就彈出詢問
-    const hasItems  = draft.orderItems && draft.orderItems.length > 0;
-    const hasFields = draft.fields && Object.values(draft.fields).some(v => v && v.trim() !== '');
-    if (hasItems || hasFields)
+    // ✅ 有品項 OR 有填單位代號才彈出詢問
+    const hasItems    = draft.orderItems && draft.orderItems.length > 0;
+    const hasUnitCode = draft.fields && draft.fields.unitCode && draft.fields.unitCode.trim() !== '';
+    if (hasItems || hasUnitCode)
       document.getElementById('draftRestoreOverlay').style.display = 'flex';
   } catch(e) { localStorage.removeItem(DRAFT_KEY); }
 }
