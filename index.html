@@ -1206,7 +1206,7 @@
       <div class="form-group" style="width:80px;margin-bottom:0;"><label class="form-label">後綴</label><input type="text" id="orderSuffix" class="form-control" placeholder="2、3…" autocomplete="off" maxlength="10"></div>
     </div>
     <div style="display:flex;gap:12px;align-items:flex-end;">
-      <div class="form-group" style="flex:1;margin-bottom:0;"><label class="form-label">性質</label><select id="orderType" class="form-control" onchange="onOrderTypeChange()"><option value="單位早會">單位早會</option><option value="處經理會議">處經理會議</option><option value="營管場">營管場</option><option value="區部場">區部場</option><option value="回購">回購</option></select></div>
+      <div class="form-group" style="flex:1;margin-bottom:0;"><label class="form-label">性質</label><select id="orderType" class="form-control" onchange="onOrderTypeChange()"><option value="回購">回購</option><option value="單位早會">單位早會</option><option value="處經理會議">處經理會議</option><option value="營管場">營管場</option><option value="區部場">區部場</option></select></div>
       <div class="form-group" style="width:80px;margin-bottom:0;"><label class="form-label">人力</label><input type="number" id="manpower" class="form-control" placeholder="—" min="0" inputmode="numeric"></div>
     </div>
     <div class="form-group"><label class="form-label">收件人<span class="required-mark">*</span></label><input type="text" id="customerName" class="form-control allow-select" placeholder="收件人姓名" oninput="clearFieldError(this)"></div>
@@ -2895,6 +2895,9 @@ setMode('standard');
 fetchUnitData();
 fetchProductData(); // ✅ 動態載入商品參數（含 initSelect），stale-while-revalidate
 checkDraftOnLoad(); // ✅ 頁面載入後檢查是否有未完成草稿
+// ✅ 預設性質=回購，人力=1
+document.getElementById('orderType').value = '回購';
+document.getElementById('manpower').value  = 1;
 
 function initSelect() {
   const sel      = document.getElementById('productSelect');
@@ -3287,8 +3290,11 @@ function confirmClear(){document.getElementById('confirmOverlay').style.display=
 function closeConfirm() {document.getElementById('confirmOverlay').style.display='none';}
 function doClrAll(){
   orderItems=[];
-  ['unitCode','unitName','customerName','senderName','shippingAddress','contactPhone','platformOrderNo','managerUnit','districtUnit'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  ['unitCode','unitName','customerName','senderName','shippingAddress','contactPhone','platformOrderNo','managerUnit','districtUnit','orderSuffix'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
   const cb=document.getElementById('syncSender');if(cb)cb.checked=false;
+  // ✅ 性質重設回購，人力重設 1
+  const ot=document.getElementById('orderType');if(ot)ot.value='回購';
+  const mp=document.getElementById('manpower');if(mp)mp.value=1;
   // ✅ 清空時一併移除所有必填欄位的紅框提示
   ['unitCode','unitName','platformOrderNo','customerName','shippingAddress','contactPhone']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('field-error');});
