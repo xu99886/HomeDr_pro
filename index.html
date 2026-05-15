@@ -703,6 +703,58 @@
       line-height: 1.4;
       text-align: center; /* 與到期日期欄位對齊 */
     }
+    .elig-product-tag {
+      display: inline-flex; align-items: stretch;
+      border-radius: 20px; overflow: hidden;
+      font-size: 13px; font-weight: 600;
+      user-select: none; -webkit-user-select: none;
+      position: relative;
+    }
+    .elig-tag-label {
+      background: var(--primary); color: #fff;
+      padding: 5px 12px; display: flex; align-items: center;
+      transition: transform 0.2s ease;
+      white-space: nowrap;
+    }
+    .elig-tag-delete {
+      background: #FF3B30; color: #fff; border: none;
+      cursor: pointer; font-size: 13px; font-weight: 600;
+      white-space: nowrap; overflow: hidden;
+      transition: max-width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+      max-width: 0; padding: 0; opacity: 0;
+    }
+    /* ✅ 桌機 hover 顯示刪除 */
+    @media (hover: hover) {
+      .elig-product-tag:hover .elig-tag-delete {
+        max-width: 60px; padding: 5px 12px; opacity: 1;
+      }
+    }
+    /* ✅ 手機左滑後顯示刪除 */
+    .elig-product-tag.swiped .elig-tag-label { transform: translateX(-60px); }
+    .elig-product-tag.swiped .elig-tag-delete { max-width: 60px; padding: 5px 12px; opacity: 1; }
+    /* ✅ 桌機（Mac/PC）：直接顯示 date input，日曆大小正常 */
+    @media (hover: hover) {
+      #eligStartDatePicker {
+        opacity: 1 !important;
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        z-index: auto !important;
+        padding: 12px;
+        min-height: 46px;
+        box-sizing: border-box;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 15px;
+        -webkit-appearance: none;
+        appearance: none;
+        cursor: pointer;
+      }
+      #eligStartDate { display: none !important; }
+    }
     /* 加入按鈕（對齊輸入框高度） */
     .elig-add-btn {
       flex-shrink: 0; padding: 0 16px;
@@ -1389,9 +1441,11 @@
     <!-- 達標品項 -->
     <div class="elig-field">
       <label class="elig-label">達標品項</label>
-      <select id="eligProduct" class="form-control">
-        <option value="">— 載入中 —</option>
+      <select id="eligProduct" class="form-control" onchange="addEligProduct()">
+        <option value="">— 選擇加入品項 —</option>
       </select>
+      <!-- 已選品項標籤 -->
+      <div id="eligProductTags" class="elig-selected-container" style="margin-top:8px;"></div>
     </div>
 
     <!-- 達標日期：隱藏 date picker 負責選擇，顯示欄位格式化為 YYYY/MM/DD -->
@@ -1403,7 +1457,8 @@
                onchange="onEligDateChange()">
         <input type="text" id="eligStartDate" class="form-control elig-date-input"
                placeholder="選擇達標日期" readonly
-               style="pointer-events:none;text-align:center;">
+               style="cursor:pointer;text-align:center;"
+               onclick="const p=document.getElementById('eligStartDatePicker');try{p.showPicker()}catch(e){p.click()}">
       </div>
     </div>
 
@@ -1755,7 +1810,8 @@ function handleMenuAction(type) {
 // 🏷️ 優惠登記功能
 // ════════════════════════════════════════════════════════
 let eligProducts    = [];  // 快取 K=Y 的商品清單
-let eligSelectedUnits = []; // 已選中通訊處清單 [{code, name}, ...]
+let eligSelectedUnits = [];
+let eligSelectedProducts = []; // ✅ 已選達標品項陣列
 let eligSwipeTouchStartX = 0;
 let eligSwipeActiveItem  = null;
 
@@ -1827,6 +1883,62 @@ function fillEligUnit(code, encodedName) {
 }
 
 // ── 加入通訊處（防重複）──
+// ✅ 達標品項多選功能
+function addEligProduct() {
+  const sel  = document.getElementById('eligProduct');
+  const name = sel.options[sel.selectedIndex]?.text;
+  if (!sel.value) return;
+  if (eligSelectedProducts.includes(name)) {
+    showGlobalToast('⚠️ 已加入此品項');
+    sel.value = '';
+    return;
+  }
+  eligSelectedProducts.push(name);
+  sel.value = '';
+  renderEligProductTags();
+}
+
+function removeEligProduct(name) {
+  eligSelectedProducts = eligSelectedProducts.filter(p => p !== name);
+  renderEligProductTags();
+}
+
+function renderEligProductTags() {
+  const container = document.getElementById('eligProductTags');
+  if (!container) return;
+  if (eligSelectedProducts.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何達標商品</p>';
+    return;
+  }
+  // ✅ 條列式，與通訊處清單相同格式
+  container.innerHTML = eligSelectedProducts.map((name, i) =>
+    `<div class="elig-sel-wrapper" data-idx="${i}">
+       <div class="elig-sel-bg">移除</div>
+       <div class="elig-sel-item">
+         ${name}
+         <button class="elig-sel-delete-btn" onclick="event.stopPropagation();removeEligProduct(${JSON.stringify(name)})">✕</button>
+       </div>
+     </div>`
+  ).join('');
+  // ✅ 左滑事件（手機）
+  container.querySelectorAll('.elig-sel-wrapper').forEach(wrapper => {
+    const item = wrapper.querySelector('.elig-sel-item');
+    let startX = 0;
+    wrapper.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      container.querySelectorAll('.elig-sel-item').forEach(el => { if (el !== item) el.style.transform = ''; });
+    }, { passive: true });
+    wrapper.addEventListener('touchend', e => {
+      const delta = e.changedTouches[0].clientX - startX;
+      if (delta < -50) item.style.transform = 'translateX(-80px)';
+      else if (delta > 20) item.style.transform = '';
+    }, { passive: true });
+    wrapper.querySelector('.elig-sel-bg').addEventListener('click', () => {
+      removeEligProduct(eligSelectedProducts[parseInt(wrapper.dataset.idx)]);
+    });
+  });
+}
+
 function addEligUnit() {
   const code = document.getElementById('eligUnitCode').value.trim().toUpperCase();
   const name = document.getElementById('eligUnitName').value.trim();
@@ -1911,26 +2023,27 @@ function calcEligEndDate() {
 
 // ── 儲存（合併多個通訊處為 + 分隔）──
 async function submitEligibility() {
-  if (eligSelectedUnits.length === 0) { showGlobalToast('⚠️ 請至少加入一個通訊處'); return; }
-  const product   = document.getElementById('eligProduct').value;
-  const startDate = document.getElementById('eligStartDatePicker').value; // YYYY-MM-DD 格式
-  if (!product)   { showGlobalToast('⚠️ 請選擇達標品項'); return; }
+  if (eligSelectedUnits.length === 0)    { showGlobalToast('⚠️ 請至少加入一個通訊處'); return; }
+  if (eligSelectedProducts.length === 0) { showGlobalToast('⚠️ 請至少加入一個達標品項'); return; }
+  const startDate = document.getElementById('eligStartDatePicker').value;
   if (!startDate) { showGlobalToast('⚠️ 請選擇達標日期'); return; }
 
-  // 合併多個通訊處為 + 分隔
   const unitCode = eligSelectedUnits.map(u => u.code).join('+');
   const unitName = eligSelectedUnits.map(u => u.name).join('+');
 
   showSyncMask('儲存中...');
   try {
-    const res = await cloudPost({ action: 'saveEligibility', unitCode, unitName, product, startDate });
+    const res = await cloudPost({ action: 'saveEligibility', unitCode, unitName, products: eligSelectedProducts, startDate });
     const r = await res.json();
     if (r.success) {
-      eligCache = { valid: null, expired: null }; // ✅ 清除快取，確保下次查詢取得最新資料
-      showGlobalToast('✅ 優惠資格已登記');
+      eligCache = { valid: null, expired: null };
+      const count = eligSelectedProducts.length; // ✅ 正確的已選品項數量
+      // ✅ 儲存成功後清空達標商品清單
+      eligSelectedProducts = [];
+      renderEligProductTags();
+      showGlobalToast('✅ 優惠資格已登記（' + count + ' 項）');
       closeEligibilityRegister();
-    }
-    else           { showGlobalToast('⚠️ 儲存失敗：' + r.message); }
+    } else { showGlobalToast('⚠️ 儲存失敗：' + r.message); }
   } catch(e) {
     showGlobalToast('⚠️ 網路異常，請重試');
   } finally { hideSyncMask(); }
@@ -3778,15 +3891,20 @@ async function _triggerFileDownload(file) {
       }
     }
 
-    // ✅ Mac / Windows / Android：直接用 data URL（Safari 相容性最佳）
-    const dataUrl = `data:${r.mimeType};base64,${r.base64}`;
+    // ✅ Mac / Windows / Android：blob URL + setTimeout 跳出 async 限制，確保 Safari 正確下載
+    const blob = new Blob([byteArr], { type: r.mimeType });
+    const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href     = dataUrl;
+    a.style.display = 'none';
+    a.href     = url;
     a.download = r.fileName;
     document.body.appendChild(a);
     downloadInitiated = true;
-    a.click();
-    document.body.removeChild(a);
+    setTimeout(() => {
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 30000); // 保留 30 秒確保 Safari 下載完成
+    }, 100);
 
   } catch(e) {
     // AbortError = 用戶取消分享（正常行為）
