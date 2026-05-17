@@ -3408,6 +3408,9 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     stopHold();
     saveDraft();
+  } else {
+    // ✅ 使用者從其他分頁返回時，確保 overlay 已關閉（修正 Mac Safari 凍結問題）
+    forceCloseOverlay();
   }
 });
 window.addEventListener('blur', stopHold);
