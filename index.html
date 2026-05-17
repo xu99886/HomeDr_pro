@@ -133,10 +133,18 @@
       background: rgba(0,0,0,0.5);
       -webkit-backdrop-filter: blur(2px);
       backdrop-filter: blur(2px);
-      display: none;
       z-index: 9998;
+      /* ✅ 用 opacity+visibility 取代 display:none，避免 Mac Safari GPU blur 殘留 */
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
     }
-    .menu-overlay.active { display: block; }
+    .menu-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
 
     /* 啟動遮罩 */
     #loadingOverlay {
