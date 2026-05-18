@@ -1156,7 +1156,7 @@
       <table class="sales-detail-table">
         <thead>
           <tr>
-            <th>收件人</th>
+            <th>訂購/寄件人</th>
             <th>金額</th>
           </tr>
         </thead>
@@ -3589,6 +3589,7 @@ async function handleSync() {
   lastSyncPayload = {
     customer: document.getElementById('customerName').value.trim()||'一般客戶(未指名)',
     sender:   document.getElementById('senderName').value.trim(),
+    action: 'syncOrderToSheet', // ✅ 顯式宣告，對應 GAS 路由
     unitCode: document.getElementById('unitCode').value.trim(),
     unitName: document.getElementById('unitName').value.trim(),
     managerUnit:  document.getElementById('managerUnit').value.trim(),
