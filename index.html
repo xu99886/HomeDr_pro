@@ -133,18 +133,10 @@
       background: rgba(0,0,0,0.5);
       -webkit-backdrop-filter: blur(2px);
       backdrop-filter: blur(2px);
+      display: none;
       z-index: 9998;
-      /* ✅ 用 opacity+visibility 取代 display:none，避免 Mac Safari GPU blur 殘留 */
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.25s ease, visibility 0.25s ease;
     }
-    .menu-overlay.active {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
+    .menu-overlay.active { display: block; }
 
     /* 啟動遮罩 */
     #loadingOverlay {
@@ -157,7 +149,7 @@
     .loading-text { color: #fff; font-weight: 700; letter-spacing: 2px; font-size: 16px; }
 
     /* ✅ 同步毛玻璃遮罩：同步進行中禁止用戶操作任何元素 */
-    #syncMask {
+     #syncMask {
       position: fixed; inset: 0;
       background: rgba(0, 0, 0, 0.45);
       -webkit-backdrop-filter: blur(8px);
@@ -167,11 +159,11 @@
       align-items: center; justify-content: center; gap: 16px;
       opacity: 0; visibility: hidden;
       transition: opacity 0.25s ease, visibility 0.25s ease;
-      pointer-events: none; /* 隱藏時不攔截任何點擊 */
+      pointer-events: none;
     }
     #syncMask.active {
       opacity: 1; visibility: visible;
-      pointer-events: all; /* 顯示時攔截全部點擊，防止用戶誤操作 */
+      pointer-events: all;
     }
     .sync-mask-spinner {
       width: 48px; height: 48px;
@@ -450,6 +442,7 @@
     .print-area { white-space: pre-wrap; font-size: 14px; background: #f8f9fa; padding: 18px; border-radius: var(--radius-md); border: 1px solid #eee; max-height: 50vh; overflow-y: auto; }
 
     #toast { position: fixed; bottom: 180px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 2000; pointer-events: none; white-space: nowrap; }
+    #toast.toast-top { bottom: auto; top: calc(80px + env(safe-area-inset-top)); }
     #toast.show { opacity: 1; }
 
     .quick-btn { width: 100%; padding: 18px; margin-bottom: 12px; border: 1.5px solid var(--color-cust); border-radius: var(--radius-md); background: #fff; font-weight: 700; text-align: left; font-size: 15px; }
@@ -763,6 +756,32 @@
       }
       #eligStartDate { display: none !important; }
       #scheduleDateDisplay { display: none !important; }
+    }
+    /* ✅ 桌機 Tooltip（hover 裝置才顯示，0.5 秒延遲） */
+    @media (hover: hover) {
+      .side-menu-content a[data-tooltip] { position: relative; }
+      .side-menu-content a[data-tooltip]::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: calc(100% + 12px);
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        transition-delay: 0s;
+        z-index: 10000;
+      }
+      .side-menu-content a[data-tooltip]:hover::after {
+        opacity: 1;
+        transition-delay: 0.5s; /* 0.5 秒後才顯示 */
+      }
     }
     /* 加入按鈕（對齊輸入框高度） */
     .elig-add-btn {
@@ -1093,16 +1112,16 @@
     <button onclick="toggleSidebar()">&times;</button>
   </div>
   <div class="side-menu-content">
-    <a onclick="handleMenuAction('copySales')"><span>📈</span> 複製業績</a>
-    <a onclick="handleMenuAction('clearSales')"><span>🗑️</span> 清除業績</a>
+    <a onclick="handleMenuAction('copySales')" data-tooltip="一鍵至公司試算表貼上"><span>📈</span> 複製業績</a>
+    <a onclick="handleMenuAction('clearSales')" data-tooltip="展開新的一天"><span>🗑️</span> 清除業績</a>
     <!-- ✅ iOS修正：檔案列表改為原生 <a> 標籤 -->
-    <a href="https://drive.google.com/drive/folders/1X_l5QwBpHqaxMRfW3cpcNp0JQTp3u7qF?usp=drive_link" onclick="forceCloseOverlay(); window.open(this.href,'_blank','noopener,noreferrer'); return false;" rel="noopener noreferrer"><span>☁️</span> 雲端列表</a>
-    <a onclick="handleMenuAction('fileDownload')"><span>📥</span> 手機出單檔案下載</a>
-    <a onclick="handleMenuAction('todayPerformance')"><span>💰</span> 今日業績</a>
-    <a onclick="handleMenuAction('weeklyReport')"><span>📊</span> 業績週報</a>
-    <a onclick="handleMenuAction('eligibilityRegister')"><span>🏷️</span> 優惠登記</a>
-    <a onclick="handleMenuAction('eligibilityQuery')"><span>🔍</span> 優惠資格</a>
-    <a onclick="handleMenuAction('lineReport')"><span>✉️</span> LINE 回報</a>
+    <a href="https://drive.google.com/drive/folders/1X_l5QwBpHqaxMRfW3cpcNp0JQTp3u7qF?usp=drive_link" target="_blank" rel="noopener noreferrer" onclick="forceCloseOverlay()" data-tooltip="快速查閱，Mac 下載專用"><span>☁️</span> 雲端列表</a>
+    <a onclick="handleMenuAction('fileDownload')" data-tooltip="iPhone、Windows 下載專用"><span>📥</span> 檔案下載</a>
+    <a onclick="handleMenuAction('todayPerformance')" data-tooltip="查詢今日出單總額"><span>💰</span> 今日業績</a>
+    <a onclick="handleMenuAction('weeklyReport')" data-tooltip="一鍵產出樞紐報表"><span>📊</span> 業績週報</a>
+    <a onclick="handleMenuAction('eligibilityRegister')" data-tooltip="大組價資格登記"><span>🏷️</span> 優惠登記</a>
+    <a onclick="handleMenuAction('eligibilityQuery')" data-tooltip="大組價資格查詢"><span>🔍</span> 優惠資格</a>
+    <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
   </div>
 </div>
 
@@ -1265,7 +1284,7 @@
                onclick="const p=document.getElementById('scheduleDatePicker');try{p.showPicker()}catch(e){p.click()}">
       </div>
     </div>
-    <div style="display:flex;gap:12px;margin-bottom:14px;">
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
       <div class="form-group" style="flex:1;margin-bottom:0;">
         <!-- ✅ 防呆：必填標記 * -->
         <label class="form-label">單位代號<span class="required-mark">*</span></label>
@@ -1289,12 +1308,12 @@
     <div class="form-group" ><label class="form-label">收件人<span class="required-mark">*</span></label><input type="text" id="customerName" class="form-control allow-select" placeholder="收件人姓名" oninput="clearFieldError(this)"></div>
     <div class="form-group">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-        <label class="form-label" style="margin-bottom:0;">寄件人</label>
+        <label class="form-label" style="margin-bottom:0;">訂購人/寄件人</label>
         <label style="font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;">
           <input type="checkbox" id="syncSender" onclick="syncSenderField()"> 與收件人相同
         </label>
       </div>
-      <input type="text" id="senderName" class="form-control allow-select" placeholder="寄件人姓名">
+      <input type="text" id="senderName" class="form-control allow-select" placeholder="訂購人姓名">
     </div>
     <div class="form-group"><label class="form-label">送貨地址<span class="required-mark">*</span></label><input type="text" id="shippingAddress" class="form-control allow-select" placeholder="送貨地址" autocomplete="off" oninput="clearFieldError(this)"></div>
     <div class="form-group"><label class="form-label">連絡電話<span class="required-mark">*</span></label><input type="tel" id="contactPhone" class="form-control allow-select" placeholder="聯絡電話" maxlength="10" inputmode="numeric" oninput="clearFieldError(this)"></div>
@@ -1669,12 +1688,17 @@
 window.alert   = function(msg) { showGlobalToast(msg); };
 // window.confirm 已由自訂 overlay 取代，不需覆蓋
 
-function showGlobalToast(msg) {
+function showGlobalToast(msg, position) {
   const t = document.getElementById('toast');
   if (!t) return;
   t.innerText = msg;
+  if (position === 'top') {
+    t.classList.add('toast-top');
+  } else {
+    t.classList.remove('toast-top');
+  }
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => { t.classList.remove('show'); t.classList.remove('toast-top'); }, 2500);
 }
 
 // ─── 通用剪貼簿函數（async）─────────────────────────────────
@@ -1757,7 +1781,6 @@ document.getElementById('customerName').addEventListener('input', function() {
 
 // ─── 側邊選單控制 ─────────────────────────────────────────
 function toggleSidebar() {
-  if (Date.now() - _lastForceClose < 500) return; // ✅ 防 Mac window.open() phantom click
   const isOpening = !document.getElementById('sideMenu').classList.contains('active');
   document.getElementById('sideMenu').classList.toggle('active');
   document.getElementById('menuOverlay').classList.toggle('active');
@@ -1771,7 +1794,6 @@ function preloadEligibilityCache() {
   if (!eligCache.expired) _fetchEligInBackground('失效', 'expired');
 }
 function forceCloseOverlay() {
-  _lastForceClose = Date.now();
   document.getElementById('sideMenu').classList.remove('active');
   document.getElementById('menuOverlay').classList.remove('active');
 }
@@ -2709,7 +2731,6 @@ async function copyWeeklyReport() {
 // ─── ✅ 同步失敗重試機制 ──────────────────────────────────
 let lastSyncPayload = null;
 let isSyncing = false;
-let _lastForceClose = 0; // ✅ 防 Mac phantom click debounce // 防止快速連點送出重複訂單
 
 function showSyncFailDialog(msg) {
   document.getElementById('syncFailMsg').textContent = msg;
@@ -3408,9 +3429,6 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     stopHold();
     saveDraft();
-  } else {
-    // ✅ 使用者從其他分頁返回時，確保 overlay 已關閉（修正 Mac Safari 凍結問題）
-    forceCloseOverlay();
   }
 });
 window.addEventListener('blur', stopHold);
@@ -3932,6 +3950,13 @@ async function downloadSelectedFiles() {
 // 實際呼叫 GAS 取得 base64 並觸發下載
 async function _triggerFileDownload(file) {
   let downloadInitiated = false;
+  const isIOS = /iPhone|iPod/.test(navigator.userAgent) ||
+                /iPad/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  // ✅ iOS：立刻顯示準備中提示，讓使用者知道在處理
+  if (isIOS) showGlobalToast('⏳ 準備中，請稍候...');
+
   try {
     const res = await cloudPost({ action: 'downloadFileById', fileId: file.id });
     const r = await res.json();
@@ -3942,22 +3967,20 @@ async function _triggerFileDownload(file) {
     const byteArr   = new Uint8Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
 
-    // ✅ iOS/iPadOS 偵測（含 iPad 桌機模式，UA 顯示 Macintosh）
-    const isIOS = /iPhone|iPod/.test(navigator.userAgent) ||
-                  /iPad/.test(navigator.userAgent) ||
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
     // ✅ iOS/iPadOS 只用 Web Share API
     if (isIOS && navigator.share && navigator.canShare) {
       const fileObj = new File([byteArr], r.fileName, { type: r.mimeType });
       if (navigator.canShare({ files: [fileObj] })) {
         downloadInitiated = true;
+        showGlobalToast('💾 請點選「儲存到檔案」', 'top');
         await navigator.share({ files: [fileObj] });
+        // ✅ share resolve = 使用者完成儲存
+        showGlobalToast('✅ 已儲存！可以離開此頁面');
         return;
       }
     }
 
-    // ✅ Mac / Windows / Android：blob URL + setTimeout 跳出 async 限制，確保 Safari 正確下載
+    // ✅ Mac / Windows / Android：blob URL + setTimeout
     const blob = new Blob([byteArr], { type: r.mimeType });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -3969,13 +3992,16 @@ async function _triggerFileDownload(file) {
     setTimeout(() => {
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 30000); // 保留 30 秒確保 Safari 下載完成
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
     }, 100);
 
   } catch(e) {
-    // AbortError = 用戶取消分享（正常行為）
-    // downloadInitiated = true 代表下載已啟動，Safari 可能拋出 SecurityError 但檔案已在下載
-    if (e.name !== 'AbortError' && !downloadInitiated) {
+    // AbortError = 使用者取消分享（正常行為，不顯示錯誤）
+    if (e.name === 'AbortError') {
+      showGlobalToast('已取消');
+      return;
+    }
+    if (!downloadInitiated) {
       showGlobalToast('⚠️ 下載失敗，請重試');
     }
   }
