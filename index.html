@@ -108,7 +108,12 @@
     .side-menu-header button { background: none; border: none; color: white; font-size: 24px; }
 
     /* ✅ UI：側邊欄選單項目加入彈簧縮放 */
-    .side-menu-content { padding: 10px 0; }
+    .side-menu-content {
+      padding: 10px 0;
+      overflow-y: auto;
+      /* ✅ header 高度約 70px，剩餘空間可滾動 */
+      max-height: calc(100vh - 70px - env(safe-area-inset-top));
+    }
     .side-menu-content a {
       display: flex;
       align-items: center;
@@ -1122,6 +1127,7 @@
     <a onclick="handleMenuAction('eligibilityRegister')" data-tooltip="大組價資格登記"><span>🏷️</span> 優惠登記</a>
     <a onclick="handleMenuAction('eligibilityQuery')" data-tooltip="大組價資格查詢"><span>🔍</span> 優惠資格</a>
     <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
+    <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
   </div>
 </div>
 
@@ -1327,8 +1333,7 @@
       <div class="form-group" style="flex:1;margin-bottom:0;">
         <label class="form-label">銷售人員</label>
         <select id="salesName" class="form-control">
-          <option value="">— 選擇銷售人員 —</option>
-          <option value="王惠宣">王惠宣</option>
+          <option value="王惠宣" selected>王惠宣</option>
           <option value="徐琬晴">徐琬晴</option>
           <option value="張詠甯">張詠甯</option>
           <option value="李孟哲">李孟哲</option>
@@ -1641,6 +1646,42 @@
 </div>
 
 <!-- ════════════════════════════════
+     📝 訊息拆解 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="msgParserOverlay" style="display:none;">
+  <div class="elig-box" style="max-width:480px;width:90%;">
+    <h3>📝 訊息拆解</h3>
+    <textarea id="msgParserInput" class="form-control"
+      placeholder="貼入整串訊息&#10;範例如下&#10;服務單位：吉伊通訊處&#10;訂購人：烏薩奇&#10;聯絡電話：0912345678"
+      rows="6"
+      style="width:100%;box-sizing:border-box;resize:vertical;font-size:14px;margin-bottom:12px;"
+      oninput="parseMsgInput()"></textarea>
+    <!-- 解析結果 -->
+    <div id="msgParserResult" style="display:none;">
+      <div id="msgParserList" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px;"></div>
+    </div>
+    <!-- 無法解析時顯示原文 -->
+    <div id="msgParserRaw" style="display:none;font-size:13px;color:var(--muted);white-space:pre-wrap;background:var(--input-bg);padding:10px;border-radius:var(--radius-sm);margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-secondary" onclick="closeMsgParser()" style="flex:1;padding:13px;">關閉</button>
+      <button class="btn-danger" onclick="confirmClearMsgParser()" style="flex:1;padding:13px;">清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- 訊息拆解清空確認 -->
+<div class="confirm-overlay" id="msgClearConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 確認清空？</h3>
+    <p>訊息內容將全部清除，<br>此動作無法還原。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="document.getElementById('msgClearConfirmOverlay').style.display='none'">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doMsgClear()">確認清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
      📥 檔案下載 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="fileDownloadOverlay" style="display:none;">
@@ -1853,9 +1894,110 @@ function handleMenuAction(type) {
   else if (type === 'eligibilityQuery')    openEligibilityQuery();
   else if (type === 'lineReport')            openLineReport();
   else if (type === 'fileDownload')          openFileDownload();
+  else if (type === 'msgParser')             openMsgParser();
 }
 
+
 // ════════════════════════════════════════════════════════
+// 📝 訊息拆解功能
+// ════════════════════════════════════════════════════════
+let _msgCopyLock = false; // ✅ 防複製按鈕連按
+
+function openMsgParser() {
+  document.getElementById('msgParserOverlay').style.display = 'flex';
+  // ✅ 關閉後重開保留內容，重新渲染
+  if (document.getElementById('msgParserInput').value.trim()) parseMsgInput();
+}
+
+function closeMsgParser() {
+  // ✅ 關閉不清除，內容保留
+  document.getElementById('msgParserOverlay').style.display = 'none';
+}
+
+function confirmClearMsgParser() {
+  document.getElementById('msgClearConfirmOverlay').style.display = 'flex';
+}
+
+function doMsgClear() {
+  document.getElementById('msgClearConfirmOverlay').style.display = 'none';
+  document.getElementById('msgParserInput').value = '';
+  document.getElementById('msgParserResult').style.display = 'none';
+  document.getElementById('msgParserRaw').style.display   = 'none';
+  document.getElementById('msgParserList').innerHTML = '';
+}
+
+function parseMsgInput() {
+  const raw   = document.getElementById('msgParserInput').value.trim();
+  const list  = document.getElementById('msgParserList');
+  const result= document.getElementById('msgParserResult');
+  const rawEl = document.getElementById('msgParserRaw');
+
+  if (!raw) {
+    result.style.display = 'none';
+    rawEl.style.display  = 'none';
+    return;
+  }
+
+  const lines = raw.split(/\r?\n/);
+  const parsed = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const colonIdx = trimmed.search(/[：:]/);
+    if (colonIdx > 0) {
+      const key = trimmed.slice(0, colonIdx).trim();
+      const val = trimmed.slice(colonIdx + 1).trim();
+      parsed.push({ key, val });
+    }
+  }
+
+  if (parsed.length === 0) {
+    result.style.display = 'none';
+    rawEl.style.display  = 'block';
+    rawEl.textContent    = raw;
+    return;
+  }
+
+  rawEl.style.display   = 'none';
+  result.style.display  = 'block';
+  list.innerHTML = parsed.map((item, i) => {
+    const hasVal = item.val.length > 0;
+    const safeVal = JSON.stringify(item.val).replace(/"/g, '&quot;');
+    const safeMsg = JSON.stringify(item.key + '已複製').replace(/"/g, '&quot;');
+    return `<div style="display:flex;align-items:center;padding:10px 12px;${i < parsed.length-1 ? 'border-bottom:1px solid var(--border);' : ''}gap:8px;">
+      <span style="flex:0 0 auto;font-size:12px;color:var(--muted);min-width:90px;">${item.key}</span>
+      <span style="flex:1;font-size:14px;font-weight:600;color:${hasVal ? 'var(--text)' : 'var(--muted)'};">${hasVal ? item.val : '（無）'}</span>
+      <button onclick="copyMsgField(this,${safeVal},${safeMsg})"
+        class="btn-primary" style="flex:0 0 auto;padding:5px 14px;font-size:13px;"
+        ${hasVal ? '' : 'disabled'}>複製</button>
+    </div>`;
+  }).join('');
+}
+
+function copyMsgField(btn, text, toastMsg) {
+  if (!text || _msgCopyLock) return;
+  _msgCopyLock = true;
+  btn.textContent = '✓';
+  btn.disabled    = true;
+  setTimeout(() => {
+    _msgCopyLock    = false;
+    btn.textContent = '複製';
+    btn.disabled    = false;
+  }, 1500);
+  navigator.clipboard.writeText(text).then(() => {
+    showGlobalToast('✅ ' + toastMsg);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showGlobalToast('✅ ' + toastMsg);
+  });
+}
+
 // 🏷️ 優惠登記功能
 // ════════════════════════════════════════════════════════
 let eligProducts    = [];  // 快取 K=Y 的商品清單
@@ -2822,7 +2964,7 @@ function saveDraft() {
     districtUnit:    document.getElementById('districtUnit').value,
     orderType:       document.getElementById('orderType').value,
     issuerName:      document.getElementById('issuerName').value,
-    salesName:       document.getElementById('salesName').value
+    // salesName 不存草稿，頁面永遠預設王惠宣
   };
   const draft = { mode, orderItems, fields, savedAt: Date.now() };
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
@@ -3486,6 +3628,7 @@ function doClrAll(){
   // ✅ 清空時一併移除所有必填欄位的紅框提示
   ['unitCode','unitName','platformOrderNo','customerName','shippingAddress','contactPhone']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('field-error');});
+  const sn=document.getElementById('salesName');if(sn)sn.value='王惠宣'; // ✅ 清空後回到預設
   closeConfirm();showGlobalToast('✨ 清單已清空');renderAll();
 }
 
@@ -3975,13 +4118,12 @@ async function _triggerFileDownload(file) {
         downloadInitiated = true;
         showGlobalToast('💾 請點選「儲存到檔案」', 'top');
         await navigator.share({ files: [fileObj] });
-        // ✅ share resolve = 使用者完成儲存
         showGlobalToast('✅ 已儲存！可以離開此頁面');
         return;
       }
     }
 
-    // ✅ Mac / Windows / Android：blob URL + setTimeout
+    // ✅ Windows / Android：blob URL + setTimeout
     const blob = new Blob([byteArr], { type: r.mimeType });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -3997,14 +4139,8 @@ async function _triggerFileDownload(file) {
     }, 100);
 
   } catch(e) {
-    // AbortError = 使用者取消分享（正常行為，不顯示錯誤）
-    if (e.name === 'AbortError') {
-      showGlobalToast('已取消');
-      return;
-    }
-    if (!downloadInitiated) {
-      showGlobalToast('⚠️ 下載失敗，請重試');
-    }
+    if (e.name === 'AbortError') { showGlobalToast('已取消'); return; }
+    if (!downloadInitiated) showGlobalToast('⚠️ 下載失敗，請重試');
   }
 }
 </script>
