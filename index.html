@@ -1079,7 +1079,178 @@
       }
 
     }
+    /* ════════════════════════════════════════════
+       📒 業績分析 — 完全對齊業績週報視窗風格
+       ════════════════════════════════════════════ */
 
+    /* 遮罩層：與 .weekly-result-overlay 完全一致的寫法 */
+    #salesAnalysisOverlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,20,40,0.85); z-index: 1300;
+      align-items: flex-start; justify-content: center;
+      padding: 16px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      overflow-y: auto;
+    }
+    #salesAnalysisOverlay.active { display: flex !important; }
+
+    /* 內容卡片 */
+    .analysis-box {
+      background: #fff; border-radius: 24px;
+      width: 100%; max-width: 560px;
+      margin: auto;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 頂部標題（漸層背景）*/
+    .analysis-header {
+      background: var(--header-bg); color: #fff;
+      padding: 16px 20px;
+      border-radius: 24px 24px 0 0;
+      flex-shrink: 0;
+    }
+    .analysis-header h2 {
+      font-size: 17px; font-weight: 900;
+      letter-spacing: 1px; margin-bottom: 12px;
+    }
+    .analysis-period-tabs { display: flex; gap: 8px; }
+    .analysis-tab {
+      flex: 1; padding: 9px 0;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: var(--radius-sm);
+      background: transparent; color: rgba(255,255,255,0.65);
+      font-size: 13px; font-weight: 700;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .analysis-tab.active {
+      background: rgba(255,255,255,0.95);
+      color: var(--primary); border-color: transparent;
+    }
+
+    /* 可上下滑動的內容區 */
+    .analysis-body {
+      overflow-y: auto; max-height: 65vh;
+      padding: 14px 16px 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .analysis-section-label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      letter-spacing: 1.5px; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* KPI 卡片：手機 2 欄，桌機 3 欄 */
+    .analysis-kpi-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 12px;
+    }
+    @media (min-width: 420px) {
+      .analysis-kpi-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .analysis-kpi-card {
+      background: #f8f9fa; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 10px;
+      overflow: hidden;
+    }
+    .analysis-kpi-card.alert { border-left: 3px solid #E24B4A; }
+    .analysis-kpi-card.good  { border-left: 3px solid #1D9E75; }
+    .analysis-kpi-label {
+      font-size: 10px; color: var(--muted); font-weight: 700;
+      letter-spacing: 0.2px; margin-bottom: 4px;
+    }
+    .analysis-kpi-value {
+      font-size: 18px; font-weight: 900;
+      color: var(--text); line-height: 1.1;
+    }
+    .analysis-kpi-unit  { font-size: 11px; font-weight: 400; }
+    .analysis-kpi-sub   { font-size: 10px; color: var(--muted); margin-top: 3px; }
+    .analysis-kpi-card.alert .analysis-kpi-value { color: #E24B4A; }
+    .analysis-kpi-card.good  .analysis-kpi-value { color: #1D9E75; }
+
+    /* 圖表卡片 */
+    .analysis-chart-card {
+      background: #f8f9fa; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 12px;
+      margin-bottom: 10px;
+    }
+    .analysis-chart-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--text); margin-bottom: 2px;
+    }
+    .analysis-chart-sub {
+      font-size: 11px; color: var(--muted); margin-bottom: 10px;
+    }
+
+    /* 警示框 */
+    .analysis-alert-box {
+      border-radius: var(--radius-md); padding: 10px 12px;
+      margin-bottom: 10px; font-size: 12px; line-height: 1.8;
+    }
+    .analysis-alert-box.red    { background:#FCEBEB; border:0.5px solid #F7C1C1; color:#791F1F; }
+    .analysis-alert-box.yellow { background:#FAEEDA; border:0.5px solid #FAC775; color:#633806; }
+    .analysis-alert-box.green  { background:#EAF3DE; border:0.5px solid #C0DD97; color:#27500A; }
+
+    /* 客戶清單表格 */
+    .analysis-customer-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .analysis-customer-table th {
+      background: #003366; color: #fff;
+      padding: 8px; text-align: left;
+      font-weight: 700; font-size: 11px;
+      position: sticky; top: 0; z-index: 1;
+    }
+    .analysis-customer-table th:nth-child(3),
+    .analysis-customer-table th:nth-child(4) { text-align: right; }
+    .analysis-customer-table td {
+      padding: 8px; border-bottom: 1px solid var(--border);
+      font-size: 12px; color: var(--text);
+    }
+    .analysis-customer-table td:nth-child(3) { text-align: right; }
+    .analysis-customer-table td:nth-child(4) { text-align: right; font-weight: 700; }
+    .analysis-customer-table tr:last-child td { border-bottom: none; }
+
+    /* 狀態點 */
+    .analysis-status-dot {
+      display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; margin-right: 5px;
+      vertical-align: middle; flex-shrink: 0;
+    }
+
+    /* 底部按鈕列（圓角下緣）*/
+    .analysis-bottom-bar {
+      display: flex; gap: 10px;
+      padding: 12px 16px;
+      background: #fff; border-top: 1px solid var(--border);
+      border-radius: 0 0 24px 24px;
+      flex-shrink: 0;
+    }
+    .analysis-bottom-bar button {
+      flex: 1; padding: 13px; border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px; font-weight: 700;
+    }
+
+    /* 載入中 */
+    .analysis-loading {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 280px; gap: 14px;
+      color: var(--muted); font-size: 14px;
+    }
+
+    /* 深色模式 */
+    @media (prefers-color-scheme: dark) {
+      .analysis-box          { background: #2c2c2e; }
+      .analysis-kpi-card     { background: #1c1c1e; }
+      .analysis-chart-card   { background: #1c1c1e; }
+      .analysis-bottom-bar   { background: #2c2c2e; border-top-color: var(--border); }
+      .analysis-customer-table th  { background: #002d5a; }
+      .analysis-customer-table td  { border-bottom-color: var(--border); }
+      .analysis-alert-box.red    { background:#2a1515; border-color:#5a2020; color:#ffaaaa; }
+      .analysis-alert-box.yellow { background:#2a2010; border-color:#5a4520; color:#ffddaa; }
+      .analysis-alert-box.green  { background:#0f2010; border-color:#204520; color:#aaddaa; }
+    }
     </style>
 </head>
 <body>
@@ -1128,6 +1299,7 @@
     <a onclick="handleMenuAction('eligibilityQuery')" data-tooltip="大組價資格查詢"><span>🔍</span> 優惠資格</a>
     <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
     <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
+<a onclick="handleMenuAction('salesAnalysis')" data-tooltip="業績儀表板分析"><span>📒</span> 業績分析</a>
   </div>
 </div>
 
@@ -1715,7 +1887,37 @@
     </div>
   </div>
 </div>
+<!-- ════════════════════════════════
+     📒 業績分析 全屏 Overlay
+     ════════════════════════════════ -->
+<div id="salesAnalysisOverlay" style="display:none;">
 
+  <div class="analysis-box">
+
+    <div class="analysis-header">
+      <h2>📒 業績分析</h2>
+      <div class="analysis-period-tabs">
+        <button class="analysis-tab active" id="tabThisMonth"
+                onclick="switchAnalysisPeriod('thisMonth')">本月</button>
+        <button class="analysis-tab" id="tabLastMonth"
+                onclick="switchAnalysisPeriod('lastMonth')">上月</button>
+        <button class="analysis-tab" id="tabAll"
+                onclick="switchAnalysisPeriod('all')">全部</button>
+      </div>
+    </div>
+
+    <!-- 預設空白，點開側邊欄才載入 -->
+    <div class="analysis-body" id="analysisBody"></div>
+
+    <div class="analysis-bottom-bar">
+      <button class="btn-secondary" onclick="closeSalesAnalysis()">關閉</button>
+      <button class="btn-primary" id="analyticsShareBtn"
+              onclick="shareAnalytics()" style="display:none;">📸 儲存並分享</button>
+    </div>
+
+  </div>
+
+</div>
 <!-- ✅ 同步毛玻璃遮罩（同步進行中全屏鎖定，防止誤操作）-->
 <div id="syncMask">
   <div class="sync-mask-spinner"></div>
@@ -1895,6 +2097,7 @@ function handleMenuAction(type) {
   else if (type === 'lineReport')            openLineReport();
   else if (type === 'fileDownload')          openFileDownload();
   else if (type === 'msgParser')             openMsgParser();
+  else if (type === 'salesAnalysis')    openSalesAnalysis();
 }
 
 
@@ -4142,6 +4345,448 @@ async function _triggerFileDownload(file) {
     if (e.name === 'AbortError') { showGlobalToast('已取消'); return; }
     if (!downloadInitiated) showGlobalToast('⚠️ 下載失敗，請重試');
   }
+}
+// ════════════════════════════════════════════════════════════
+// 📒 業績分析功能
+// ════════════════════════════════════════════════════════════
+ 
+let analysisPeriod  = 'thisMonth'; // 目前選中的期間
+let analyticsData   = null;        // GAS 回傳的完整資料
+let analyticsCharts = [];          // Chart.js 實例清單（關閉時 destroy，避免記憶體洩漏）
+ 
+// ── 開啟分析頁 ──
+function openSalesAnalysis() {
+  analysisPeriod = 'thisMonth';
+  // 重設 tab 樣式
+  ['tabThisMonth', 'tabLastMonth', 'tabAll'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+  document.getElementById('tabThisMonth').classList.add('active');
+  // 隱藏分享按鈕，等資料載入完才顯示
+  document.getElementById('analyticsShareBtn').style.display = 'none';
+  document.getElementById('salesAnalysisOverlay').classList.add('active');
+  loadAnalyticsData('thisMonth');
+}
+ 
+// ── 關閉分析頁 ──
+function closeSalesAnalysis() {
+  document.getElementById('salesAnalysisOverlay').classList.remove('active');
+  // Destroy 所有圖表，釋放記憶體
+  analyticsCharts.forEach(c => { try { c.destroy(); } catch(e) {} });
+  analyticsCharts = [];
+}
+ 
+// ── 切換期間 Tab ──
+function switchAnalysisPeriod(period) {
+  if (period === analysisPeriod) return; // 同一個 tab 不重複請求
+  analysisPeriod = period;
+  ['tabThisMonth', 'tabLastMonth', 'tabAll'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+  const tabMap = {
+    thisMonth: 'tabThisMonth',
+    lastMonth: 'tabLastMonth',
+    all:       'tabAll'
+  };
+  document.getElementById(tabMap[period]).classList.add('active');
+  loadAnalyticsData(period);
+}
+ 
+// ── 向 GAS 請求分析資料 ──
+async function loadAnalyticsData(period) {
+  const body = document.getElementById('analysisBody');
+ 
+  // 顯示載入動畫
+  body.innerHTML = `
+    <div class="analysis-loading">
+      <div class="loader"
+           style="border-color:rgba(0,70,145,0.15);border-top-color:var(--primary);"></div>
+      <span>資料分析中...</span>
+    </div>`;
+  document.getElementById('analyticsShareBtn').style.display = 'none';
+ 
+  // Destroy 舊圖表
+  analyticsCharts.forEach(c => { try { c.destroy(); } catch(e) {} });
+  analyticsCharts = [];
+ 
+  try {
+    const res = await cloudPost({ action: 'getAnalyticsData', period });
+    const r   = await res.json();
+    if (!r.success) {
+      body.innerHTML = `<div class="analysis-loading">⚠️ ${r.message}</div>`;
+      return;
+    }
+    analyticsData = r;
+    // Chart.js 動態載入後才渲染
+    _loadChartJS(() => _renderAnalytics(r));
+  } catch(e) {
+    body.innerHTML = `<div class="analysis-loading">⚠️ 網路連線異常，請重試</div>`;
+  }
+}
+ 
+// ── 動態載入 Chart.js（只載入一次，之後直接用快取）──
+function _loadChartJS(callback) {
+  if (window.Chart) { callback(); return; }
+  const s   = document.createElement('script');
+  s.src     = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+  s.onload  = callback;
+  s.onerror = () => showGlobalToast('⚠️ 圖表套件載入失敗，請確認網路連線');
+  document.head.appendChild(s);
+}
+ 
+// ── 渲染整頁分析內容 ──
+function _renderAnalytics(data) {
+  const s    = data.summary;
+  const body = document.getElementById('analysisBody');
+ 
+  // 數字格式化：≥1萬顯示「X.X萬」，否則千分位
+  const fmt = n =>
+    n >= 10000 ? (n / 10000).toFixed(1) + '萬' : n.toLocaleString();
+ 
+  const periodLabel = {
+    thisMonth: '本月', lastMonth: '上月', all: '全部'
+  }[data.period] || '';
+ 
+  // ── 警示 / 提示框 ──
+  let alertBoxes = '';
+  if (s.top3Concentration >= 50) {
+    alertBoxes += `
+      <div class="analysis-alert-box red">
+        ⚠️ 前三名客戶佔業績 <strong>${s.top3Concentration}%</strong>，
+        集中度偏高，建議積極開發新客戶以分散風險。
+      </div>`;
+  }
+  if (s.warningCustomers + s.lostCustomers > 0) {
+    alertBoxes += `
+      <div class="analysis-alert-box yellow">
+        ⏰ 待追蹤 <strong>${s.warningCustomers}</strong> 人（61-90天未購買）、
+        流失警戒 <strong>${s.lostCustomers}</strong> 人（超過90天），
+        建議優先主動聯繫。
+      </div>`;
+  }
+  if (s.repurchaseRate >= 25) {
+    alertBoxes += `
+      <div class="analysis-alert-box green">
+        ✅ 回購率 ${s.repurchaseRate}%，客戶黏著度表現良好，繼續維持！
+      </div>`;
+  }
+ 
+  // ── 客戶清單列 ──
+  const custRows = data.customerList.map(c => {
+    const dotColor  = c.status === 'active'  ? '#1D9E75'
+                    : c.status === 'warning' ? '#EF9F27'
+                    :                         '#E24B4A';
+    const daysColor = c.daysSince > 90 ? '#E24B4A'
+                    : c.daysSince > 60 ? '#EF9F27'
+                    : 'var(--muted)';
+    return `
+      <tr>
+        <td>
+          <span class="analysis-status-dot" style="background:${dotColor};"></span>
+          ${c.name}
+        </td>
+        <td style="color:var(--muted);font-size:11px;">${c.lastDateStr}</td>
+        <td style="color:${daysColor};">${c.daysSince}天</td>
+        <td>${fmt(c.totalAmt)}</td>
+      </tr>`;
+  }).join('');
+ 
+  // ── 品項圖高度（依品項數量動態調整）──
+  const prodChartHeight = Math.min(data.products.length, 8) * 26 + 20;
+ 
+  // ── 組合完整 HTML ──
+  body.innerHTML = `
+ 
+    <div class="analysis-section-label">${periodLabel} 業績概覽</div>
+ 
+    <!-- KPI 六格 -->
+    <div class="analysis-kpi-grid">
+ 
+      <div class="analysis-kpi-card">
+        <div class="analysis-kpi-label">總銷售額</div>
+        <div class="analysis-kpi-value">${fmt(s.totalRevenue)}</div>
+        <div class="analysis-kpi-sub">當期</div>
+      </div>
+ 
+      <div class="analysis-kpi-card">
+        <div class="analysis-kpi-label">客戶總數</div>
+        <div class="analysis-kpi-value">
+          ${s.totalCustomers}<span class="analysis-kpi-unit"> 人</span>
+        </div>
+        <div class="analysis-kpi-sub">當期</div>
+      </div>
+ 
+      <div class="analysis-kpi-card ${s.lostCustomers > 0 || s.warningCustomers > 0 ? 'alert' : 'good'}">
+        <div class="analysis-kpi-label">活躍客戶</div>
+        <div class="analysis-kpi-value">
+          ${s.activeCustomers}<span class="analysis-kpi-unit"> 人</span>
+        </div>
+        <div class="analysis-kpi-sub">全史${s.allTotalCustomers}人中 ≤60天</div>
+      </div>
+ 
+      <div class="analysis-kpi-card ${s.repurchaseRate < 20 ? 'alert' : 'good'}">
+        <div class="analysis-kpi-label">回購率</div>
+        <div class="analysis-kpi-value">
+          ${s.repurchaseRate}<span class="analysis-kpi-unit">%</span>
+        </div>
+        <div class="analysis-kpi-sub">歷史客戶曾回購</div>
+      </div>
+ 
+      <div class="analysis-kpi-card ${s.retentionRate < 25 ? 'alert' : 'good'}">
+        <div class="analysis-kpi-label">留存率</div>
+        <div class="analysis-kpi-value">
+          ${s.retentionRate}<span class="analysis-kpi-unit">%</span>
+        </div>
+        <div class="analysis-kpi-sub">最近兩月留存</div>
+      </div>
+ 
+      <div class="analysis-kpi-card">
+        <div class="analysis-kpi-label">平均客單價</div>
+        <div class="analysis-kpi-value">${fmt(s.avgOrderValue)}</div>
+        <div class="analysis-kpi-sub">當期每次購買</div>
+      </div>
+ 
+    </div>
+ 
+    ${alertBoxes}
+ 
+    <!-- 月份趨勢圖 -->
+    <div class="analysis-chart-card" id="analysisTrendCard">
+      <div class="analysis-chart-title">📈 月份業績趨勢</div>
+      <div class="analysis-chart-sub">早會（藍）vs 回購（綠）· 單位：萬元</div>
+      <div style="position:relative;height:170px;">
+        <canvas id="chartTrend"></canvas>
+      </div>
+    </div>
+ 
+    <!-- 品項排行圖 -->
+    <div class="analysis-chart-card" id="analyticsProductCard">
+      <div class="analysis-chart-title">🏆 品項銷售排行 TOP 8</div>
+      <div class="analysis-chart-sub">${periodLabel}銷售額 · 萬元</div>
+      <div style="position:relative;height:${prodChartHeight}px;">
+        <canvas id="chartProduct"></canvas>
+      </div>
+    </div>
+ 
+    <!-- 客戶健康清單 -->
+    <div class="analysis-chart-card" id="analyticsCustomerCard">
+      <div class="analysis-chart-title">👥 客戶健康清單</div>
+      <div class="analysis-chart-sub" style="margin-bottom:8px;">
+        <span class="analysis-status-dot" style="background:#1D9E75;"></span>活躍（≤60天）
+        <span class="analysis-status-dot"
+              style="background:#EF9F27;margin-left:8px;"></span>待追蹤（61-90天）
+        <span class="analysis-status-dot"
+              style="background:#E24B4A;margin-left:8px;"></span>流失警戒（>90天）
+      </div>
+      <div style="max-height:300px;overflow-y:auto;
+                  border-radius:var(--radius-sm);border:1px solid var(--border);">
+        <table class="analysis-customer-table">
+          <thead>
+            <tr>
+              <th>客戶</th>
+              <th>最後購買</th>
+              <th>距今</th>
+              <th>金額</th>
+            </tr>
+          </thead>
+          <tbody>${custRows}</tbody>
+        </table>
+      </div>
+    </div>
+ 
+    <div style="height:8px;"></div>
+  `;
+ 
+  // ── 顯示分享按鈕 ──
+  document.getElementById('analyticsShareBtn').style.display = '';
+ 
+  // ── 渲染月份趨勢圖 ──
+  const trendCanvas = document.getElementById('chartTrend');
+  if (trendCanvas && data.monthlyTrend.length > 0) {
+    const ct = new Chart(trendCanvas, {
+      type: 'bar',
+      data: {
+        labels: data.monthlyTrend.map(d =>
+          d.label.replace(/^\d{4}\//, '') + '月'
+        ),
+        datasets: [
+          {
+            label: '早會/場',
+            data: data.monthlyTrend.map(d => +(d.meeting    / 10000).toFixed(1)),
+            backgroundColor: '#185FA5',
+            borderRadius: 3
+          },
+          {
+            label: '回購',
+            data: data.monthlyTrend.map(d => +(d.repurchase / 10000).toFixed(1)),
+            backgroundColor: '#1D9E75',
+            borderRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true, position: 'top',
+            labels: { boxWidth: 10, font: { size: 11 } }
+          },
+          tooltip: {
+            callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '萬' }
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { display: false },
+            ticks: { font: { size: 10 } }
+          },
+          y: {
+            stacked: true,
+            ticks: { callback: v => v + '萬', font: { size: 10 } },
+            grid:  { color: 'rgba(128,128,128,0.1)' }
+          }
+        }
+      }
+    });
+    analyticsCharts.push(ct);
+  }
+ 
+  // ── 渲染品項排行圖 ──
+  const prodCanvas = document.getElementById('chartProduct');
+  if (prodCanvas && data.products.length > 0) {
+    const cp = new Chart(prodCanvas, {
+      type: 'bar',
+      data: {
+        labels: data.products.map(p => p.name),
+        datasets: [{
+          data: data.products.map(p => +(p.amount / 10000).toFixed(1)),
+          backgroundColor: '#185FA5',
+          borderRadius: 3
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.raw + '萬' } }
+        },
+        scales: {
+          x: {
+            ticks: { callback: v => v + '萬', font: { size: 10 } },
+            grid:  { color: 'rgba(128,128,128,0.1)' }
+          },
+          y: {
+            grid:  { display: false },
+            ticks: { font: { size: 11 } }
+          }
+        }
+      }
+    });
+    analyticsCharts.push(cp);
+  }
+}
+ 
+// ── 截圖並分享（html2canvas → Web Share API / 桌機直接下載）──
+async function shareAnalytics() {
+  if (!analyticsData) return;
+ 
+  const btn = document.getElementById('analyticsShareBtn');
+  btn.disabled    = true;
+  btn.textContent = '⏳ 截圖中...';
+ 
+  try {
+    // 1. 動態載入 html2canvas
+    await _loadHtml2Canvas();
+ 
+    const body = document.getElementById('analysisBody');
+ 
+    // 2. 截圖（scale:2 = 2倍解析度，圖片清晰）
+    const canvas = await html2canvas(body, {
+      scale:           2,
+      useCORS:         true,
+      allowTaint:      false,
+      logging:         false,
+      backgroundColor: window.matchMedia('(prefers-color-scheme: dark)').matches
+                       ? '#1c1c1e' : '#f0f2f5',
+      onclone: (clonedDoc) => {
+        // 截圖時移除捲動限制，確保完整渲染
+        const b = clonedDoc.getElementById('analysisBody');
+        if (b) {
+          b.style.overflow  = 'visible';
+          b.style.maxHeight = 'none';
+          b.style.height    = 'auto';
+        }
+        // 移除客戶清單的限高，讓所有客戶都截進去
+        const custWrap = b && b.querySelector('[style*="max-height:300px"]');
+        if (custWrap) {
+          custWrap.style.maxHeight = 'none';
+          custWrap.style.overflow  = 'visible';
+        }
+      }
+    });
+ 
+    // 3. Canvas → Blob
+    const blob = await new Promise(resolve =>
+      canvas.toBlob(resolve, 'image/png')
+    );
+    if (!blob) throw new Error('截圖產生失敗');
+ 
+    // 4. 組合檔名（業績分析_本月_2026-05-20.png）
+    const periodLabel = {
+      thisMonth: '本月', lastMonth: '上月', all: '全部'
+    }[analysisPeriod] || '業績';
+    const today    = new Date();
+    const dateStr  = today.getFullYear() + '-' +
+                     String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                     String(today.getDate()).padStart(2, '0');
+    const fileName = `業績分析_${periodLabel}_${dateStr}.png`;
+    const file     = new File([blob], fileName, { type: 'image/png' });
+ 
+    // 5a. 手機（iOS / Android）→ Web Share API（分享選單含 LINE）
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      showGlobalToast('💾 請選擇傳送方式', 'top');
+      await navigator.share({ files: [file], title: '業績分析報告' });
+      showGlobalToast('✅ 分享成功！');
+      return;
+    }
+ 
+    // 5b. 桌機 Fallback → 直接下載 PNG
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    showGlobalToast('✅ 圖片已下載至裝置');
+ 
+  } catch(e) {
+    // 使用者主動取消分享不顯示錯誤
+    if (e.name !== 'AbortError') {
+      showGlobalToast('⚠️ 分享失敗，請重試');
+    }
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '📸 儲存並分享';
+  }
+}
+ 
+// ── 動態載入 html2canvas（只載入一次）──
+function _loadHtml2Canvas() {
+  return new Promise((resolve, reject) => {
+    if (window.html2canvas) { resolve(); return; }
+    const s   = document.createElement('script');
+    s.src     = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload  = resolve;
+    s.onerror = () => reject(new Error('html2canvas 載入失敗，請確認網路連線'));
+    document.head.appendChild(s);
+  });
 }
 </script>
 </body>
