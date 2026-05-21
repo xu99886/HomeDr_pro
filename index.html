@@ -1483,15 +1483,15 @@
       <div class="form-group" style="flex:1;margin-bottom:0;"><label class="form-label">性質</label><select id="orderType" class="form-control" onchange="onOrderTypeChange()"><option value="回購">回購</option><option value="單位早會">單位早會</option><option value="處經理會議">處經理會議</option><option value="營管場">營管場</option><option value="區部場">區部場</option></select></div>
       <div class="form-group" style="width:80px;margin-bottom:0;"><label class="form-label">單位人力</label><input type="number" id="manpower" class="form-control" placeholder="—" min="0" inputmode="numeric"></div>
     </div>
-    <div class="form-group" ><label class="form-label">收件人<span class="required-mark">*</span></label><input type="text" id="customerName" class="form-control allow-select" placeholder="收件人姓名" oninput="clearFieldError(this)"></div>
+    <div class="form-group"><label class="form-label">訂購人/寄件人<span class="required-mark">*</span></label><input type="text" id="senderName" class="form-control allow-select" placeholder="訂購人/寄件人姓名" oninput="clearFieldError(this)"></div>
     <div class="form-group">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-        <label class="form-label" style="margin-bottom:0;">訂購人/寄件人</label>
-        <label style="font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;">
-          <input type="checkbox" id="syncSender" onclick="syncSenderField()"> 與收件人相同
+        <label class="form-label" style="margin-bottom:0;">收件人</label>
+        <label style="font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="syncSender" onclick="syncSenderField()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"> 與訂購人/寄件人相同
         </label>
       </div>
-      <input type="text" id="senderName" class="form-control allow-select" placeholder="訂購人姓名">
+      <input type="text" id="customerName" class="form-control allow-select" placeholder="收件人姓名" oninput="clearFieldError(this)">
     </div>
     <div class="form-group"><label class="form-label">送貨地址<span class="required-mark">*</span></label><input type="text" id="shippingAddress" class="form-control allow-select" placeholder="送貨地址" autocomplete="off" oninput="clearFieldError(this)"></div>
     <div class="form-group"><label class="form-label">連絡電話<span class="required-mark">*</span></label><input type="tel" id="contactPhone" class="form-control allow-select" placeholder="聯絡電話" maxlength="10" inputmode="numeric" oninput="clearFieldError(this)"></div>
@@ -2015,11 +2015,11 @@ document.getElementById('sideMenu').addEventListener('touchend', function(e) {
 // ─── 寄件人同步 ──────────────────────────────────────────
 function syncSenderField() {
   if (document.getElementById('syncSender').checked)
-    document.getElementById('senderName').value = document.getElementById('customerName').value;
+    document.getElementById('customerName').value = document.getElementById('senderName').value;
 }
-document.getElementById('customerName').addEventListener('input', function() {
+document.getElementById('senderName').addEventListener('input', function() {
   if (document.getElementById('syncSender').checked)
-    document.getElementById('senderName').value = this.value;
+    document.getElementById('customerName').value = this.value;
 });
 
 // ─── 側邊選單控制 ─────────────────────────────────────────
@@ -3829,7 +3829,7 @@ function doClrAll(){
   const ot=document.getElementById('orderType');if(ot)ot.value='回購';
   const mp=document.getElementById('manpower');if(mp)mp.value=1;
   // ✅ 清空時一併移除所有必填欄位的紅框提示
-  ['unitCode','unitName','platformOrderNo','customerName','shippingAddress','contactPhone']
+  ['unitCode','unitName','platformOrderNo','senderName','shippingAddress','contactPhone']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('field-error');});
   const sn=document.getElementById('salesName');if(sn)sn.value='王惠宣'; // ✅ 清空後回到預設
   closeConfirm();showGlobalToast('✨ 清單已清空');renderAll();
@@ -3915,7 +3915,7 @@ async function handleSync() {
   //    → 不強制跳轉，只彈窗提示 + 保留紅框，用戶自行回客戶頁補填
   const REQUIRED_FIELDS = [
     { id: 'platformOrderNo', label: '平台訂單號碼' },
-    { id: 'customerName',    label: '收件人姓名' },
+    { id: 'senderName',      label: '訂購人/寄件人姓名' },
   ];
   // 先清除所有舊紅框，再重新判斷
   REQUIRED_FIELDS.forEach(f => document.getElementById(f.id).classList.remove('field-error'));
@@ -4438,255 +4438,337 @@ function _loadChartJS(callback) {
 function _renderAnalytics(data) {
   const s    = data.summary;
   const body = document.getElementById('analysisBody');
- 
-  // 數字格式化：≥1萬顯示「X.X萬」，否則千分位
-  const fmt = n =>
-    n >= 10000 ? (n / 10000).toFixed(1) + '萬' : n.toLocaleString();
- 
-  const periodLabel = {
-    thisMonth: '本月', lastMonth: '上月', all: '全部'
-  }[data.period] || '';
- 
-  // ── 警示 / 提示框 ──
+  const fmt  = n => n >= 10000 ? (n/10000).toFixed(1)+'萬' : n.toLocaleString();
+  const fmtAmt = n => n > 0 ? fmt(n)+'元' : '-';
+  const periodLabel = {thisMonth:'本月',lastMonth:'上月',all:'全部'}[data.period]||'';
+
+  // ── 警示框 ──
   let alertBoxes = '';
-  if (s.top3Concentration >= 50) {
-    alertBoxes += `
-      <div class="analysis-alert-box red">
-        ⚠️ 前三名客戶佔業績 <strong>${s.top3Concentration}%</strong>，
-        集中度偏高，建議積極開發新客戶以分散風險。
-      </div>`;
-  }
-  if (s.warningCustomers + s.lostCustomers > 0) {
-    alertBoxes += `
-      <div class="analysis-alert-box yellow">
-        ⏰ 待追蹤 <strong>${s.warningCustomers}</strong> 人（61-90天未購買）、
-        流失警戒 <strong>${s.lostCustomers}</strong> 人（超過90天），
-        建議優先主動聯繫。
-      </div>`;
-  }
-  if (s.repurchaseRate >= 25) {
-    alertBoxes += `
-      <div class="analysis-alert-box green">
-        ✅ 回購率 ${s.repurchaseRate}%，客戶黏著度表現良好，繼續維持！
-      </div>`;
-  }
- 
-  // ── 客戶清單列 ──
+  if (s.top3Concentration >= 50)
+    alertBoxes += `<div class="analysis-alert-box red">⚠️ 前三名客戶佔業績 <strong>${s.top3Concentration}%</strong>，集中度偏高，建議積極開發新客戶分散風險。</div>`;
+  if (s.warningCustomers+s.lostCustomers > 0)
+    alertBoxes += `<div class="analysis-alert-box yellow">⏰ 待追蹤 <strong>${s.warningCustomers}</strong> 人（61-90天），流失警戒 <strong>${s.lostCustomers}</strong> 人（>90天）。</div>`;
+  if (s.repurchaseRate >= 25)
+    alertBoxes += `<div class="analysis-alert-box green">✅ 回購率 ${s.repurchaseRate}%，客戶黏著度良好，繼續維持！</div>`;
+
+  // ── 當期客戶清單 rows ──
   const custRows = data.customerList.map(c => {
-    const dotColor  = c.status === 'active'  ? '#1D9E75'
-                    : c.status === 'warning' ? '#EF9F27'
-                    :                         '#E24B4A';
-    const daysColor = c.daysSince > 90 ? '#E24B4A'
-                    : c.daysSince > 60 ? '#EF9F27'
-                    : 'var(--muted)';
-    return `
-      <tr>
-        <td>
-          <span class="analysis-status-dot" style="background:${dotColor};"></span>
-          ${c.name}
-        </td>
-        <td style="color:var(--muted);font-size:11px;">${c.lastDateStr}</td>
-        <td style="color:${daysColor};">${c.daysSince}天</td>
-        <td>${fmt(c.totalAmt)}</td>
-      </tr>`;
+    const dot = c.status==='active'?'#1D9E75':c.status==='warning'?'#EF9F27':'#E24B4A';
+    const dc  = c.daysSince>90?'#E24B4A':c.daysSince>60?'#EF9F27':'var(--muted)';
+    return `<tr>
+      <td><span class="analysis-status-dot" style="background:${dot};"></span>${c.name}</td>
+      <td style="color:var(--muted);font-size:11px;">${c.lastDateStr}</td>
+      <td style="color:${dc};">${c.daysSince}天</td>
+      <td>${fmt(c.totalAmt)}</td></tr>`;
   }).join('');
- 
-  // ── 品項圖高度（依品項數量動態調整）──
-  const prodChartHeight = Math.min(data.products.length, 8) * 26 + 20;
- 
-  // ── 組合完整 HTML ──
+
+  // ── 行動清單 rows ──
+  const actionRows = data.actionList.length > 0
+    ? data.actionList.map(c => {
+        const bg  = c.status==='lost'?'rgba(226,75,74,0.07)':'rgba(239,159,39,0.07)';
+        const clr = c.status==='lost'?'#E24B4A':'#EF9F27';
+        return `<tr style="background:${bg};">
+          <td><span class="analysis-status-dot" style="background:${clr};"></span><strong>${c.name}</strong></td>
+          <td style="color:var(--muted);font-size:11px;">${c.unitName||'-'}</td>
+          <td style="color:${clr};font-weight:700;">${c.daysSince}天</td>
+          <td style="font-weight:700;">${fmtAmt(c.lastAmt)}</td></tr>`;
+      }).join('')
+    : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">🎉 目前沒有需要追蹤的客戶</td></tr>`;
+
+// ── 熱銷品項 CSS 條狀列表 ──
+  const maxQtyHot = Math.max(...data.products.map(p=>p.qty||0), 1);
+  const hotRows = data.products.map((p, i) => {
+    const barW   = Math.max(2, Math.round((p.qty||0) / maxQtyHot * 100));
+    const medal  = ['🥇','🥈','🥉'][i] || '<span style="font-size:11px;font-weight:600;color:var(--muted);">' + (i+1) + '</span>';
+    const amtStr = p.amount >= 10000
+      ? (p.amount/10000).toFixed(1)+'萬'
+      : p.amount.toLocaleString()+'元';
+    const bar = '<div style="width:' + barW + '%;height:100%;background:linear-gradient(90deg,#185FA5,#2E86C1);border-radius:4px;transition:width .5s ease;"></div>';
+    return (
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
+        '<div style="width:22px;text-align:center;flex-shrink:0;font-size:14px;">' + medal + '</div>' +
+        '<div style="width:90px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div>' +
+        '<div style="flex:1;min-width:30px;height:8px;background:rgba(128,128,128,0.12);border-radius:4px;overflow:hidden;">' + bar + '</div>' +
+        '<div style="width:44px;text-align:right;font-size:13px;font-weight:800;color:var(--text);flex-shrink:0;">' + (p.qty||0) + '</div>' +
+        '<div style="width:52px;text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;">' + amtStr + '</div>' +
+      '</div>'
+    );
+  }).join('');
+// ── 冷宮品項 rows ──
+  const maxQty15 = Math.max(...data.coldProducts.map(p=>p.qty15||0), 1);
+  const coldRows = data.coldProducts.map(p => {
+    const clr    = 'linear-gradient(90deg,#EF9F27,#F39C12)';
+    const barW   = Math.max(2, Math.round((p.qty15||0)/maxQty15*100));
+    const amtStr = p.isZero ? '—' : (p.amt15>=10000?(p.amt15/10000).toFixed(1)+'萬':p.amt15.toLocaleString()+'元');
+    const qtyStr = p.isZero ? '—' : String(p.qty15||0);
+    const barOrZero = p.isZero
+      ? '<span style="background:#E24B4A;color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;">零銷售</span>'
+      : '<div style="flex:1;min-width:30px;height:8px;background:rgba(128,128,128,0.12);border-radius:4px;overflow:hidden;"><div style="width:' + barW + '%;height:100%;background:' + clr + ';border-radius:4px;transition:width .5s ease;"></div></div>';
+    return (
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
+        '<div style="width:120px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div>' +
+        '<div style="flex:1;min-width:30px;display:flex;align-items:center;">' + barOrZero + '</div>' +
+        '<div style="width:44px;text-align:right;font-size:13px;font-weight:800;color:' + (p.isZero?'#E24B4A':'var(--text)') + ';flex-shrink:0;">' + qtyStr + '</div>' +
+        '<div style="width:52px;text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;">' + amtStr + '</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  const firstPurchaseH = Math.min(data.firstPurchaseRanking.length,8)*27+20;
   body.innerHTML = `
- 
+
+    <!-- ══ 區塊一：本期業績概覽 ══ -->
     <div class="analysis-section-label">${periodLabel} 業績概覽</div>
- 
-    <!-- KPI 六格 -->
     <div class="analysis-kpi-grid">
- 
       <div class="analysis-kpi-card">
         <div class="analysis-kpi-label">總銷售額</div>
         <div class="analysis-kpi-value">${fmt(s.totalRevenue)}</div>
         <div class="analysis-kpi-sub">當期</div>
       </div>
- 
       <div class="analysis-kpi-card">
         <div class="analysis-kpi-label">客戶總數</div>
-        <div class="analysis-kpi-value">
-          ${s.totalCustomers}<span class="analysis-kpi-unit"> 人</span>
-        </div>
+        <div class="analysis-kpi-value">${s.totalCustomers}<span class="analysis-kpi-unit"> 人</span></div>
         <div class="analysis-kpi-sub">當期</div>
       </div>
- 
-      <div class="analysis-kpi-card ${s.lostCustomers > 0 || s.warningCustomers > 0 ? 'alert' : 'good'}">
+      <div class="analysis-kpi-card ${s.lostCustomers>0||s.warningCustomers>0?'alert':'good'}">
         <div class="analysis-kpi-label">活躍客戶</div>
-        <div class="analysis-kpi-value">
-          ${s.activeCustomers}<span class="analysis-kpi-unit"> 人</span>
-        </div>
-        <div class="analysis-kpi-sub">全史${s.allTotalCustomers}人中 ≤60天</div>
+        <div class="analysis-kpi-value">${s.activeCustomers}<span class="analysis-kpi-unit"> 人</span></div>
+        <div class="analysis-kpi-sub">全史${s.allTotalCustomers}人 ≤60天</div>
       </div>
- 
-      <div class="analysis-kpi-card ${s.repurchaseRate < 20 ? 'alert' : 'good'}">
+      <div class="analysis-kpi-card ${s.repurchaseRate<20?'alert':'good'}">
         <div class="analysis-kpi-label">回購率</div>
-        <div class="analysis-kpi-value">
-          ${s.repurchaseRate}<span class="analysis-kpi-unit">%</span>
-        </div>
+        <div class="analysis-kpi-value">${s.repurchaseRate}<span class="analysis-kpi-unit">%</span></div>
         <div class="analysis-kpi-sub">歷史客戶曾回購</div>
       </div>
- 
-      <div class="analysis-kpi-card ${s.retentionRate < 25 ? 'alert' : 'good'}">
+      <div class="analysis-kpi-card ${s.retentionRate<25?'alert':'good'}">
         <div class="analysis-kpi-label">留存率</div>
-        <div class="analysis-kpi-value">
-          ${s.retentionRate}<span class="analysis-kpi-unit">%</span>
-        </div>
+        <div class="analysis-kpi-value">${s.retentionRate}<span class="analysis-kpi-unit">%</span></div>
         <div class="analysis-kpi-sub">最近兩月留存</div>
       </div>
- 
       <div class="analysis-kpi-card">
         <div class="analysis-kpi-label">平均客單價</div>
         <div class="analysis-kpi-value">${fmt(s.avgOrderValue)}</div>
         <div class="analysis-kpi-sub">當期每次購買</div>
       </div>
- 
     </div>
- 
     ${alertBoxes}
- 
-    <!-- 月份趨勢圖 -->
-    <div class="analysis-chart-card" id="analysisTrendCard">
-      <div class="analysis-chart-title">📈 月份業績趨勢</div>
-      <div class="analysis-chart-sub">早會（藍）vs 回購（綠）· 單位：萬元</div>
-      <div style="position:relative;height:170px;">
-        <canvas id="chartTrend"></canvas>
+
+    <!-- ══ 區塊二：客戶健康儀表板 ══ -->
+    <div class="analysis-section-label" style="margin-top:16px;">客戶健康儀表板</div>
+
+    <!-- 三色狀態分布 -->
+    <div class="analysis-chart-card" style="margin-bottom:10px;">
+      <div class="analysis-chart-title">📊 客戶狀態分布</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">
+        <div style="text-align:center;padding:12px 6px;background:#EAF3DE;border-radius:var(--radius-md);">
+          <div style="font-size:26px;font-weight:900;color:#1D9E75;line-height:1;">${s.activeCustomers}</div>
+          <div style="font-size:10px;color:#27500A;margin-top:4px;font-weight:700;">🟢 活躍</div>
+          <div style="font-size:10px;color:#27500A;">≤60天</div>
+        </div>
+        <div style="text-align:center;padding:12px 6px;background:#FAEEDA;border-radius:var(--radius-md);">
+          <div style="font-size:26px;font-weight:900;color:#EF9F27;line-height:1;">${s.warningCustomers}</div>
+          <div style="font-size:10px;color:#633806;margin-top:4px;font-weight:700;">🟡 待追蹤</div>
+          <div style="font-size:10px;color:#633806;">61-90天</div>
+        </div>
+        <div style="text-align:center;padding:12px 6px;background:#FCEBEB;border-radius:var(--radius-md);">
+          <div style="font-size:26px;font-weight:900;color:#E24B4A;line-height:1;">${s.lostCustomers}</div>
+          <div style="font-size:10px;color:#791F1F;margin-top:4px;font-weight:700;">🔴 流失警戒</div>
+          <div style="font-size:10px;color:#791F1F;">>90天</div>
+        </div>
       </div>
     </div>
- 
-    <!-- 品項排行圖 -->
+
+    <!-- 忠誠型 vs 探索型 ＋ 平均回購週期 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div class="analysis-chart-card">
+        <div class="analysis-chart-title">🧬 客戶類型</div>
+        <div style="margin:10px 0 6px;">
+          <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(128,128,128,0.15);">
+            <div style="width:${s.loyalPct}%;background:#185FA5;display:flex;align-items:center;justify-content:center;">
+              ${s.loyalPct>18?`<span style="color:#fff;font-size:10px;font-weight:700;">忠誠</span>`:''}
+            </div>
+            <div style="flex:1;background:#1D9E75;display:flex;align-items:center;justify-content:center;">
+              ${s.explorerPct>18?`<span style="color:#fff;font-size:10px;font-weight:700;">探索</span>`:''}
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span><span style="color:#185FA5;font-weight:700;">忠誠型</span> ${s.loyalPct}%</span>
+            <span>${s.loyalCount} 人</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:2px;">
+            <span><span style="color:#1D9E75;font-weight:700;">探索型</span> ${s.explorerPct}%</span>
+            <span>${s.explorerCount} 人</span>
+          </div>
+        </div>
+      </div>
+      <div class="analysis-chart-card">
+        <div class="analysis-chart-title">🔄 平均回購週期</div>
+        <div style="text-align:center;padding:10px 0 6px;">
+          <div style="font-size:34px;font-weight:900;color:var(--primary);line-height:1;">${s.avgRepurchaseDays}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px;">天 / 次</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.4;">有回購記錄客戶<br>的平均間隔</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新客 vs 流失淨變化（本月/上月才顯示）-->
+    ${data.period !== 'all' ? `
+    <div class="analysis-chart-card" style="margin-bottom:10px;">
+      <div class="analysis-chart-title">📈 ${periodLabel}客戶流動</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;text-align:center;">
+        <div style="padding:8px 0;">
+          <div style="font-size:26px;font-weight:900;color:#1D9E75;">+${s.newCustomerCount}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">本期新客</div>
+        </div>
+        <div style="padding:8px 0;">
+          <div style="font-size:26px;font-weight:900;color:#E24B4A;">-${s.lostThisPeriod}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">新增流失</div>
+        </div>
+        <div style="padding:8px 0;border-left:1px solid var(--border);">
+          <div style="font-size:26px;font-weight:900;color:${s.netChange>=0?'#1D9E75':'#E24B4A'};">${s.netChange>=0?'+':''}${s.netChange}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">淨增減</div>
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- 業績集中度 -->
+    <div class="analysis-chart-card" style="margin-bottom:10px;">
+      <div class="analysis-chart-title">💰 業績集中度</div>
+      <div class="analysis-chart-sub">前三名客戶佔總業績的比例</div>
+      <div style="height:14px;border-radius:7px;overflow:hidden;display:flex;margin:8px 0;">
+        <div style="width:${s.top3Concentration}%;background:#E24B4A;transition:width .5s;"></div>
+        <div style="flex:1;background:#1D9E75;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px;">
+        <span style="color:#E24B4A;font-weight:700;">前三名 ${s.top3Concentration}%</span>
+        <span style="color:#1D9E75;font-weight:700;">其他 ${Math.round((100-s.top3Concentration)*10)/10}%</span>
+      </div>
+      ${s.top3Details.map((c,i)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;${i<2?'border-bottom:1px solid var(--border);':''}font-size:12px;">
+          <span>${['🥇','🥈','🥉'][i]} ${c.name}</span>
+          <span><strong>${fmt(c.amount)}</strong> <span style="color:var(--muted);">(${c.pct}%)</span></span>
+        </div>`).join('')}
+    </div>
+
+    <!-- ══ 區塊三：品項戰略分析 ══ -->
+    <div class="analysis-section-label" style="margin-top:16px;">品項戰略分析</div>
+
+    <!-- 熱銷排行 -->
     <div class="analysis-chart-card" id="analyticsProductCard">
-      <div class="analysis-chart-title">🏆 品項銷售排行 TOP 8</div>
-      <div class="analysis-chart-sub">${periodLabel}銷售額 · 萬元</div>
-      <div style="position:relative;height:${prodChartHeight}px;">
-        <canvas id="chartProduct"></canvas>
+      <div class="analysis-chart-title">🏆 熱銷排行 TOP 8</div>
+      <div class="analysis-chart-sub">${periodLabel}銷售量 · <span style="font-weight:700;color:var(--text);">數量（盒）</span>為主 · 金額（元）為輔</div>
+      <div style="padding-top:4px;">${hotRows}</div>
+    </div>
+
+    <!-- 冷宮排行 -->
+    <div class="analysis-chart-card">
+      <div class="analysis-chart-title">🧊 冷宮排行 FLOP 5</div>
+      <div class="analysis-chart-sub">近15天銷售量最低 · <span style="font-weight:700;color:var(--text);">數量（盒）</span>為主 · <span style="color:#E24B4A;font-weight:700;">紅色＝零銷售</span></div>
+      <div style="padding-top:4px;">${coldRows}</div>
+    </div>
+
+    <!-- 首購品項排行 -->
+    <div class="analysis-chart-card" id="analyticsFirstPurchaseCard">
+      <div class="analysis-chart-title">🚪 首購品項排行</div>
+      <div class="analysis-chart-sub">新客第一次購買的品項 · 人數</div>
+      <div style="position:relative;height:${firstPurchaseH}px;"><canvas id="chartFirstPurchase"></canvas></div>
+    </div>
+
+    <!-- ══ 區塊四：立即行動清單 ══ -->
+    <div class="analysis-section-label" style="margin-top:16px;">立即行動清單</div>
+    <div class="analysis-chart-card">
+      <div class="analysis-chart-title">📞 超過60天未回購</div>
+      <div class="analysis-chart-sub" style="margin-bottom:8px;">
+        <span style="color:#E24B4A;">🔴 >90天優先</span>
+        <span style="color:#EF9F27;margin-left:10px;">🟡 61-90天次之</span>
+        <span style="color:var(--muted);margin-left:10px;">同色按金額排序</span>
+      </div>
+      <div style="max-height:300px;overflow-y:auto;border-radius:var(--radius-sm);border:1px solid var(--border);">
+        <table class="analysis-customer-table">
+          <thead>
+            <tr><th>客戶</th><th>通訊處</th><th>距今</th><th>上次金額</th></tr>
+          </thead>
+          <tbody>${actionRows}</tbody>
+        </table>
       </div>
     </div>
- 
-    <!-- 客戶健康清單 -->
+
+    <!-- ══ 區塊五：月份業績趨勢 ══ -->
+    <div class="analysis-section-label" style="margin-top:16px;">月份業績趨勢</div>
+    <div class="analysis-chart-card" id="analysisTrendCard">
+      <div class="analysis-chart-title">📈 月份業績趨勢（全部歷史）</div>
+      <div class="analysis-chart-sub" style="margin-bottom:6px;">
+        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="width:10px;height:10px;background:#185FA5;border-radius:2px;display:inline-block;"></span>早會/場</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#1D9E75;border-radius:2px;display:inline-block;"></span>回購</span>
+      </div>
+      <div style="position:relative;height:170px;"><canvas id="chartTrend"></canvas></div>
+    </div>
+
+    <!-- 客戶完整清單 -->
+    <div class="analysis-section-label" style="margin-top:16px;">客戶完整清單（當期）</div>
     <div class="analysis-chart-card" id="analyticsCustomerCard">
       <div class="analysis-chart-title">👥 客戶健康清單</div>
       <div class="analysis-chart-sub" style="margin-bottom:8px;">
         <span class="analysis-status-dot" style="background:#1D9E75;"></span>活躍（≤60天）
-        <span class="analysis-status-dot"
-              style="background:#EF9F27;margin-left:8px;"></span>待追蹤（61-90天）
-        <span class="analysis-status-dot"
-              style="background:#E24B4A;margin-left:8px;"></span>流失警戒（>90天）
+        <span class="analysis-status-dot" style="background:#EF9F27;margin-left:8px;"></span>待追蹤（61-90天）
+        <span class="analysis-status-dot" style="background:#E24B4A;margin-left:8px;"></span>流失警戒（>90天）
       </div>
-      <div style="max-height:300px;overflow-y:auto;
-                  border-radius:var(--radius-sm);border:1px solid var(--border);">
+      <div style="max-height:300px;overflow-y:auto;border-radius:var(--radius-sm);border:1px solid var(--border);">
         <table class="analysis-customer-table">
-          <thead>
-            <tr>
-              <th>客戶</th>
-              <th>最後購買</th>
-              <th>距今</th>
-              <th>金額</th>
-            </tr>
-          </thead>
+          <thead><tr><th>客戶</th><th>最後購買</th><th>距今</th><th>金額</th></tr></thead>
           <tbody>${custRows}</tbody>
         </table>
       </div>
     </div>
- 
+
     <div style="height:8px;"></div>
   `;
- 
-  // ── 顯示分享按鈕 ──
+
   document.getElementById('analyticsShareBtn').style.display = '';
- 
-  // ── 渲染月份趨勢圖 ──
+
+  // ── 月份趨勢圖 ──
   const trendCanvas = document.getElementById('chartTrend');
   if (trendCanvas && data.monthlyTrend.length > 0) {
-    const ct = new Chart(trendCanvas, {
-      type: 'bar',
-      data: {
-        labels: data.monthlyTrend.map(d =>
-          d.label.replace(/^\d{4}\//, '') + '月'
-        ),
-        datasets: [
-          {
-            label: '早會/場',
-            data: data.monthlyTrend.map(d => +(d.meeting    / 10000).toFixed(1)),
-            backgroundColor: '#185FA5',
-            borderRadius: 3
-          },
-          {
-            label: '回購',
-            data: data.monthlyTrend.map(d => +(d.repurchase / 10000).toFixed(1)),
-            backgroundColor: '#1D9E75',
-            borderRadius: 3
-          }
+    analyticsCharts.push(new Chart(trendCanvas, {
+      type:'bar',
+      data:{
+        labels: data.monthlyTrend.map(d=>d.label.replace(/^\d{4}\//,'')+'月'),
+        datasets:[
+          {label:'早會/場', data:data.monthlyTrend.map(d=>+(d.meeting/10000).toFixed(1)),    backgroundColor:'#185FA5',borderRadius:3},
+          {label:'回購',    data:data.monthlyTrend.map(d=>+(d.repurchase/10000).toFixed(1)), backgroundColor:'#1D9E75',borderRadius:3}
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true, position: 'top',
-            labels: { boxWidth: 10, font: { size: 11 } }
-          },
-          tooltip: {
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '萬' }
-          }
-        },
-        scales: {
-          x: {
-            stacked: true,
-            grid: { display: false },
-            ticks: { font: { size: 10 } }
-          },
-          y: {
-            stacked: true,
-            ticks: { callback: v => v + '萬', font: { size: 10 } },
-            grid:  { color: 'rgba(128,128,128,0.1)' }
-          }
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw+'萬'}}},
+        scales:{
+          x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},
+          y:{stacked:true,ticks:{callback:v=>v+'萬',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}}
         }
       }
-    });
-    analyticsCharts.push(ct);
+    }));
   }
- 
-  // ── 渲染品項排行圖 ──
-  const prodCanvas = document.getElementById('chartProduct');
-  if (prodCanvas && data.products.length > 0) {
-    const cp = new Chart(prodCanvas, {
-      type: 'bar',
-      data: {
-        labels: data.products.map(p => p.name),
-        datasets: [{
-          data: data.products.map(p => +(p.amount / 10000).toFixed(1)),
-          backgroundColor: '#185FA5',
-          borderRadius: 3
-        }]
+
+  // ── 首購品項圖 ──
+  const firstCanvas = document.getElementById('chartFirstPurchase');
+  if (firstCanvas && data.firstPurchaseRanking.length > 0) {
+    analyticsCharts.push(new Chart(firstCanvas, {
+      type:'bar',
+      data:{
+        labels:data.firstPurchaseRanking.map(p=>p.name),
+        datasets:[{data:data.firstPurchaseRanking.map(p=>p.count),backgroundColor:'#534AB7',borderRadius:3}]
       },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ctx.raw + '萬' } }
-        },
-        scales: {
-          x: {
-            ticks: { callback: v => v + '萬', font: { size: 10 } },
-            grid:  { color: 'rgba(128,128,128,0.1)' }
-          },
-          y: {
-            grid:  { display: false },
-            ticks: { font: { size: 11 } }
-          }
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'人'}}},
+        scales:{
+          x:{ticks:{callback:v=>v+'人',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}},
+          y:{grid:{display:false},ticks:{font:{size:11}}}
         }
       }
-    });
-    analyticsCharts.push(cp);
+    }));
   }
 }
  
