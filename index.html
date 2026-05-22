@@ -762,32 +762,7 @@
       #eligStartDate { display: none !important; }
       #scheduleDateDisplay { display: none !important; }
     }
-    /* ✅ 桌機 Tooltip（hover 裝置才顯示，0.5 秒延遲） */
-    @media (hover: hover) {
-      .side-menu-content a[data-tooltip] { position: relative; }
-      .side-menu-content a[data-tooltip]::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        left: calc(100% + 12px);
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(0,0,0,0.85);
-        color: #fff;
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        white-space: nowrap;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        transition-delay: 0s;
-        z-index: 10000;
-      }
-      .side-menu-content a[data-tooltip]:hover::after {
-        opacity: 1;
-        transition-delay: 0.5s; /* 0.5 秒後才顯示 */
-      }
-    }
+    /* ✅ 桌機 Tooltip → 改由 JS position:fixed 實作（避免 overflow-y 裁切）*/
     /* 加入按鈕（對齊輸入框高度） */
     .elig-add-btn {
       flex-shrink: 0; padding: 0 16px;
@@ -1896,7 +1871,24 @@
 
     <div class="analysis-header">
       <h2>📒 業績分析</h2>
-      <div class="analysis-period-tabs">
+      <!-- 手動篩選日期 -->
+      <div style="padding:10px 0 6px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;">
+          <input type="checkbox" id="analyticsCustomToggle" onchange="toggleAnalyticsCustom()"
+                 style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);">
+          手動篩選日期
+        </label>
+      </div>
+      <div id="analyticsCustomInputRow" style="display:none;align-items:center;gap:8px;padding:4px 0 12px;box-sizing:border-box;width:100%;">
+        <input type="text" id="analyticsStart" inputmode="numeric" placeholder="開始 MMDD" maxlength="5"
+               autocomplete="off" oninput="autoFormatAnalyticsDate(this,'start')"
+               style="flex:1;min-width:0;padding:9px 4px;border-radius:var(--radius-sm);border:1.5px solid rgba(255,255,255,0.4);background:transparent;color:#fff;font-size:13px;font-weight:700;text-align:center;outline:none;box-sizing:border-box;">
+        <span style="color:rgba(255,255,255,0.6);font-size:14px;flex-shrink:0;">～</span>
+        <input type="text" id="analyticsEnd" inputmode="numeric" placeholder="結束 MMDD" maxlength="5"
+               autocomplete="off" oninput="autoFormatAnalyticsDate(this,'end')"
+               style="flex:1;min-width:0;padding:9px 4px;border-radius:var(--radius-sm);border:1.5px solid rgba(255,255,255,0.4);background:transparent;color:#fff;font-size:13px;font-weight:700;text-align:center;outline:none;box-sizing:border-box;">
+      </div>
+      <div class="analysis-period-tabs" style="margin-top:4px;">
         <button class="analysis-tab active" id="tabThisMonth"
                 onclick="switchAnalysisPeriod('thisMonth')">本月</button>
         <button class="analysis-tab" id="tabLastMonth"
@@ -1912,7 +1904,7 @@
     <div class="analysis-bottom-bar">
       <button class="btn-secondary" onclick="closeSalesAnalysis()">關閉</button>
       <button class="btn-primary" id="analyticsShareBtn"
-              onclick="shareAnalytics()" style="display:none;">📸 儲存並分享</button>
+              onclick="shareAnalytics()" style="display:none;">📸 儲存</button>
     </div>
 
   </div>
@@ -2039,6 +2031,8 @@ function preloadEligibilityCache() {
 function forceCloseOverlay() {
   document.getElementById('sideMenu').classList.remove('active');
   document.getElementById('menuOverlay').classList.remove('active');
+  // 選單關閉時隱藏 tooltip（透過 IIFE 暴露的清除函數，確保 closure 內的 timer 也被清除）
+  if (window._clearSideMenuTip) window._clearSideMenuTip();
 }
 
 // ─── 清除業績 ─────────────────────────────────────────────
@@ -4224,12 +4218,21 @@ function renderFileDownloadList(files) {
        </p>` : '';
   list.innerHTML = iosHint + files.map((f, i) => {
     const shortName = getShortFileName(f.name, f.mimeType);
+    // 拆分前綴（出貨單 / DO貨）與客戶名稱（溫雅竹.pdf）
+    const ulIdx  = shortName.indexOf('_');
+    const prefix = ulIdx !== -1 ? shortName.slice(0, ulIdx) : shortName;
+    const rest   = ulIdx !== -1 ? shortName.slice(ulIdx + 1) : '';
+    const timeStr = f.modifiedTime || '';
     // iOS 不顯示 checkbox（改用個別下載按鈕）
     const checkboxHtml = isIOS ? '' :
       `<input type="checkbox" class="file-dl-checkbox file-check-item" data-idx="${i}">`;
     return `<div class="file-dl-row">
       ${checkboxHtml}
-      <span class="file-dl-name">${shortName}</span>
+      <span class="file-dl-name" style="display:flex;align-items:center;gap:8px;">
+        <span style="width:3.5em;flex-shrink:0;">${prefix}</span>
+        <span style="flex:1;">${rest}</span>
+      </span>
+      <span style="width:36px;text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;">${timeStr}</span>
       <button class="file-dl-btn-single" onclick="downloadOneFile(${i})">下載</button>
     </div>`;
   }).join('');
@@ -4354,15 +4357,89 @@ let analysisPeriod  = 'thisMonth'; // 目前選中的期間
 let analyticsData   = null;        // GAS 回傳的完整資料
 let analyticsCharts = [];          // Chart.js 實例清單（關閉時 destroy，避免記憶體洩漏）
  
+// ── 業績分析自訂日期 ──
+function toggleAnalyticsCustom() {
+  const tog = document.getElementById('analyticsCustomToggle');
+  const row = document.getElementById('analyticsCustomInputRow');
+  row.style.display = tog.checked ? 'flex' : 'none';
+  if (!tog.checked) {
+    document.getElementById('analyticsStart').value = '';
+    document.getElementById('analyticsEnd').value   = '';
+  }
+}
+
+function autoFormatAnalyticsDate(el, which) {
+  // 用 setTimeout(0) 推遲到瀏覽器處理完按鍵後再格式化
+  // 修正桌面端：oninput 裡直接改 el.value 會讓瀏覽器重複插入最後一個字元
+  setTimeout(function() {
+    let raw = el.value.replace(/\D/g,'');
+    if (raw.length > 4) raw = raw.slice(0,4);
+    let formatted = raw.length > 2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
+    el.value = formatted;
+    if (which==='end' && raw.length===4) applyAnalyticsCustomDate();
+  }, 0);
+}
+
+function applyAnalyticsCustomDate() {
+  const startStr = document.getElementById('analyticsStart').value;
+  const endStr   = document.getElementById('analyticsEnd').value;
+  if (startStr.length < 5 || endStr.length < 5) return; // 尚未填完
+
+  const now = new Date(); now.setHours(0,0,0,0);
+
+  // 解析 MM/DD，判斷跨年邏輯
+  const parseMMDD = (str, refDate) => {
+    const p = str.split('/'); if (p.length!==2) return null;
+    const m = parseInt(p[0])-1, d = parseInt(p[1]);
+    if (isNaN(m)||isNaN(d)||m<0||m>11||d<1||d>31) return null;
+    if (!refDate) {
+      // 開始日：在未來則用去年
+      let dt = new Date(now.getFullYear(), m, d); dt.setHours(0,0,0,0);
+      if (dt > now) dt.setFullYear(now.getFullYear()-1);
+      return dt;
+    } else {
+      // 結束日：若早於開始日則加一年（跨年）
+      let dt = new Date(refDate.getFullYear(), m, d); dt.setHours(0,0,0,0);
+      if (dt < refDate) dt.setFullYear(refDate.getFullYear()+1);
+      return dt;
+    }
+  };
+
+  const startDate = parseMMDD(startStr, null);
+  const endDate   = parseMMDD(endStr, startDate);
+  if (!startDate || !endDate) return;
+
+  // 格式化為 YYYY-MM-DD 傳給 GAS
+  const fmt = dt =>
+    dt.getFullYear() + '-' +
+    String(dt.getMonth()+1).padStart(2,'0') + '-' +
+    String(dt.getDate()).padStart(2,'0');
+
+  // 移除 tab active 樣式
+  ['tabThisMonth','tabLastMonth','tabAll'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+
+  analysisPeriod = 'custom';
+  loadAnalyticsData('custom', fmt(startDate), fmt(endDate));
+}
+
 // ── 開啟分析頁 ──
 function openSalesAnalysis() {
   analysisPeriod = 'thisMonth';
+  // 重設自訂日期狀態
+  const tog = document.getElementById('analyticsCustomToggle');
+  if (tog) { tog.checked = false; }
+  const row = document.getElementById('analyticsCustomInputRow');
+  if (row) { row.style.display = 'none'; }
+  const as = document.getElementById('analyticsStart');
+  const ae = document.getElementById('analyticsEnd');
+  if (as) as.value = ''; if (ae) ae.value = '';
   // 重設 tab 樣式
   ['tabThisMonth', 'tabLastMonth', 'tabAll'].forEach(id =>
     document.getElementById(id).classList.remove('active')
   );
   document.getElementById('tabThisMonth').classList.add('active');
-  // 隱藏分享按鈕，等資料載入完才顯示
   document.getElementById('analyticsShareBtn').style.display = 'none';
   document.getElementById('salesAnalysisOverlay').classList.add('active');
   loadAnalyticsData('thisMonth');
@@ -4378,7 +4455,16 @@ function closeSalesAnalysis() {
  
 // ── 切換期間 Tab ──
 function switchAnalysisPeriod(period) {
-  if (period === analysisPeriod) return; // 同一個 tab 不重複請求
+  // 清除自訂日期狀態
+  const tog = document.getElementById('analyticsCustomToggle');
+  if (tog) { tog.checked = false; }
+  const row = document.getElementById('analyticsCustomInputRow');
+  if (row) { row.style.display = 'none'; }
+  const as = document.getElementById('analyticsStart');
+  const ae = document.getElementById('analyticsEnd');
+  if (as) as.value = ''; if (ae) ae.value = '';
+  // 同一個 tab 且非 custom 不重複請求
+  if (period === analysisPeriod && analysisPeriod !== 'custom') return;
   analysisPeriod = period;
   ['tabThisMonth', 'tabLastMonth', 'tabAll'].forEach(id =>
     document.getElementById(id).classList.remove('active')
@@ -4393,7 +4479,7 @@ function switchAnalysisPeriod(period) {
 }
  
 // ── 向 GAS 請求分析資料 ──
-async function loadAnalyticsData(period) {
+async function loadAnalyticsData(period, customStart, customEnd) {
   const body = document.getElementById('analysisBody');
  
   // 顯示載入動畫
@@ -4410,15 +4496,27 @@ async function loadAnalyticsData(period) {
   analyticsCharts = [];
  
   try {
-    const res = await cloudPost({ action: 'getAnalyticsData', period });
+    const payload = { action: 'getAnalyticsData', period };
+    if (period === 'custom' && customStart && customEnd) {
+      payload.startDate = customStart;
+      payload.endDate   = customEnd;
+    }
+    const res = await cloudPost(payload);
     const r   = await res.json();
     if (!r.success) {
       body.innerHTML = `<div class="analysis-loading">⚠️ ${r.message}</div>`;
       return;
     }
     analyticsData = r;
-    // Chart.js 動態載入後才渲染
-    _loadChartJS(() => _renderAnalytics(r));
+    // Chart.js 動態載入後才渲染，callback 包 try/catch 確保渲染錯誤不會靜默失敗
+    _loadChartJS(() => {
+      try {
+        _renderAnalytics(r);
+      } catch(renderErr) {
+        body.innerHTML = `<div class="analysis-loading">⚠️ 渲染失敗，請重試</div>`;
+        document.getElementById('analyticsShareBtn').style.display = 'none';
+      }
+    });
   } catch(e) {
     body.innerHTML = `<div class="analysis-loading">⚠️ 網路連線異常，請重試</div>`;
   }
@@ -4440,7 +4538,7 @@ function _renderAnalytics(data) {
   const body = document.getElementById('analysisBody');
   const fmt  = n => n >= 10000 ? (n/10000).toFixed(1)+'萬' : n.toLocaleString();
   const fmtAmt = n => n > 0 ? fmt(n)+'元' : '-';
-  const periodLabel = {thisMonth:'本月',lastMonth:'上月',all:'全部'}[data.period]||'';
+  const periodLabel = data.period==='custom' ? (data.customLabel||'自選') : ({thisMonth:'本月',lastMonth:'上月',all:'全部'}[data.period]||'');
 
   // ── 警示框 ──
   let alertBoxes = '';
@@ -4496,8 +4594,8 @@ function _renderAnalytics(data) {
   }).join('');
 // ── 冷宮品項 rows ──
   const maxQty15 = Math.max(...data.coldProducts.map(p=>p.qty15||0), 1);
-  const coldRows = data.coldProducts.map(p => {
-    const clr    = 'linear-gradient(90deg,#EF9F27,#F39C12)';
+  const coldRows = data.coldProducts.map((p, i) => {
+    const clr    = 'linear-gradient(90deg,#E24B4A,#C0392B)';
     const barW   = Math.max(2, Math.round((p.qty15||0)/maxQty15*100));
     const amtStr = p.isZero ? '—' : (p.amt15>=10000?(p.amt15/10000).toFixed(1)+'萬':p.amt15.toLocaleString()+'元');
     const qtyStr = p.isZero ? '—' : String(p.qty15||0);
@@ -4506,7 +4604,8 @@ function _renderAnalytics(data) {
       : '<div style="flex:1;min-width:30px;height:8px;background:rgba(128,128,128,0.12);border-radius:4px;overflow:hidden;"><div style="width:' + barW + '%;height:100%;background:' + clr + ';border-radius:4px;transition:width .5s ease;"></div></div>';
     return (
       '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
-        '<div style="width:120px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div>' +
+        '<div style="width:18px;text-align:center;flex-shrink:0;font-size:11px;font-weight:600;color:var(--muted);">' + (i+1) + '</div>' +
+        '<div style="width:90px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div>' +
         '<div style="flex:1;min-width:30px;display:flex;align-items:center;">' + barOrZero + '</div>' +
         '<div style="width:44px;text-align:right;font-size:13px;font-weight:800;color:' + (p.isZero?'#E24B4A':'var(--text)') + ';flex-shrink:0;">' + qtyStr + '</div>' +
         '<div style="width:52px;text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;">' + amtStr + '</div>' +
@@ -4514,7 +4613,41 @@ function _renderAnalytics(data) {
     );
   }).join('');
 
-  const firstPurchaseH = Math.min(data.firstPurchaseRanking.length,8)*27+20;
+// ── LTV 排名 rows ──
+  const ltvRows = (data.ltvRanking || []).map(function(c, i) {
+    var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="font-size:11px;font-weight:600;color:var(--muted);">'+(i+1)+'</span>';
+    var ltvStr = c.ltv>=10000?(c.ltv/10000).toFixed(1)+'萬':c.ltv.toLocaleString()+'元';
+    return (
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
+        '<div style="width:22px;text-align:center;flex-shrink:0;font-size:14px;">' + medal + '</div>' +
+        '<div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + c.name + '</span>' +
+          '<span style="font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;">' + (c.unitName||'') + '</span>' +
+        '</div>' +
+        '<div style="width:52px;text-align:right;font-size:13px;font-weight:800;color:var(--text);flex-shrink:0;white-space:nowrap;">' + ltvStr + '</div>' +
+        '<div style="width:28px;text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;">' + c.purchaseCount + '次</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  const coldLabel = data.period==='thisMonth' ? '本月' : data.period==='lastMonth' ? '上月' : data.period==='custom' ? (data.customLabel||'自選') : '近90天';
+
+  // ── 首購品項 CSS 條狀列表 ──
+  const maxFirstCount = Math.max(...(data.firstPurchaseRanking||[]).map(p=>p.count), 1);
+  const firstRows = (data.firstPurchaseRanking||[]).map(function(p, i) {
+    var barW = Math.max(2, Math.round(p.count / maxFirstCount * 100));
+    return (
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
+        '<div style="width:18px;text-align:center;flex-shrink:0;font-size:11px;font-weight:600;color:var(--muted);">' + (i+1) + '</div>' +
+        '<div style="width:90px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</div>' +
+        '<div style="flex:1;min-width:30px;height:8px;background:rgba(128,128,128,0.12);border-radius:4px;overflow:hidden;">' +
+          '<div style="width:' + barW + '%;height:100%;background:linear-gradient(90deg,#EF9F27,#E67E22);border-radius:4px;transition:width .5s ease;"></div>' +
+        '</div>' +
+        '<div style="width:44px;text-align:right;font-size:13px;font-weight:800;color:var(--text);flex-shrink:0;">' + p.count + '</div>' +
+      '</div>'
+    );
+  }).join('');
+
   body.innerHTML = `
 
     <!-- ══ 區塊一：本期業績概覽 ══ -->
@@ -4532,8 +4665,8 @@ function _renderAnalytics(data) {
       </div>
       <div class="analysis-kpi-card ${s.lostCustomers>0||s.warningCustomers>0?'alert':'good'}">
         <div class="analysis-kpi-label">活躍客戶</div>
-        <div class="analysis-kpi-value">${s.activeCustomers}<span class="analysis-kpi-unit"> 人</span></div>
-        <div class="analysis-kpi-sub">全史${s.allTotalCustomers}人 ≤60天</div>
+        <div class="analysis-kpi-value">${Math.round(s.activeCustomers/s.allTotalCustomers*1000)/10}<span class="analysis-kpi-unit">%</span></div>
+        <div class="analysis-kpi-sub">全史${s.allTotalCustomers}人基準 ≤60天</div>
       </div>
       <div class="analysis-kpi-card ${s.repurchaseRate<20?'alert':'good'}">
         <div class="analysis-kpi-label">回購率</div>
@@ -4546,9 +4679,9 @@ function _renderAnalytics(data) {
         <div class="analysis-kpi-sub">最近兩月留存</div>
       </div>
       <div class="analysis-kpi-card">
-        <div class="analysis-kpi-label">平均客單價</div>
+        <div class="analysis-kpi-label">平均帶貨額/次</div>
         <div class="analysis-kpi-value">${fmt(s.avgOrderValue)}</div>
-        <div class="analysis-kpi-sub">當期每次購買</div>
+        <div class="analysis-kpi-sub">當期每次到店金額</div>
       </div>
     </div>
     ${alertBoxes}
@@ -4581,7 +4714,7 @@ function _renderAnalytics(data) {
     <!-- 忠誠型 vs 探索型 ＋ 平均回購週期 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div class="analysis-chart-card">
-        <div class="analysis-chart-title">🧬 客戶類型</div>
+        <div class="analysis-chart-title">🧬 客戶選品類型</div>
         <div style="margin:10px 0 6px;">
           <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(128,128,128,0.15);">
             <div style="width:${s.loyalPct}%;background:#185FA5;display:flex;align-items:center;justify-content:center;">
@@ -4604,13 +4737,20 @@ function _renderAnalytics(data) {
         </div>
       </div>
       <div class="analysis-chart-card">
-        <div class="analysis-chart-title">🔄 平均回購週期</div>
+        <div class="analysis-chart-title">💰 平均 LTV</div>
         <div style="text-align:center;padding:10px 0 6px;">
-          <div style="font-size:34px;font-weight:900;color:var(--primary);line-height:1;">${s.avgRepurchaseDays}</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:4px;">天 / 次</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.4;">有回購記錄客戶<br>的平均間隔</div>
+          <div style="font-size:28px;font-weight:900;color:var(--primary);line-height:1;">${fmt(s.avgLTV)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">元 / 人</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.4;">每位客戶平均<br>終身貢獻金額</div>
         </div>
       </div>
+    </div>
+
+    <!-- LTV 排名 TOP 10 -->
+    <div class="analysis-chart-card" style="margin-bottom:10px;">
+      <div class="analysis-chart-title">💎 客戶 LTV 排名 TOP 10</div>
+      <div class="analysis-chart-sub">全史消費總額 · 由高到低 · 排名 · 姓名 · 通訊處 · 金額 · 次數</div>
+      <div style="padding-top:4px;">${ltvRows}</div>
     </div>
 
     <!-- 新客 vs 流失淨變化（本月/上月才顯示）-->
@@ -4647,7 +4787,10 @@ function _renderAnalytics(data) {
       </div>
       ${s.top3Details.map((c,i)=>`
         <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;${i<2?'border-bottom:1px solid var(--border);':''}font-size:12px;">
-          <span>${['🥇','🥈','🥉'][i]} ${c.name}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span>${['🥇','🥈','🥉'][i]} ${c.name}</span>
+            <span style="color:var(--muted);font-size:11px;font-weight:400;">${c.unitName}</span>
+          </span>
           <span><strong>${fmt(c.amount)}</strong> <span style="color:var(--muted);">(${c.pct}%)</span></span>
         </div>`).join('')}
     </div>
@@ -4665,15 +4808,15 @@ function _renderAnalytics(data) {
     <!-- 冷宮排行 -->
     <div class="analysis-chart-card">
       <div class="analysis-chart-title">🧊 冷宮排行 FLOP 5</div>
-      <div class="analysis-chart-sub">近15天銷售量最低 · <span style="font-weight:700;color:var(--text);">數量（盒）</span>為主 · <span style="color:#E24B4A;font-weight:700;">紅色＝零銷售</span></div>
+      <div class="analysis-chart-sub">${coldLabel}銷售量最低 · 數量 · 金額 · <span style="color:#E24B4A;font-weight:700;">紅色＝零銷售</span></div>
       <div style="padding-top:4px;">${coldRows}</div>
     </div>
 
     <!-- 首購品項排行 -->
     <div class="analysis-chart-card" id="analyticsFirstPurchaseCard">
       <div class="analysis-chart-title">🚪 首購品項排行</div>
-      <div class="analysis-chart-sub">新客第一次購買的品項 · 人數</div>
-      <div style="position:relative;height:${firstPurchaseH}px;"><canvas id="chartFirstPurchase"></canvas></div>
+      <div class="analysis-chart-sub">${periodLabel}新客首購品項 · 每位新客首購日所有品項皆計入 · 人數</div>
+      <div style="padding-top:4px;">${firstRows}</div>
     </div>
 
     <!-- ══ 區塊四：立即行動清單 ══ -->
@@ -4751,25 +4894,6 @@ function _renderAnalytics(data) {
     }));
   }
 
-  // ── 首購品項圖 ──
-  const firstCanvas = document.getElementById('chartFirstPurchase');
-  if (firstCanvas && data.firstPurchaseRanking.length > 0) {
-    analyticsCharts.push(new Chart(firstCanvas, {
-      type:'bar',
-      data:{
-        labels:data.firstPurchaseRanking.map(p=>p.name),
-        datasets:[{data:data.firstPurchaseRanking.map(p=>p.count),backgroundColor:'#534AB7',borderRadius:3}]
-      },
-      options:{
-        indexAxis:'y', responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'人'}}},
-        scales:{
-          x:{ticks:{callback:v=>v+'人',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}},
-          y:{grid:{display:false},ticks:{font:{size:11}}}
-        }
-      }
-    }));
-  }
 }
  
 // ── 截圖並分享（html2canvas → Web Share API / 桌機直接下載）──
@@ -4818,9 +4942,9 @@ async function shareAnalytics() {
     if (!blob) throw new Error('截圖產生失敗');
  
     // 4. 組合檔名（業績分析_本月_2026-05-20.png）
-    const periodLabel = {
-      thisMonth: '本月', lastMonth: '上月', all: '全部'
-    }[analysisPeriod] || '業績';
+    const periodLabel = analysisPeriod === 'custom'
+      ? (analyticsData && analyticsData.customLabel ? analyticsData.customLabel : '自選')
+      : ({ thisMonth: '本月', lastMonth: '上月', all: '全部' }[analysisPeriod] || '業績');
     const today    = new Date();
     const dateStr  = today.getFullYear() + '-' +
                      String(today.getMonth() + 1).padStart(2, '0') + '-' +
@@ -4828,15 +4952,16 @@ async function shareAnalytics() {
     const fileName = `業績分析_${periodLabel}_${dateStr}.png`;
     const file     = new File([blob], fileName, { type: 'image/png' });
  
-    // 5a. 手機（iOS / Android）→ Web Share API（分享選單含 LINE）
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      showGlobalToast('💾 請選擇傳送方式', 'top');
-      await navigator.share({ files: [file], title: '業績分析報告' });
-      showGlobalToast('✅ 分享成功！');
+    // 5a. 手機（iOS / Android）→ Web Share API，iOS 點「儲存影像」存至相簿
+    // 桌機（Mac / Windows）即使支援 Web Share API 也強制走直接下載
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      showGlobalToast('📷 點選「儲存影像」存至相簿', 'top');
+      await navigator.share({ files: [file] });
       return;
     }
- 
-    // 5b. 桌機 Fallback → 直接下載 PNG
+
+    // 5b. 桌機（Mac / Windows）→ 直接下載，瀏覽器提示選擇儲存位置
     const url = URL.createObjectURL(blob);
     const a   = document.createElement('a');
     a.href     = url;
@@ -4846,7 +4971,7 @@ async function shareAnalytics() {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 30000);
-    showGlobalToast('✅ 圖片已下載至裝置');
+    showGlobalToast('✅ 圖片已儲存');
  
   } catch(e) {
     // 使用者主動取消分享不顯示錯誤
@@ -4855,11 +4980,90 @@ async function shareAnalytics() {
     }
   } finally {
     btn.disabled    = false;
-    btn.textContent = '📸 儲存並分享';
+    btn.textContent = '📸 儲存';
   }
 }
  
-// ── 動態載入 html2canvas（只載入一次）──
+// ── 側邊欄 Tooltip（position:fixed，不受 overflow 裁切）──
+(function() {
+  // 只在桌機（有 hover 能力的裝置）啟用，手機完全不執行
+  if (!window.matchMedia('(hover: hover)').matches) return;
+
+  // 建立共用 tooltip 元素，position:fixed 脫離所有父層 overflow 限制
+  const tip = document.createElement('div');
+  tip.id = '_sideMenuTip';
+  tip.style.cssText = [
+    'position:fixed',
+    'background:rgba(0,0,0,0.85)',
+    'color:#fff',
+    'padding:6px 12px',
+    'border-radius:8px',
+    'font-size:12px',
+    'white-space:nowrap',
+    'pointer-events:none',
+    'opacity:0',
+    'transition:opacity 0.2s ease',
+    'z-index:99999',
+    'display:none'
+  ].join(';');
+  document.body.appendChild(tip);
+
+  let showTimer = null;  // 控制 0.5 秒顯示延遲
+  let hideGen   = 0;    // 計數器：每次 showTip 遞增，讓過期的 hide setTimeout 自動失效
+
+  function showTip(el) {
+    clearTimeout(showTimer);
+    hideGen++;                      // 讓任何正在倒數的 hide 失效
+    const text = el.getAttribute('data-tooltip');
+    if (!text) return;
+
+    const rect = el.getBoundingClientRect();
+
+    // 先顯示（opacity:0）讓瀏覽器計算 tip 尺寸
+    tip.textContent = text;
+    tip.style.display = 'block';
+    tip.style.opacity = '0';
+
+    // 按鈕右側 + 垂直置中
+    const tipH = tip.offsetHeight;
+    const top  = Math.round(rect.top + (rect.height - tipH) / 2);
+    const left = Math.round(rect.right + 12);
+
+    // 防止超出視窗底部
+    const maxTop = window.innerHeight - tipH - 8;
+    tip.style.top  = Math.min(top, maxTop) + 'px';
+    tip.style.left = left + 'px';
+
+    // 0.5 秒延遲後才出現
+    showTimer = setTimeout(() => { tip.style.opacity = '1'; }, 500);
+  }
+
+  function hideTip() {
+    clearTimeout(showTimer);
+    tip.style.opacity = '0';
+    const myGen = ++hideGen;        // 記錄本次 hide 的世代號碼
+    setTimeout(() => {
+      if (hideGen === myGen) {      // 只有沒被 showTip 打斷才真正隱藏
+        tip.style.display = 'none';
+      }
+    }, 200);
+  }
+
+  // 綁定所有側邊欄 tooltip 按鈕
+  document.querySelectorAll('.side-menu-content a[data-tooltip]').forEach(el => {
+    el.addEventListener('mouseenter', () => showTip(el));
+    el.addEventListener('mouseleave', hideTip);
+  });
+
+  // 暴露清除函數給 forceCloseOverlay 使用
+  window._clearSideMenuTip = function() {
+    clearTimeout(showTimer);
+    tip.style.opacity = '0';
+    tip.style.display = 'none';
+  };
+})();
+
+
 function _loadHtml2Canvas() {
   return new Promise((resolve, reject) => {
     if (window.html2canvas) { resolve(); return; }
