@@ -763,6 +763,50 @@
       #scheduleDateDisplay { display: none !important; }
     }
     /* ✅ 桌機 Tooltip → 改由 JS position:fixed 實作（避免 overflow-y 裁切）*/
+
+    /* ── 人力計算 ── */
+    .mp-row { overflow:hidden; position:relative; border-bottom:1px solid var(--border); }
+    .mp-row:last-child { border-bottom:none; }
+    .mp-row-content {
+      display:flex; align-items:center; gap:8px; padding:13px 4px;
+      background:var(--bg); position:relative; z-index:1;
+      will-change:transform;
+    }
+    .mp-code { font-size:11px; color:var(--muted); font-weight:600; flex-shrink:0; min-width:42px; }
+    .mp-name-label { font-size:14px; font-weight:600; flex:1; }
+    .mp-power-label { font-size:13px; color:var(--muted); flex-shrink:0; }
+    .mp-hover-delete {
+      display:none; width:26px; height:26px; border-radius:50%;
+      background:var(--danger-light); color:var(--danger);
+      border:1px solid var(--danger-border);
+      align-items:center; justify-content:center;
+      cursor:pointer; font-size:15px; font-weight:700;
+      flex-shrink:0; transition:background 0.15s, color 0.15s;
+    }
+    .mp-hover-delete:hover { background:var(--danger); color:#fff; }
+    @media (hover: hover) {
+      .mp-row:hover .mp-hover-delete { display:flex; }
+    }
+    .mp-delete-btn {
+      position:absolute; right:0; top:0; bottom:0; width:64px;
+      background:var(--danger); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; cursor:pointer; z-index:0;
+    }
+    .mp-dropdown {
+      display:none; position:absolute; top:100%; left:0; right:0;
+      background:var(--bg); border:1px solid var(--border);
+      border-radius:var(--radius-sm); z-index:200;
+      max-height:200px; overflow-y:auto;
+      box-shadow:0 4px 16px rgba(0,0,0,0.18);
+    }
+    .mp-dropdown-item {
+      display:flex; align-items:center; gap:8px;
+      padding:11px 12px; cursor:pointer;
+      border-bottom:1px solid var(--border); font-size:13px;
+    }
+    .mp-dropdown-item:last-child { border-bottom:none; }
+    .mp-dropdown-item:active { background:rgba(128,128,128,0.1); }
     /* 加入按鈕（對齊輸入框高度） */
     .elig-add-btn {
       flex-shrink: 0; padding: 0 16px;
@@ -1274,6 +1318,7 @@
     <a onclick="handleMenuAction('eligibilityQuery')" data-tooltip="大組價資格查詢"><span>🔍</span> 優惠資格</a>
     <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
     <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
+    <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="多通訊處人力加總"><span>👥</span> 人力計算</a>
 <a onclick="handleMenuAction('salesAnalysis')" data-tooltip="業績儀表板分析"><span>📒</span> 業績分析</a>
   </div>
 </div>
@@ -1829,6 +1874,38 @@
 </div>
 
 <!-- ════════════════════════════════
+     👥 人力計算 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="manpowerOverlay" style="display:none;"
+     onclick="if(event.target===this)closeManpowerCalc()">
+  <div class="elig-box" style="max-height:80vh;display:flex;flex-direction:column;gap:0;">
+    <h3 style="margin-bottom:14px;">👥 人力計算</h3>
+
+    <!-- 搜尋欄 -->
+    <div style="position:relative;margin-bottom:12px;">
+      <input id="mpSearchInput" type="text" class="form-control allow-select"
+             placeholder="搜尋通訊處名稱..." autocomplete="off"
+             oninput="filterManpower(this.value)">
+      <div id="mpDropdown" class="mp-dropdown"></div>
+    </div>
+
+    <!-- 已選清單 -->
+    <div id="mpListBody" style="flex:1;overflow-y:auto;min-height:60px;"></div>
+
+    <!-- 合計 -->
+    <div id="mpTotal" style="display:none;"></div>
+
+    <!-- 底部按鈕 -->
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn-secondary" style="flex:1;padding:14px;"
+              onclick="closeManpowerCalc()">關閉</button>
+      <button class="btn-danger" style="flex:1;padding:14px;"
+              onclick="clearMpList()">清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
      📥 檔案下載 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="fileDownloadOverlay" style="display:none;">
@@ -1870,8 +1947,26 @@
   <div class="analysis-box">
 
     <div class="analysis-header">
-      <h2>📒 業績分析</h2>
-      <!-- 手動篩選日期 -->
+      <!-- 收合列（永遠顯示，點擊展開/收合）-->
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0 6px;" onclick="toggleAnalyticsHeader()">
+        <h2 style="margin-bottom:0;">📒 業績分析</h2>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:0;">
+          <span id="analyticsHeaderSummary" style="font-size:11px;color:rgba(255,255,255,0.65);font-weight:600;text-align:right;white-space:nowrap;"></span>
+          <span id="analyticsHeaderToggle" style="color:rgba(255,255,255,0.75);font-size:11px;flex-shrink:0;">▼</span>
+        </div>
+      </div>
+      <!-- 展開的控制區（預設隱藏）-->
+      <div id="analyticsHeaderControls" style="display:none;">
+        <!-- 資料來源 Tab -->
+        <div class="analysis-period-tabs" style="margin-bottom:10px;">
+          <button class="analysis-tab active" id="srcTabA"
+                  onclick="switchAnalyticsSource('A')">手動出單</button>
+          <button class="analysis-tab" id="srcTabB"
+                  onclick="switchAnalyticsSource('B')">團購系統</button>
+          <button class="analysis-tab" id="srcTabAB"
+                  onclick="switchAnalyticsSource('AB')">合併業績</button>
+        </div>
+        <!-- 手動篩選日期 -->
       <div style="padding:10px 0 6px;">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;">
           <input type="checkbox" id="analyticsCustomToggle" onchange="toggleAnalyticsCustom()"
@@ -1896,6 +1991,7 @@
         <button class="analysis-tab" id="tabAll"
                 onclick="switchAnalysisPeriod('all')">全部</button>
       </div>
+      </div><!-- end analyticsHeaderControls -->
     </div>
 
     <!-- 預設空白，點開側邊欄才載入 -->
@@ -2091,6 +2187,7 @@ function handleMenuAction(type) {
   else if (type === 'lineReport')            openLineReport();
   else if (type === 'fileDownload')          openFileDownload();
   else if (type === 'msgParser')             openMsgParser();
+  else if (type === 'manpowerCalc')          openManpowerCalc();
   else if (type === 'salesAnalysis')    openSalesAnalysis();
 }
 
@@ -4354,6 +4451,9 @@ async function _triggerFileDownload(file) {
 // ════════════════════════════════════════════════════════════
  
 let analysisPeriod  = 'thisMonth'; // 目前選中的期間
+let analyticsSource = 'A';         // 目前選中的來源：A/B/AB
+let analyticsCustomStart = null;   // 自訂開始日期 YYYY-MM-DD
+let analyticsCustomEnd   = null;   // 自訂結束日期 YYYY-MM-DD
 let analyticsData   = null;        // GAS 回傳的完整資料
 let analyticsCharts = [];          // Chart.js 實例清單（關閉時 destroy，避免記憶體洩漏）
  
@@ -4420,13 +4520,68 @@ function applyAnalyticsCustomDate() {
     document.getElementById(id).classList.remove('active')
   );
 
+  analyticsCustomStart = fmt(startDate);
+  analyticsCustomEnd   = fmt(endDate);
   analysisPeriod = 'custom';
-  loadAnalyticsData('custom', fmt(startDate), fmt(endDate));
+  updateAnalyticsHeaderLabel();
+  loadAnalyticsData('custom', analyticsCustomStart, analyticsCustomEnd);
+}
+
+let analyticsHeaderExpanded = false;
+
+function toggleAnalyticsHeader() {
+  analyticsHeaderExpanded = !analyticsHeaderExpanded;
+  const controls = document.getElementById('analyticsHeaderControls');
+  const toggle   = document.getElementById('analyticsHeaderToggle');
+  if (controls) controls.style.display = analyticsHeaderExpanded ? 'block' : 'none';
+  if (toggle)   toggle.textContent = analyticsHeaderExpanded ? '▲' : '▼';
+}
+
+function updateAnalyticsHeaderLabel() {
+  const el = document.getElementById('analyticsHeaderSummary');
+  if (!el) return;
+  const srcLabel = {A:'手動出單', B:'團購系統', AB:'合併業績'}[analyticsSource] || '';
+  let perLabel = '';
+  if (analysisPeriod === 'custom' && analyticsCustomStart && analyticsCustomEnd) {
+    const s = analyticsCustomStart.split('-');
+    const e = analyticsCustomEnd.split('-');
+    perLabel = parseInt(s[1]) + '/' + parseInt(s[2]) + '～' + parseInt(e[1]) + '/' + parseInt(e[2]);
+  } else {
+    perLabel = {thisMonth:'本月', lastMonth:'上月', all:'全部'}[analysisPeriod] || '';
+  }
+  el.textContent = srcLabel + (perLabel ? ' · ' + perLabel : '');
+}
+
+function switchAnalyticsSource(source) {
+  if (source === analyticsSource) return;
+  analyticsSource = source;
+  ['srcTabA','srcTabB','srcTabAB'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+  const srcMap = { A:'srcTabA', B:'srcTabB', AB:'srcTabAB' };
+  document.getElementById(srcMap[source]).classList.add('active');
+  updateAnalyticsHeaderLabel();
+  loadAnalyticsData(analysisPeriod, analyticsCustomStart, analyticsCustomEnd);
 }
 
 // ── 開啟分析頁 ──
 function openSalesAnalysis() {
-  analysisPeriod = 'thisMonth';
+  analysisPeriod  = 'thisMonth';
+  analyticsSource = 'A';
+  analyticsCustomStart = null;
+  analyticsCustomEnd   = null;
+  // 重設 header 為收合狀態
+  analyticsHeaderExpanded = false;
+  const hCtrl = document.getElementById('analyticsHeaderControls');
+  const hTog  = document.getElementById('analyticsHeaderToggle');
+  if (hCtrl) hCtrl.style.display = 'none';
+  if (hTog)  hTog.textContent = '▼';
+  updateAnalyticsHeaderLabel();
+  // 重設來源 Tab 樣式
+  ['srcTabA','srcTabB','srcTabAB'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+  document.getElementById('srcTabA').classList.add('active');
   // 重設自訂日期狀態
   const tog = document.getElementById('analyticsCustomToggle');
   if (tog) { tog.checked = false; }
@@ -4463,6 +4618,8 @@ function switchAnalysisPeriod(period) {
   const as = document.getElementById('analyticsStart');
   const ae = document.getElementById('analyticsEnd');
   if (as) as.value = ''; if (ae) ae.value = '';
+  analyticsCustomStart = null;
+  analyticsCustomEnd   = null;
   // 同一個 tab 且非 custom 不重複請求
   if (period === analysisPeriod && analysisPeriod !== 'custom') return;
   analysisPeriod = period;
@@ -4475,6 +4632,7 @@ function switchAnalysisPeriod(period) {
     all:       'tabAll'
   };
   document.getElementById(tabMap[period]).classList.add('active');
+  updateAnalyticsHeaderLabel();
   loadAnalyticsData(period);
 }
  
@@ -4496,7 +4654,7 @@ async function loadAnalyticsData(period, customStart, customEnd) {
   analyticsCharts = [];
  
   try {
-    const payload = { action: 'getAnalyticsData', period };
+    const payload = { action: 'getAnalyticsData', period, source: analyticsSource };
     if (period === 'custom' && customStart && customEnd) {
       payload.startDate = customStart;
       payload.endDate   = customEnd;
@@ -4538,12 +4696,13 @@ function _renderAnalytics(data) {
   const body = document.getElementById('analysisBody');
   const fmt  = n => n >= 10000 ? (n/10000).toFixed(1)+'萬' : n.toLocaleString();
   const fmtAmt = n => n > 0 ? fmt(n)+'元' : '-';
+  const sourceLabel = {A:'手動出單', B:'團購系統', AB:'合併業績'}[data.source] || '';
   const periodLabel = data.period==='custom' ? (data.customLabel||'自選') : ({thisMonth:'本月',lastMonth:'上月',all:'全部'}[data.period]||'');
 
   // ── 警示框 ──
   let alertBoxes = '';
   if (s.top3Concentration >= 50)
-    alertBoxes += `<div class="analysis-alert-box red">⚠️ 前三名客戶佔業績 <strong>${s.top3Concentration}%</strong>，集中度偏高，建議積極開發新客戶分散風險。</div>`;
+    alertBoxes += `<div class="analysis-alert-box red">⚠️ 前五名客戶佔業績 <strong>${s.top3Concentration}%</strong>，集中度偏高，建議積極開發新客戶分散風險。</div>`;
   if (s.warningCustomers+s.lostCustomers > 0)
     alertBoxes += `<div class="analysis-alert-box yellow">⏰ 待追蹤 <strong>${s.warningCustomers}</strong> 人（61-90天），流失警戒 <strong>${s.lostCustomers}</strong> 人（>90天）。</div>`;
   if (s.repurchaseRate >= 25)
@@ -4554,7 +4713,7 @@ function _renderAnalytics(data) {
     const dot = c.status==='active'?'#1D9E75':c.status==='warning'?'#EF9F27':'#E24B4A';
     const dc  = c.daysSince>90?'#E24B4A':c.daysSince>60?'#EF9F27':'var(--muted)';
     return `<tr>
-      <td><span class="analysis-status-dot" style="background:${dot};"></span>${c.name}</td>
+      <td><span class="analysis-status-dot" style="background:${dot};"></span><span style="font-weight:600;">${c.name}</span><span style="font-size:11px;color:var(--muted);margin-left:4px;">${c.unitName||''}</span></td>
       <td style="color:var(--muted);font-size:11px;">${c.lastDateStr}</td>
       <td style="color:${dc};">${c.daysSince}天</td>
       <td>${fmt(c.totalAmt)}</td></tr>`;
@@ -4613,6 +4772,22 @@ function _renderAnalytics(data) {
     );
   }).join('');
 
+// ── 通訊處排名 rows ──
+  const unitRankRows = (data.unitRanking || []).map(function(u, i) {
+    var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="font-size:11px;font-weight:600;color:var(--muted);">'+(i+1)+'</span>';
+    var amtStr = u.amount>=10000?(u.amount/10000).toFixed(1)+'萬':u.amount.toLocaleString()+'元';
+    return (
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
+        '<div style="width:22px;text-align:center;flex-shrink:0;font-size:14px;">' + medal + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text);">' + u.unit + '</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-right:8px;">' + u.customerCount + '人</div>' +
+        '<div style="width:60px;text-align:right;font-size:13px;font-weight:800;color:var(--text);flex-shrink:0;">' + amtStr + '</div>' +
+      '</div>'
+    );
+  }).join('');
+
 // ── LTV 排名 rows ──
   const ltvRows = (data.ltvRanking || []).map(function(c, i) {
     var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="font-size:11px;font-weight:600;color:var(--muted);">'+(i+1)+'</span>';
@@ -4651,11 +4826,12 @@ function _renderAnalytics(data) {
   body.innerHTML = `
 
     <!-- ══ 區塊一：本期業績概覽 ══ -->
-    <div class="analysis-section-label">${periodLabel} 業績概覽</div>
+    <div class="analysis-section-label">${periodLabel}${sourceLabel?' · '+sourceLabel:''} 業績概覽</div>
     <div class="analysis-kpi-grid">
       <div class="analysis-kpi-card">
         <div class="analysis-kpi-label">總銷售額</div>
-        <div class="analysis-kpi-value">${fmt(s.totalRevenue)}</div>
+        <div class="analysis-kpi-value">${s.totalRevenue.toLocaleString()}</div>
+        <div class="analysis-kpi-sub" style="font-size:11px;color:var(--muted);">元</div>
         <div class="analysis-kpi-sub">當期</div>
       </div>
       <div class="analysis-kpi-card">
@@ -4746,6 +4922,13 @@ function _renderAnalytics(data) {
       </div>
     </div>
 
+    <!-- 通訊處排名 TOP 10 -->
+    <div class="analysis-chart-card" style="margin-bottom:10px;">
+      <div class="analysis-chart-title">🏢 通訊處排名 TOP 10</div>
+      <div class="analysis-chart-sub">${periodLabel}購買金額最高 · 通訊處 · 購買人數 · 金額</div>
+      <div style="padding-top:4px;">${unitRankRows.length > 0 ? unitRankRows : '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">暫無資料</div>'}</div>
+    </div>
+
     <!-- LTV 排名 TOP 10 -->
     <div class="analysis-chart-card" style="margin-bottom:10px;">
       <div class="analysis-chart-title">💎 客戶 LTV 排名 TOP 10</div>
@@ -4776,22 +4959,23 @@ function _renderAnalytics(data) {
     <!-- 業績集中度 -->
     <div class="analysis-chart-card" style="margin-bottom:10px;">
       <div class="analysis-chart-title">💰 業績集中度</div>
-      <div class="analysis-chart-sub">前三名客戶佔總業績的比例</div>
+      <div class="analysis-chart-sub">前五名客戶佔${periodLabel}總業績的比例</div>
       <div style="height:14px;border-radius:7px;overflow:hidden;display:flex;margin:8px 0;">
         <div style="width:${s.top3Concentration}%;background:#E24B4A;transition:width .5s;"></div>
         <div style="flex:1;background:#1D9E75;"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px;">
-        <span style="color:#E24B4A;font-weight:700;">前三名 ${s.top3Concentration}%</span>
+        <span style="color:#E24B4A;font-weight:700;">前五名 ${s.top3Concentration}%</span>
         <span style="color:#1D9E75;font-weight:700;">其他 ${Math.round((100-s.top3Concentration)*10)/10}%</span>
       </div>
       ${s.top3Details.map((c,i)=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;${i<2?'border-bottom:1px solid var(--border);':''}font-size:12px;">
-          <span style="display:flex;align-items:center;gap:6px;">
-            <span>${['🥇','🥈','🥉'][i]} ${c.name}</span>
-            <span style="color:var(--muted);font-size:11px;font-weight:400;">${c.unitName}</span>
-          </span>
-          <span><strong>${fmt(c.amount)}</strong> <span style="color:var(--muted);">(${c.pct}%)</span></span>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;${i<4?'border-bottom:1px solid var(--border);':''}">
+          <div style="width:22px;text-align:center;flex-shrink:0;font-size:14px;">${(['🥇','🥈','🥉'][i]||'<span style="font-size:11px;font-weight:700;color:var(--muted);">'+(i+1)+'</span>')}</div>
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</span>
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;">${c.unitName}</span>
+          </div>
+          <div style="text-align:right;flex-shrink:0;font-size:12px;white-space:nowrap;"><strong>${fmt(c.amount)}</strong> <span style="color:var(--muted);">(${c.pct}%)</span></div>
         </div>`).join('')}
     </div>
 
@@ -4801,20 +4985,20 @@ function _renderAnalytics(data) {
     <!-- 熱銷排行 -->
     <div class="analysis-chart-card" id="analyticsProductCard">
       <div class="analysis-chart-title">🏆 熱銷排行 TOP 8</div>
-      <div class="analysis-chart-sub">${periodLabel}銷售量 · <span style="font-weight:700;color:var(--text);">數量（盒）</span>為主 · 金額（元）為輔</div>
+      <div class="analysis-chart-sub">${periodLabel}銷售量 · <span style="font-weight:700;color:var(--text);">數量</span>· 金額</div>
       <div style="padding-top:4px;">${hotRows}</div>
     </div>
 
     <!-- 冷宮排行 -->
     <div class="analysis-chart-card">
       <div class="analysis-chart-title">🧊 冷宮排行 FLOP 5</div>
-      <div class="analysis-chart-sub">${coldLabel}銷售量最低 · 數量 · 金額 · <span style="color:#E24B4A;font-weight:700;">紅色＝零銷售</span></div>
+      <div class="analysis-chart-sub">${coldLabel}銷售量最低 · 數量 · 金額</div>
       <div style="padding-top:4px;">${coldRows}</div>
     </div>
 
     <!-- 首購品項排行 -->
     <div class="analysis-chart-card" id="analyticsFirstPurchaseCard">
-      <div class="analysis-chart-title">🚪 首購品項排行</div>
+      <div class="analysis-chart-title">🐔 帶路雞首購排行</div>
       <div class="analysis-chart-sub">${periodLabel}新客首購品項 · 每位新客首購日所有品項皆計入 · 人數</div>
       <div style="padding-top:4px;">${firstRows}</div>
     </div>
@@ -4842,9 +5026,9 @@ function _renderAnalytics(data) {
     <div class="analysis-section-label" style="margin-top:16px;">月份業績趨勢</div>
     <div class="analysis-chart-card" id="analysisTrendCard">
       <div class="analysis-chart-title">📈 月份業績趨勢（全部歷史）</div>
-      <div class="analysis-chart-sub" style="margin-bottom:6px;">
-        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="width:10px;height:10px;background:#185FA5;border-radius:2px;display:inline-block;"></span>早會/場</span>
-        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#1D9E75;border-radius:2px;display:inline-block;"></span>回購</span>
+      <div class="analysis-chart-sub" style="margin-bottom:6px;" id="trendLegend">
+        ${data.source !== 'B' ? '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="width:10px;height:10px;background:#185FA5;border-radius:2px;display:inline-block;"></span>早會/場</span><span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="width:10px;height:10px;background:#1D9E75;border-radius:2px;display:inline-block;"></span>回購</span>' : ''}
+        ${data.source !== 'A' ? '<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#E24B4A;border-radius:2px;display:inline-block;"></span>團購</span>' : ''}
       </div>
       <div style="position:relative;height:170px;"><canvas id="chartTrend"></canvas></div>
     </div>
@@ -4874,14 +5058,19 @@ function _renderAnalytics(data) {
   // ── 月份趨勢圖 ──
   const trendCanvas = document.getElementById('chartTrend');
   if (trendCanvas && data.monthlyTrend.length > 0) {
+    const trendDatasets = [];
+    if (data.source !== 'B') {
+      trendDatasets.push({label:'早會/場', data:data.monthlyTrend.map(d=>+(d.meeting/10000).toFixed(1)),    backgroundColor:'#185FA5', borderRadius:3, stack:'trend'});
+      trendDatasets.push({label:'回購',    data:data.monthlyTrend.map(d=>+(d.repurchase/10000).toFixed(1)), backgroundColor:'#1D9E75', borderRadius:3, stack:'trend'});
+    }
+    if (data.source !== 'A') {
+      trendDatasets.push({label:'團購',    data:data.monthlyTrend.map(d=>+((d.teamBuy||0)/10000).toFixed(1)), backgroundColor:'#E24B4A', borderRadius:3, stack:'trend'});
+    }
     analyticsCharts.push(new Chart(trendCanvas, {
       type:'bar',
       data:{
         labels: data.monthlyTrend.map(d=>d.label.replace(/^\d{4}\//,'')+'月'),
-        datasets:[
-          {label:'早會/場', data:data.monthlyTrend.map(d=>+(d.meeting/10000).toFixed(1)),    backgroundColor:'#185FA5',borderRadius:3},
-          {label:'回購',    data:data.monthlyTrend.map(d=>+(d.repurchase/10000).toFixed(1)), backgroundColor:'#1D9E75',borderRadius:3}
-        ]
+        datasets: trendDatasets
       },
       options:{
         responsive:true, maintainAspectRatio:false,
@@ -4984,7 +5173,204 @@ async function shareAnalytics() {
   }
 }
  
-// ── 側邊欄 Tooltip（position:fixed，不受 overflow 裁切）──
+// ════════════════════════════════════════════════════════
+// 👥 人力計算功能
+// ════════════════════════════════════════════════════════
+let mpUnits    = [];    // 從 GAS 載入的通訊處完整清單
+let mpSelected = [];    // 使用者已加入的清單
+let mpLoaded   = false; // 是否已載入
+
+async function openManpowerCalc() {
+  document.getElementById('manpowerOverlay').style.display = 'flex';
+  mpSelected = []; // 每次開啟重置清單
+  document.getElementById('mpSearchInput').value = '';
+  document.getElementById('mpDropdown').style.display = 'none';
+
+  if (!mpLoaded) {
+    document.getElementById('mpListBody').innerHTML =
+      '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">載入中...</div>';
+    document.getElementById('mpTotal').style.display = 'none';
+    try {
+      const res = await cloudPost({ action: 'getUnitManpower' });
+      const r   = await res.json();
+      if (!r.success) throw new Error(r.message || '載入失敗');
+      mpUnits  = r.units;
+      mpLoaded = true;
+    } catch(e) {
+      document.getElementById('mpListBody').innerHTML =
+        '<div style="text-align:center;padding:24px;color:#E24B4A;font-size:13px;">⚠️ 載入失敗，請重試</div>';
+      return;
+    }
+  }
+  renderMpList();
+}
+
+function closeManpowerCalc() {
+  document.getElementById('manpowerOverlay').style.display = 'none';
+  document.getElementById('mpDropdown').style.display = 'none';
+}
+
+function filterManpower(query) {
+  const q  = query.trim();
+  const dd = document.getElementById('mpDropdown');
+  if (!q) { dd.style.display = 'none'; return; }
+
+  const matches = mpUnits.filter(function(u) {
+    return (u.name.includes(q) || u.code.includes(q)) &&
+           !mpSelected.find(function(s) { return s.name === u.name; });
+  });
+
+  if (matches.length === 0) { dd.style.display = 'none'; return; }
+
+  dd.innerHTML = matches.map(function(u) {
+    var safeCode = u.code.replace(/'/g,"\\'");
+    var safeName = u.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return (
+      '<div class="mp-dropdown-item" onclick="addMpUnit(\'' + safeCode + '\',\'' + safeName + '\',' + u.power + ')">' +
+        '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
+        '<span style="flex:1;">' + u.name + '</span>' +
+        '<span style="color:var(--muted);font-size:12px;flex-shrink:0;">' + u.power + ' 人</span>' +
+      '</div>'
+    );
+  }).join('');
+  dd.style.display = 'block';
+}
+
+// 搜尋框失焦時延遲關閉 dropdown（保留點選時間）
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('mpSearchInput');
+  if (inp) {
+    inp.addEventListener('blur', function() {
+      setTimeout(function() {
+        document.getElementById('mpDropdown').style.display = 'none';
+      }, 180);
+    });
+  }
+});
+
+function addMpUnit(code, name, power) {
+  if (mpSelected.find(function(s) { return s.name === name; })) {
+    showGlobalToast('⚠️ 已在清單中');
+    return;
+  }
+  mpSelected.push({ code: code, name: name, power: power });
+  document.getElementById('mpSearchInput').value = '';
+  document.getElementById('mpDropdown').style.display = 'none';
+  renderMpList();
+  setTimeout(function() { document.getElementById('mpSearchInput').focus(); }, 50);
+}
+
+function removeMpUnit(index) {
+  mpSelected.splice(index, 1);
+  renderMpList();
+}
+
+function clearMpList() {
+  mpSelected = [];
+  renderMpList();
+  document.getElementById('mpSearchInput').focus();
+}
+
+function renderMpList() {
+  var body  = document.getElementById('mpListBody');
+  var total = document.getElementById('mpTotal');
+
+  if (mpSelected.length === 0) {
+    body.innerHTML =
+      '<div style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px;line-height:1.8;">' +
+        '尚未加入任何通訊處<br>' +
+        '<span style="font-size:11px;">搜尋代號或名稱後點選即可加入</span>' +
+      '</div>';
+    total.style.display = 'none';
+    return;
+  }
+
+  body.innerHTML = mpSelected.map(function(u, i) {
+    return (
+      '<div class="mp-row" id="mpRow' + i + '">' +
+        '<div class="mp-row-content">' +
+          '<span class="mp-code">' + u.code + '</span>' +
+          '<span class="mp-name-label">' + u.name + '</span>' +
+          '<span class="mp-power-label">' + u.power + ' 人</span>' +
+          '<span class="mp-hover-delete" onclick="removeMpUnit(' + i + ')">×</span>' +
+        '</div>' +
+        '<div class="mp-delete-btn" onclick="removeMpUnit(' + i + ')">刪除</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  mpSelected.forEach(function(u, i) {
+    var el = document.getElementById('mpRow' + i);
+    if (el) initMpSwipe(el);
+  });
+
+  var sum   = mpSelected.reduce(function(acc, u) { return acc + u.power; }, 0);
+  var count = mpSelected.length;
+  total.style.display = 'block';
+  total.innerHTML =
+    '<div style="border-top:2px solid var(--border);padding:14px 4px 0;margin-top:2px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:12px;color:var(--muted);">已選 ' + count + ' 個通訊處</span>' +
+        '<span style="font-size:24px;font-weight:900;color:var(--primary);">' +
+          sum +
+          '<span style="font-size:13px;font-weight:400;color:var(--muted);margin-left:3px;">人</span>' +
+        '</span>' +
+      '</div>' +
+    '</div>';
+}
+
+// ── 左滑兩段式刪除（行動端）──
+var _mpSwipeActive = null; // 目前展開的 row
+var MP_DELETE_W    = 64;   // 刪除按鈕寬度 px
+
+function initMpSwipe(rowEl) {
+  var content   = rowEl.querySelector('.mp-row-content');
+  var startX    = 0;
+  var dragging  = false;
+
+  // 關閉其他已展開的 row
+  function closeOthers() {
+    if (_mpSwipeActive && _mpSwipeActive !== rowEl) {
+      var otherContent = _mpSwipeActive.querySelector('.mp-row-content');
+      if (otherContent) {
+        otherContent.style.transition = 'transform 0.2s ease';
+        otherContent.style.transform  = 'translateX(0)';
+      }
+      _mpSwipeActive = null;
+    }
+  }
+
+  content.addEventListener('touchstart', function(e) {
+    startX   = e.touches[0].clientX;
+    dragging = true;
+    content.style.transition = 'none';
+    closeOthers();
+  }, { passive: true });
+
+  content.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    var dx = e.touches[0].clientX - startX;
+    if (dx < 0) {
+      content.style.transform = 'translateX(' + Math.max(dx, -MP_DELETE_W) + 'px)';
+    }
+  }, { passive: true });
+
+  content.addEventListener('touchend', function(e) {
+    if (!dragging) return;
+    dragging = false;
+    content.style.transition = 'transform 0.2s ease';
+    var dx = e.changedTouches[0].clientX - startX;
+    if (dx < -(MP_DELETE_W / 2)) {
+      content.style.transform = 'translateX(-' + MP_DELETE_W + 'px)';
+      _mpSwipeActive = rowEl;
+    } else {
+      content.style.transform = 'translateX(0)';
+      _mpSwipeActive = null;
+    }
+  }, { passive: true });
+}
+
+
 (function() {
   // 只在桌機（有 hover 能力的裝置）啟用，手機完全不執行
   if (!window.matchMedia('(hover: hover)').matches) return;
