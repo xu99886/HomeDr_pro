@@ -807,6 +807,16 @@
     }
     .mp-dropdown-item:last-child { border-bottom:none; }
     .mp-dropdown-item:active { background:rgba(128,128,128,0.1); }
+    .unit-sort-btn {
+      padding:5px 10px; font-size:11px; font-weight:600;
+      border-radius:6px; cursor:pointer;
+      border:1px solid var(--border);
+      background:transparent; color:var(--muted);
+      transition:background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .unit-sort-btn.active {
+      background:var(--primary); color:#fff; border-color:var(--primary);
+    }
     /* 加入按鈕（對齊輸入框高度） */
     .elig-add-btn {
       flex-shrink: 0; padding: 0 16px;
@@ -1992,6 +2002,12 @@
                 onclick="switchAnalysisPeriod('all')">全部</button>
       </div>
       </div><!-- end analyticsHeaderControls -->
+      <!-- 開始分析按鈕 -->
+      <button class="btn-primary"
+              style="width:100%;padding:13px;margin-top:12px;font-size:15px;font-weight:900;letter-spacing:1px;border-radius:var(--radius);"
+              onclick="loadAnalyticsData(analysisPeriod, analyticsCustomStart, analyticsCustomEnd)">
+        ▶ 開始分析
+      </button>
     </div>
 
     <!-- 預設空白，點開側邊欄才載入 -->
@@ -3631,8 +3647,10 @@ function onOrderTypeChange() {
 function onSelectProduct(code) {
   if(!code)return;
   const p=allParams.find(x=>x.code===code);
-  if(orderItems.some(x=>x.param.code===code)) showGlobalToast('🔔 此品項已在清單內');
-  else { orderItems.push({id:idCounter++,param:p,qty:1,manualMode:''}); renderAll(); }
+  const isDuplicate = orderItems.some(x=>x.param.code===code);
+  orderItems.push({id:idCounter++,param:p,qty:1,manualMode:''});
+  renderAll();
+  if(isDuplicate) showGlobalToast('📦 重複品項已加入，記得設為不計價');
   document.getElementById('productSelect').value='';
 }
 
@@ -3651,7 +3669,8 @@ function calcPrice(item) {
 }
 
 function calcGroup1Rolling(tgt) {
-  const gItems=orderItems.filter(x=>x.param.group==='Group_1');
+  // 🟡不計價（贈品）排除在門檻計算之外，不影響其他品項定價
+  const gItems=orderItems.filter(x=>x.param.group==='Group_1' && x.manualMode!=='🟡不計價');
   const total=gItems.reduce((s,x)=>s+x.qty,0);
   if(total>=100) return tgt.qty*tgt.param.groupPrice;
   let prev=0;
@@ -3661,7 +3680,8 @@ function calcGroup1Rolling(tgt) {
 }
 
 function calcGroup2Logic(tgt) {
-  const gItems=orderItems.filter(x=>x.param.group==='Group_2');
+  // 🟡不計價（贈品）排除在門檻計算之外，不影響其他品項定價
+  const gItems=orderItems.filter(x=>x.param.group==='Group_2' && x.manualMode!=='🟡不計價');
   const total=gItems.reduce((s,x)=>s+x.qty,0);
   if(total>=120||tgt.qty>=tgt.param.groupQty) return tgt.qty*tgt.param.groupPrice;
   return (Math.floor(tgt.qty/7)*tgt.param.combo)+(tgt.qty%7)*tgt.param.price;
@@ -4524,10 +4544,72 @@ function applyAnalyticsCustomDate() {
   analyticsCustomEnd   = fmt(endDate);
   analysisPeriod = 'custom';
   updateAnalyticsHeaderLabel();
-  loadAnalyticsData('custom', analyticsCustomStart, analyticsCustomEnd);
+  // 不自動載入，等用戶點「開始分析」
 }
 
 let analyticsHeaderExpanded = false;
+let _unitRankingData = []; // 全部通訊處資料，前端排序用
+let _unitRankSort    = 'amount'; // 'amount' | 'perPerson'
+let _unitManpowerMap = new Map(); // 通訊處名稱→人力，由 getUnitManpower 填充
+
+// ── 通訊處排名：前端排序切換（不重新請求 GAS）──
+function renderUnitRanking(sort) {
+  _unitRankSort = sort;
+  var btnAmt = document.getElementById('unitSortAmount');
+  var btnPer = document.getElementById('unitSortPerPerson');
+  if (btnAmt) { btnAmt.classList.toggle('active', sort === 'amount'); }
+  if (btnPer) { btnPer.classList.toggle('active', sort === 'perPerson'); }
+
+  var container = document.getElementById('unitRankList');
+  if (!container) return;
+  if (!_unitRankingData.length) {
+    container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">暫無資料</div>';
+    return;
+  }
+
+  // 計算人均，依排序方式重排，取前10
+  var sorted = _unitRankingData
+    .map(function(u) {
+      return {
+        unit: u.unit,
+        amount: u.amount,
+        customerCount: u.customerCount,
+        perPerson: u.customerCount > 0 ? Math.round(u.amount / u.customerCount) : 0
+      };
+    })
+    .sort(function(a, b) {
+      return sort === 'amount' ? b.amount - a.amount : b.perPerson - a.perPerson;
+    })
+    .slice(0, 10);
+
+  container.innerHTML = sorted.map(function(u, i) {
+    var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':
+      '<span style="font-size:11px;font-weight:700;color:var(--muted);">'+(i+1)+'</span>';
+    var amtStr = u.amount>=10000?(u.amount/10000).toFixed(1)+'萬':u.amount.toLocaleString()+'元';
+    var perStr = u.perPerson >= 10000
+      ? (u.perPerson/10000).toFixed(1)+'萬'
+      : u.perPerson.toLocaleString()+'元';
+    var sep = i < 9 ? 'border-bottom:1px solid rgba(128,128,128,0.08);' : '';
+    // 從前端 _unitManpowerMap 查人力（NFC 標準化比對）
+    var mpVal  = _unitManpowerMap.get(String(u.unit).trim().normalize('NFC')) || 0;
+    var mpStr  = mpVal > 0 ? String(mpVal) : '—';
+    return (
+      '<div style="display:flex;align-items:center;gap:6px;padding:8px 0;' + sep + '">' +
+        '<div style="width:22px;text-align:center;flex-shrink:0;font-size:14px;">' + medal + '</div>' +
+        '<div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);' +
+             'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + u.unit + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:28px;text-align:right;white-space:nowrap;">' +
+             mpStr + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:32px;text-align:right;">' +
+             u.customerCount + '人</div>' +
+        '<div style="font-size:13px;font-weight:800;color:var(--text);flex-shrink:0;' +
+             'width:52px;text-align:right;">' + amtStr + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;' +
+             'width:52px;text-align:right;white-space:nowrap;">' + perStr + '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
 
 function toggleAnalyticsHeader() {
   analyticsHeaderExpanded = !analyticsHeaderExpanded;
@@ -4561,7 +4643,7 @@ function switchAnalyticsSource(source) {
   const srcMap = { A:'srcTabA', B:'srcTabB', AB:'srcTabAB' };
   document.getElementById(srcMap[source]).classList.add('active');
   updateAnalyticsHeaderLabel();
-  loadAnalyticsData(analysisPeriod, analyticsCustomStart, analyticsCustomEnd);
+  // 不自動載入，等用戶點「開始分析」
 }
 
 // ── 開啟分析頁 ──
@@ -4570,12 +4652,12 @@ function openSalesAnalysis() {
   analyticsSource = 'A';
   analyticsCustomStart = null;
   analyticsCustomEnd   = null;
-  // 重設 header 為收合狀態
-  analyticsHeaderExpanded = false;
+  // 預設展開 header（讓用戶先選設定）
+  analyticsHeaderExpanded = true;
   const hCtrl = document.getElementById('analyticsHeaderControls');
   const hTog  = document.getElementById('analyticsHeaderToggle');
-  if (hCtrl) hCtrl.style.display = 'none';
-  if (hTog)  hTog.textContent = '▼';
+  if (hCtrl) hCtrl.style.display = 'block';
+  if (hTog)  hTog.textContent = '▲';
   updateAnalyticsHeaderLabel();
   // 重設來源 Tab 樣式
   ['srcTabA','srcTabB','srcTabAB'].forEach(id =>
@@ -4596,8 +4678,16 @@ function openSalesAnalysis() {
   );
   document.getElementById('tabThisMonth').classList.add('active');
   document.getElementById('analyticsShareBtn').style.display = 'none';
+  // 顯示空狀態（等待用戶點選開始分析）
+  const body = document.getElementById('analysisBody');
+  if (body) body.innerHTML =
+    '<div style="text-align:center;padding:56px 24px;color:var(--muted);">' +
+      '<div style="font-size:36px;margin-bottom:14px;">📊</div>' +
+      '<div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text);">尚未開始分析</div>' +
+      '<div style="font-size:12px;line-height:1.8;">選擇來源與時間範圍<br>點選「開始分析」</div>' +
+    '</div>';
   document.getElementById('salesAnalysisOverlay').classList.add('active');
-  loadAnalyticsData('thisMonth');
+  // 不自動呼叫 loadAnalyticsData，等用戶主動點「開始分析」
 }
  
 // ── 關閉分析頁 ──
@@ -4633,13 +4723,20 @@ function switchAnalysisPeriod(period) {
   };
   document.getElementById(tabMap[period]).classList.add('active');
   updateAnalyticsHeaderLabel();
-  loadAnalyticsData(period);
+  // 不自動載入，等用戶點「開始分析」
 }
  
 // ── 向 GAS 請求分析資料 ──
 async function loadAnalyticsData(period, customStart, customEnd) {
   const body = document.getElementById('analysisBody');
- 
+
+  // 開始載入時自動收合 header，讓結果區有更多空間
+  analyticsHeaderExpanded = false;
+  const _hCtrl = document.getElementById('analyticsHeaderControls');
+  const _hTog  = document.getElementById('analyticsHeaderToggle');
+  if (_hCtrl) _hCtrl.style.display = 'none';
+  if (_hTog)  _hTog.textContent = '▼';
+
   // 顯示載入動畫
   body.innerHTML = `
     <div class="analysis-loading">
@@ -4648,28 +4745,42 @@ async function loadAnalyticsData(period, customStart, customEnd) {
       <span>資料分析中...</span>
     </div>`;
   document.getElementById('analyticsShareBtn').style.display = 'none';
- 
+
   // Destroy 舊圖表
   analyticsCharts.forEach(c => { try { c.destroy(); } catch(e) {} });
   analyticsCharts = [];
- 
+
   try {
     const payload = { action: 'getAnalyticsData', period, source: analyticsSource };
     if (period === 'custom' && customStart && customEnd) {
       payload.startDate = customStart;
       payload.endDate   = customEnd;
     }
-    const res = await cloudPost(payload);
-    const r   = await res.json();
-    if (!r.success) {
-      body.innerHTML = `<div class="analysis-loading">⚠️ ${r.message}</div>`;
+
+    // 兩個 GAS 請求平行執行：業績分析 + 通訊處人力
+    const [analyticsJson, mpJson] = await Promise.all([
+      cloudPost(payload).then(function(r) { return r.json(); }),
+      cloudPost({ action: 'getUnitManpower' }).then(function(r) { return r.json(); })
+    ]);
+
+    // 建立通訊處人力對照表（NFC 標準化，確保名稱比對一致）
+    _unitManpowerMap = new Map();
+    if (mpJson && mpJson.success && mpJson.units) {
+      mpJson.units.forEach(function(u) {
+        var key = String(u.name).trim().normalize('NFC');
+        if (key) _unitManpowerMap.set(key, u.power);
+      });
+    }
+
+    if (!analyticsJson.success) {
+      body.innerHTML = `<div class="analysis-loading">⚠️ ${analyticsJson.message}</div>`;
       return;
     }
-    analyticsData = r;
+    analyticsData = analyticsJson;
     // Chart.js 動態載入後才渲染，callback 包 try/catch 確保渲染錯誤不會靜默失敗
     _loadChartJS(() => {
       try {
-        _renderAnalytics(r);
+        _renderAnalytics(analyticsJson);
       } catch(renderErr) {
         body.innerHTML = `<div class="analysis-loading">⚠️ 渲染失敗，請重試</div>`;
         document.getElementById('analyticsShareBtn').style.display = 'none';
@@ -4768,22 +4879,6 @@ function _renderAnalytics(data) {
         '<div style="flex:1;min-width:30px;display:flex;align-items:center;">' + barOrZero + '</div>' +
         '<div style="width:44px;text-align:right;font-size:13px;font-weight:800;color:' + (p.isZero?'#E24B4A':'var(--text)') + ';flex-shrink:0;">' + qtyStr + '</div>' +
         '<div style="width:52px;text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;">' + amtStr + '</div>' +
-      '</div>'
-    );
-  }).join('');
-
-// ── 通訊處排名 rows ──
-  const unitRankRows = (data.unitRanking || []).map(function(u, i) {
-    var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="font-size:11px;font-weight:600;color:var(--muted);">'+(i+1)+'</span>';
-    var amtStr = u.amount>=10000?(u.amount/10000).toFixed(1)+'萬':u.amount.toLocaleString()+'元';
-    return (
-      '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.08);">' +
-        '<div style="width:22px;text-align:center;flex-shrink:0;font-size:14px;">' + medal + '</div>' +
-        '<div style="flex:1;min-width:0;">' +
-          '<span style="font-size:13px;font-weight:600;color:var(--text);">' + u.unit + '</span>' +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-right:8px;">' + u.customerCount + '人</div>' +
-        '<div style="width:60px;text-align:right;font-size:13px;font-weight:800;color:var(--text);flex-shrink:0;">' + amtStr + '</div>' +
       '</div>'
     );
   }).join('');
@@ -4924,9 +5019,19 @@ function _renderAnalytics(data) {
 
     <!-- 通訊處排名 TOP 10 -->
     <div class="analysis-chart-card" style="margin-bottom:10px;">
-      <div class="analysis-chart-title">🏢 通訊處排名 TOP 10</div>
-      <div class="analysis-chart-sub">${periodLabel}購買金額最高 · 通訊處 · 購買人數 · 金額</div>
-      <div style="padding-top:4px;">${unitRankRows.length > 0 ? unitRankRows : '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">暫無資料</div>'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div>
+          <div class="analysis-chart-title">🏢 通訊處排名 TOP 10</div>
+          <div class="analysis-chart-sub">${periodLabel} · 通訊處 · 購買人數 · 總金額 · 人均購買</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-top:2px;">
+          <button id="unitSortAmount" class="unit-sort-btn active"
+                  onclick="renderUnitRanking('amount')">總金額</button>
+          <button id="unitSortPerPerson" class="unit-sort-btn"
+                  onclick="renderUnitRanking('perPerson')">人均購買</button>
+        </div>
+      </div>
+      <div id="unitRankList" style="padding-top:2px;"></div>
     </div>
 
     <!-- LTV 排名 TOP 10 -->
@@ -4975,7 +5080,10 @@ function _renderAnalytics(data) {
             <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</span>
             <span style="font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;">${c.unitName}</span>
           </div>
-          <div style="text-align:right;flex-shrink:0;font-size:12px;white-space:nowrap;"><strong>${fmt(c.amount)}</strong> <span style="color:var(--muted);">(${c.pct}%)</span></div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <strong style="font-size:12px;white-space:nowrap;">${fmt(c.amount)}</strong>
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap;min-width:44px;text-align:right;">(${c.pct}%)</span>
+          </div>
         </div>`).join('')}
     </div>
 
@@ -5082,6 +5190,11 @@ function _renderAnalytics(data) {
       }
     }));
   }
+
+  // ── 通訊處排名初始化（前端排序，預設總金額）──
+  _unitRankingData = data.unitRanking || [];
+  _unitRankSort    = 'amount';
+  renderUnitRanking('amount');
 
 }
  
