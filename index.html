@@ -1838,11 +1838,13 @@
         <label class="elig-label">今日業績</label>
         <input type="text" id="lineReportTodayAmt" class="form-control"
                placeholder="查詢中..." style="text-align:right;padding:8px 10px;">
+        <div id="lineReportTodayBreakdown" style="margin-top:5px;"></div>
       </div>
       <div style="flex:1;min-width:0;">
         <label class="elig-label">截至目前月累積</label>
         <input type="text" id="lineReportMonthAmt" class="form-control"
                placeholder="查詢中..." style="text-align:right;padding:8px 10px;">
+        <div id="lineReportMonthBreakdown" style="margin-top:5px;"></div>
       </div>
     </div>
 
@@ -4226,10 +4228,22 @@ async function fetchLineToday() {
   try {
     const res = await cloudPost({ action: 'getTodaySales', salesName: '王惠宣' });
     const r = await res.json();
-    document.getElementById('lineReportTodayAmt').value =
-      r.success ? r.total.toLocaleString() : '0';
+    if (r.success) {
+      document.getElementById('lineReportTodayAmt').value = r.total.toLocaleString();
+      document.getElementById('lineReportTodayBreakdown').innerHTML =
+        '<div style="font-size:11px;color:var(--muted);display:flex;justify-content:space-between;">' +
+          '<span>手動出單</span><span>' + r.salesTotal.toLocaleString() + '元</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--muted);display:flex;justify-content:space-between;">' +
+          '<span>團購系統</span><span>' + r.teamBuyTotal.toLocaleString() + '元</span>' +
+        '</div>';
+    } else {
+      document.getElementById('lineReportTodayAmt').value = '0';
+      document.getElementById('lineReportTodayBreakdown').innerHTML = '';
+    }
   } catch(e) {
     document.getElementById('lineReportTodayAmt').value = '0';
+    document.getElementById('lineReportTodayBreakdown').innerHTML = '';
   }
 }
 
@@ -4238,10 +4252,22 @@ async function fetchLineMonthly() {
   try {
     const res = await cloudPost({ action: 'getMonthlyTotal' });
     const r = await res.json();
-    document.getElementById('lineReportMonthAmt').value =
-      r.success ? r.total.toLocaleString() : '0';
+    if (r.success) {
+      document.getElementById('lineReportMonthAmt').value = r.total.toLocaleString();
+      document.getElementById('lineReportMonthBreakdown').innerHTML =
+        '<div style="font-size:11px;color:var(--muted);display:flex;justify-content:space-between;">' +
+          '<span>手動出單</span><span>' + r.salesTotal.toLocaleString() + '元</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--muted);display:flex;justify-content:space-between;">' +
+          '<span>團購系統</span><span>' + r.teamBuyTotal.toLocaleString() + '元</span>' +
+        '</div>';
+    } else {
+      document.getElementById('lineReportMonthAmt').value = '0';
+      document.getElementById('lineReportMonthBreakdown').innerHTML = '';
+    }
   } catch(e) {
     document.getElementById('lineReportMonthAmt').value = '0';
+    document.getElementById('lineReportMonthBreakdown').innerHTML = '';
   }
 }
 
