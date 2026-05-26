@@ -1177,27 +1177,29 @@
 
     /* 頂部標題（漸層背景）*/
     .analysis-header {
-      background: var(--header-bg); color: #fff;
+      background: var(--card); color: var(--text);
       padding: 16px 20px;
       border-radius: 24px 24px 0 0;
       flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
     }
     .analysis-header h2 {
       font-size: 17px; font-weight: 900;
       letter-spacing: 1px; margin-bottom: 12px;
+      color: var(--text);
     }
     .analysis-period-tabs { display: flex; gap: 8px; }
     .analysis-tab {
       flex: 1; padding: 9px 0;
-      border: 1.5px solid rgba(255,255,255,0.4);
+      border: 1.5px solid var(--border);
       border-radius: var(--radius-sm);
-      background: transparent; color: rgba(255,255,255,0.65);
+      background: transparent; color: var(--muted);
       font-size: 13px; font-weight: 700;
       transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
     .analysis-tab.active {
-      background: rgba(255,255,255,0.95);
-      color: var(--primary); border-color: transparent;
+      background: var(--primary);
+      color: #fff; border-color: var(--primary);
     }
 
     /* 可上下滑動的內容區 */
@@ -2060,8 +2062,8 @@
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0 6px;" onclick="toggleAnalyticsHeader()">
         <h2 style="margin-bottom:0;">📒 業績分析</h2>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:0;">
-          <span id="analyticsHeaderSummary" style="font-size:11px;color:rgba(255,255,255,0.65);font-weight:600;text-align:right;white-space:nowrap;"></span>
-          <span id="analyticsHeaderToggle" style="color:rgba(255,255,255,0.75);font-size:11px;flex-shrink:0;">▼</span>
+          <span id="analyticsHeaderSummary" style="font-size:11px;color:var(--muted);font-weight:600;text-align:right;white-space:nowrap;"></span>
+          <span id="analyticsHeaderToggle" style="color:var(--muted);font-size:11px;flex-shrink:0;">▼</span>
         </div>
       </div>
       <!-- 展開的控制區（預設隱藏）-->
@@ -2075,31 +2077,47 @@
           <button class="analysis-tab" id="srcTabAB"
                   onclick="switchAnalyticsSource('AB')">合併業績</button>
         </div>
-        <!-- 手動篩選日期 -->
-      <div style="padding:10px 0 6px;">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;">
-          <input type="checkbox" id="analyticsCustomToggle" onchange="toggleAnalyticsCustom()"
-                 style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);">
-          手動篩選日期
-        </label>
-      </div>
-      <div id="analyticsCustomInputRow" style="display:none;align-items:center;gap:8px;padding:4px 0 12px;box-sizing:border-box;width:100%;">
-        <input type="text" id="analyticsStart" inputmode="numeric" placeholder="開始 MMDD" maxlength="5"
-               autocomplete="off" oninput="autoFormatAnalyticsDate(this,'start')"
-               style="flex:1;min-width:0;padding:9px 4px;border-radius:var(--radius-sm);border:1.5px solid rgba(255,255,255,0.4);background:transparent;color:#fff;font-size:13px;font-weight:700;text-align:center;outline:none;box-sizing:border-box;">
-        <span style="color:rgba(255,255,255,0.6);font-size:14px;flex-shrink:0;">～</span>
-        <input type="text" id="analyticsEnd" inputmode="numeric" placeholder="結束 MMDD" maxlength="5"
-               autocomplete="off" oninput="autoFormatAnalyticsDate(this,'end')"
-               style="flex:1;min-width:0;padding:9px 4px;border-radius:var(--radius-sm);border:1.5px solid rgba(255,255,255,0.4);background:transparent;color:#fff;font-size:13px;font-weight:700;text-align:center;outline:none;box-sizing:border-box;">
-      </div>
-      <div class="analysis-period-tabs" style="margin-top:4px;">
-        <button class="analysis-tab active" id="tabThisMonth"
-                onclick="switchAnalysisPeriod('thisMonth')">本月</button>
-        <button class="analysis-tab" id="tabLastMonth"
-                onclick="switchAnalysisPeriod('lastMonth')">上月</button>
-        <button class="analysis-tab" id="tabAll"
-                onclick="switchAnalysisPeriod('all')">全部</button>
-      </div>
+        <!-- 期間 Tab（移到自訂日期上方）-->
+        <div class="analysis-period-tabs" style="margin-bottom:10px;">
+          <button class="analysis-tab active" id="tabThisMonth"
+                  onclick="switchAnalysisPeriod('thisMonth')">本月</button>
+          <button class="analysis-tab" id="tabLastMonth"
+                  onclick="switchAnalysisPeriod('lastMonth')">上月</button>
+          <button class="analysis-tab" id="tabAll"
+                  onclick="switchAnalysisPeriod('all')">全部</button>
+        </div>
+        <!-- 手動篩選日期（移到期間 Tab 下方）-->
+        <div style="padding:4px 0 6px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;">
+            <input type="checkbox" id="analyticsCustomToggle" onchange="toggleAnalyticsCustom()"
+                   style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);">
+            手動篩選日期
+          </label>
+        </div>
+        <div id="analyticsCustomInputRow" style="display:none;align-items:center;gap:8px;padding:4px 0 12px;box-sizing:border-box;width:100%;">
+          <input type="text" id="analyticsStart" inputmode="numeric" placeholder="開始 MMDD" maxlength="5"
+                 autocomplete="off" oninput="autoFormatAnalyticsDate(this,'start')"
+                 style="flex:1;min-width:0;padding:9px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px;font-weight:700;text-align:center;outline:none;box-sizing:border-box;">
+          <span style="color:var(--muted);font-size:14px;flex-shrink:0;">～</span>
+          <input type="text" id="analyticsEnd" inputmode="numeric" placeholder="結束 MMDD" maxlength="5"
+                 autocomplete="off" oninput="autoFormatAnalyticsDate(this,'end')"
+                 style="flex:1;min-width:0;padding:9px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px;font-weight:700;text-align:center;outline:none;box-sizing:border-box;">
+        </div>
+        <!-- 個人 / 全公司 radio（互斥，瀏覽器原生防呆）-->
+        <div style="display:flex;gap:20px;padding:6px 0 2px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text);font-weight:600;">
+            <input type="radio" name="analyticsScope" id="scopePersonal" value="personal"
+                   checked onchange="switchAnalyticsScope('personal')"
+                   style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);">
+            👤 個人業績
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text);font-weight:600;">
+            <input type="radio" name="analyticsScope" id="scopeCompany" value="company"
+                   onchange="switchAnalyticsScope('company')"
+                   style="width:16px;height:16px;cursor:pointer;accent-color:#EF9F27;">
+            🏢 全公司業績
+          </label>
+        </div>
       </div><!-- end analyticsHeaderControls -->
       <!-- 開始分析按鈕 -->
       <button class="btn-primary"
@@ -4569,6 +4587,7 @@ let analysisPeriod  = 'thisMonth'; // 目前選中的期間
 let analyticsSource = 'A';         // 目前選中的來源：A/B/AB
 let analyticsCustomStart = null;   // 自訂開始日期 YYYY-MM-DD
 let analyticsCustomEnd   = null;   // 自訂結束日期 YYYY-MM-DD
+let analyticsScope       = 'personal'; // 'personal' | 'company'
 let analyticsData   = null;        // GAS 回傳的完整資料
 let analyticsCharts = [];          // Chart.js 實例清單（關閉時 destroy，避免記憶體洩漏）
  
@@ -5129,14 +5148,53 @@ function updateAnalyticsHeaderLabel() {
   if (!el) return;
   const srcLabel = {A:'手動出單', B:'團購系統', AB:'合併業績'}[analyticsSource] || '';
   let perLabel = '';
-  if (analysisPeriod === 'custom' && analyticsCustomStart && analyticsCustomEnd) {
+  if (analysisPeriod === 'all') {
+    perLabel = '全部';
+  } else if (analysisPeriod === 'custom' && analyticsCustomStart && analyticsCustomEnd) {
     const s = analyticsCustomStart.split('-');
     const e = analyticsCustomEnd.split('-');
     perLabel = parseInt(s[1]) + '/' + parseInt(s[2]) + '～' + parseInt(e[1]) + '/' + parseInt(e[2]);
-  } else {
-    perLabel = {thisMonth:'本月', lastMonth:'上月', all:'全部'}[analysisPeriod] || '';
+  } else if (analysisPeriod === 'thisMonth' || analysisPeriod === 'lastMonth') {
+    // 顯示實際 21-20 週期範圍
+    const range = calcAnalyticsCycleLabel(analysisPeriod);
+    perLabel = range;
   }
-  el.textContent = srcLabel + (perLabel ? ' · ' + perLabel : '');
+  const scopeLabel = analyticsScope === 'company' ? ' ⚠️ 全公司' : '';
+  el.textContent = srcLabel + (perLabel ? ' · ' + perLabel : '') + scopeLabel;
+}
+
+// 計算 21-20 週期的顯示標籤（例如 4/21～5/20）
+function calcAnalyticsCycleLabel(period) {
+  const now = new Date();
+  const cy = now.getFullYear(), cm = now.getMonth() + 1, cd = now.getDate();
+  let sY, sM, eY, eM;
+  if (cd <= 20) {
+    const thisSM = cm === 1 ? 12 : cm - 1;
+    const thisSY = cm === 1 ? cy - 1 : cy;
+    if (period === 'thisMonth') {
+      sY = thisSY; sM = thisSM; eY = cy; eM = cm;
+    } else {
+      eM = thisSM; eY = thisSY;
+      sM = thisSM === 1 ? 12 : thisSM - 1;
+      sY = thisSM === 1 ? thisSY - 1 : thisSY;
+    }
+  } else {
+    if (period === 'thisMonth') {
+      sY = cy; sM = cm;
+      eM = cm === 12 ? 1 : cm + 1;
+      eY = cm === 12 ? cy + 1 : cy;
+    } else {
+      sM = cm === 1 ? 12 : cm - 1;
+      sY = cm === 1 ? cy - 1 : cy;
+      eY = cy; eM = cm;
+    }
+  }
+  return sM + '/21～' + eM + '/20';
+}
+
+function switchAnalyticsScope(scope) {
+  analyticsScope = scope;
+  updateAnalyticsHeaderLabel();
 }
 
 function switchAnalyticsSource(source) {
@@ -5182,6 +5240,10 @@ function openSalesAnalysis() {
     document.getElementById(id).classList.remove('active')
   );
   document.getElementById('tabThisMonth').classList.add('active');
+  // 重設 scope 為個人業績
+  analyticsScope = 'personal';
+  const scopeRadio = document.getElementById('scopePersonal');
+  if (scopeRadio) scopeRadio.checked = true;
   document.getElementById('analyticsShareBtn').style.display = 'none';
   // 顯示空狀態（等待用戶點選開始分析）
   const body = document.getElementById('analysisBody');
@@ -5259,7 +5321,7 @@ async function loadAnalyticsData(period, customStart, customEnd) {
   analyticsCharts = [];
 
   try {
-    const payload = { action: 'getAnalyticsData', period, source: analyticsSource };
+    const payload = { action: 'getAnalyticsData', period, source: analyticsSource, scope: analyticsScope };
     if (period === 'custom' && customStart && customEnd) {
       payload.startDate = customStart;
       payload.endDate   = customEnd;
@@ -5433,6 +5495,11 @@ function _renderAnalytics(data) {
   }).join('');
 
   body.innerHTML = `
+
+    <!-- ⚠️ 全公司模式警示條（個人模式不顯示）-->
+    ${data.scope === 'company' ?
+      '<div style="background:#EF9F27;color:#fff;font-size:13px;font-weight:700;padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:12px;display:flex;align-items:center;gap:8px;">⚠️ 全公司模式｜分析結果為全公司合併資料，截圖完畢請切回個人業績</div>'
+      : ''}
 
     <!-- ══ 區塊一：本期業績概覽 ══ -->
     <div class="analysis-section-label">${periodLabel}${sourceLabel?' · '+sourceLabel:''} 業績概覽</div>
@@ -5699,7 +5766,7 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
   var rows = plans.map(function(p, idx) {
     var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
     var rateColor   = p.rate >= 100 ? '#1D9E75' : p.rate >= 70 ? 'var(--text)' : '#E24B4A';
-    var actualStr   = p.actual >= 10000 ? (p.actual/10000).toFixed(1).replace('.0','')+'萬' : p.actual.toLocaleString()+'元';
+    var actualStr   = p.actual > 0 ? p.actual.toLocaleString() + '元' : '0元';
     var estStr      = p.estimate >= 10000 ? (p.estimate/10000).toFixed(1).replace('.0','')+'萬' : p.estimate.toLocaleString()+'元';
     var unitId      = 'arUnit' + idx;
     return (
@@ -5708,7 +5775,7 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
         '<div id="' + unitId + '" onclick="toggleVpUnit(\'' + unitId + '\')" style="flex:1;min-width:0;font-size:12px;color:var(--muted);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + unitDisplay + '</div>' +
         '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:36px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
         '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:44px;text-align:right;white-space:nowrap;">' + estStr + '</div>' +
-        '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:52px;text-align:right;white-space:nowrap;">' + actualStr + '</div>' +
+        '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:72px;text-align:right;white-space:nowrap;">' + actualStr + '</div>' +
         '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:56px;text-align:right;white-space:nowrap;color:' + rateColor + ';">' + p.rate + '%</div>' +
       '</div>'
     );
@@ -5719,7 +5786,7 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
   var totalRate   = totalEst > 0 ? Math.round(totalActual/totalEst*1000)/10 : 0;
   var totalRateColor = totalRate >= 100 ? '#1D9E75' : totalRate >= 70 ? 'var(--text)' : '#E24B4A';
   var totalEstStr = totalEst >= 10000 ? (totalEst/10000).toFixed(1)+'萬' : totalEst.toLocaleString()+'元';
-  var totalActStr = totalActual >= 10000 ? (totalActual/10000).toFixed(1)+'萬' : totalActual.toLocaleString()+'元';
+  var totalActStr = totalActual.toLocaleString() + '元';
 
   return (
     '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
