@@ -807,6 +807,50 @@
     }
     .mp-dropdown-item:last-child { border-bottom:none; }
     .mp-dropdown-item:active { background:rgba(128,128,128,0.1); }
+    /* ── 早會登記 ── */
+    .vp-mode { display:none; }
+    .vp-mode.active { display:block; }
+    .vp-unit-row {
+      display:flex; align-items:center; gap:8px; padding:10px 4px;
+      border-bottom:1px solid var(--border); font-size:13px;
+    }
+    .vp-unit-row:last-child { border-bottom:none; }
+    .vp-plan-row { border-bottom:1px solid var(--border); }
+    .vp-plan-row:last-child { border-bottom:none; }
+    .vp-swipe-wrapper { overflow:hidden; position:relative; }
+    .vp-plan-content {
+      display:flex; align-items:center; gap:4px; padding:10px 4px;
+      background:var(--bg); position:relative; z-index:1; will-change:transform;
+    }
+    .vp-plan-delete-btn {
+      position:absolute; right:0; top:0; bottom:1px; width:64px;
+      background:var(--danger); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; cursor:pointer; z-index:0;
+    }
+    .vp-plan-hover-del {
+      display:none; width:26px; height:26px; border-radius:50%;
+      background:var(--danger-light); color:var(--danger);
+      border:1px solid var(--danger-border);
+      align-items:center; justify-content:center;
+      cursor:pointer; font-size:15px; font-weight:700;
+      flex-shrink:0; transition:background 0.15s, color 0.15s;
+    }
+    .vp-plan-hover-del:hover { background:var(--danger); color:#fff; }
+    @media (hover: hover) {
+      .vp-swipe-wrapper:hover .vp-plan-hover-del { display:flex; }
+    }
+    .vp-edit-box {
+      background:rgba(128,128,128,0.06); border-radius:var(--radius-sm);
+      padding:10px; margin-top:8px;
+    }
+    .vp-rate-row {
+      display:flex; align-items:center; gap:6px;
+      padding:8px 0; border-bottom:1px solid rgba(128,128,128,0.08);
+      font-size:13px;
+    }
+    .vp-rate-row:last-child { border-bottom:none; }
+
     .unit-sort-btn {
       padding:5px 10px; font-size:11px; font-weight:600;
       border-radius:6px; cursor:pointer;
@@ -1329,6 +1373,7 @@
     <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
     <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
     <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="多通訊處人力加總"><span>👥</span> 人力計算</a>
+    <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會/開團與業績預估"><span>🎙️</span> 早會開團</a>
 <a onclick="handleMenuAction('salesAnalysis')" data-tooltip="業績儀表板分析"><span>📒</span> 業績分析</a>
   </div>
 </div>
@@ -1500,7 +1545,7 @@
       </div>
       <div class="form-group" id="nameGroup" style="flex:2.5;margin-bottom:0;position:relative;">
         <label class="form-label">中文通訊處<span class="required-mark">*</span></label>
-        <input type="text" id="unitName" class="form-control allow-select" placeholder="輸入名稱搜尋處名" autocomplete="off" oninput="clearConnectedFields()">
+        <input type="text" id="unitName" class="form-control allow-select" placeholder="輸入代號or中文通訊處" autocomplete="off" oninput="clearConnectedFields()">
         <div id="unitSuggestions" class="unit-suggestions" style="display:none;"></div>
       </div>
     </div>
@@ -1661,24 +1706,13 @@
     <h3>🏷️ 優惠登記</h3>
     <p class="elig-sub">登記通訊處大組價優惠資格（有效期 90 天）</p>
 
-    <!-- 代號 + 通訊處 並排（1:2.5），加入按鈕靠右 -->
-    <div style="display:flex;gap:10px;margin-bottom:13px;">
-      <div style="flex:1;min-width:0;">
-        <label class="elig-label">單位代號</label>
-        <input type="text" id="eligUnitCode" class="form-control" placeholder="輸入代號"
-               autocomplete="off" oninput="onEligCodeInput(this.value)">
-      </div>
-      <div style="flex:2.5;min-width:0;position:relative;">
-        <label class="elig-label">中文通訊處</label>
-        <div style="display:flex;gap:6px;align-items:stretch;">
-          <div style="flex:1;min-width:0;position:relative;">
-            <input type="text" id="eligUnitName" class="form-control" placeholder="輸入名稱搜尋"
-                   autocomplete="off" oninput="onEligNameInput(this.value)">
-            <div id="eligSuggestions" class="unit-suggestions" style="display:none;"></div>
-          </div>
-          <button class="elig-add-btn" onclick="addEligUnit()">加入</button>
-        </div>
-      </div>
+    <!-- 通訊處搜尋（對齊早會登記 UX）-->
+    <div style="position:relative;margin-bottom:13px;">
+      <label class="elig-label">通訊處</label>
+      <input type="text" id="eligUnitSearch" class="form-control allow-select"
+             placeholder="輸入代號or中文通訊處..." autocomplete="off"
+             oninput="filterEligUnit(this.value)">
+      <div id="eligUnitDropdown" class="mp-dropdown"></div>
     </div>
 
     <!-- 已選中通訊處 -->
@@ -1894,7 +1928,7 @@
     <!-- 搜尋欄 -->
     <div style="position:relative;margin-bottom:12px;">
       <input id="mpSearchInput" type="text" class="form-control allow-select"
-             placeholder="搜尋通訊處名稱..." autocomplete="off"
+             placeholder="輸入代號or中文通訊處..." autocomplete="off"
              oninput="filterManpower(this.value)">
       <div id="mpDropdown" class="mp-dropdown"></div>
     </div>
@@ -1911,6 +1945,71 @@
               onclick="closeManpowerCalc()">關閉</button>
       <button class="btn-danger" style="flex:1;padding:14px;"
               onclick="clearMpList()">清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     🎙️ 早會開團 Overlay
+     ════════════════════════════════ -->
+<div class="overlay-backdrop" id="visitPlannerOverlay" style="display:none;"
+     onclick="if(event.target===this)closeVisitPlanner()">
+  <div class="elig-box" style="max-height:85vh;display:flex;flex-direction:column;gap:0;">
+    <h3 style="margin-bottom:12px;">🎙️ 早會開團</h3>
+
+    <!-- 新增模式 -->
+    <div id="vpNewMode" class="vp-mode active">
+      <!-- 日期輸入 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:13px;color:var(--muted);flex-shrink:0;">日期</span>
+        <input id="vpMonth" type="tel" maxlength="2" placeholder="月" class="form-control allow-select"
+               style="width:56px;text-align:center;">
+        <span style="color:var(--muted);">/</span>
+        <input id="vpDay" type="tel" maxlength="2" placeholder="日" class="form-control allow-select"
+               style="width:56px;text-align:center;">
+      </div>
+      <!-- 搜尋通訊處 -->
+      <div style="position:relative;margin-bottom:10px;">
+        <input id="vpSearchInput" type="text" class="form-control allow-select"
+               placeholder="輸入代號or中文通訊處..." autocomplete="off"
+               oninput="filterVisit(this.value,'new')">
+        <div id="vpDropdown" class="mp-dropdown"></div>
+      </div>
+      <!-- 已選通訊處 -->
+      <div id="vpUnitList" style="min-height:40px;"></div>
+      <!-- 小計 -->
+      <div id="vpSummary" style="font-size:12px;color:var(--muted);padding:6px 0;border-top:1px solid var(--border);margin-top:4px;display:none;"></div>
+      <!-- 底部按鈕 -->
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn-secondary" style="flex:1;padding:13px;"
+                onclick="closeVisitPlanner()">關閉</button>
+        <button class="btn-secondary" style="flex:2;padding:13px;"
+                onclick="openVisitView()">查看登記</button>
+        <button class="btn-primary" style="flex:2;padding:13px;font-weight:900;"
+                onclick="saveVisitPlan()">儲存這場</button>
+      </div>
+    </div>
+
+    <!-- 查看模式 -->
+    <div id="vpViewMode" class="vp-mode" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+      <!-- 日期篩選 -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-shrink:0;">
+        <input id="vpViewStart" type="tel" maxlength="4" placeholder="0501" class="form-control allow-select"
+               style="flex:1;text-align:center;">
+        <span style="color:var(--muted);">～</span>
+        <input id="vpViewEnd" type="tel" maxlength="4" placeholder="0531" class="form-control allow-select"
+               style="flex:1;text-align:center;">
+        <button class="unit-sort-btn active" onclick="loadVisitPlans()" style="flex-shrink:0;padding:8px 12px;">查詢</button>
+      </div>
+      <!-- 計畫列表 -->
+      <div id="vpPlanList" style="flex:1;overflow-y:auto;min-height:60px;"></div>
+      <!-- 底部 -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-shrink:0;">
+        <button class="btn-secondary" style="flex:1;padding:13px;"
+                onclick="openVisitNew()">＋ 新增場次</button>
+        <button class="btn-secondary" style="flex:1;padding:13px;"
+                onclick="closeVisitPlanner()">關閉</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2204,6 +2303,7 @@ function handleMenuAction(type) {
   else if (type === 'fileDownload')          openFileDownload();
   else if (type === 'msgParser')             openMsgParser();
   else if (type === 'manpowerCalc')          openManpowerCalc();
+  else if (type === 'visitPlanner')          openVisitPlanner();
   else if (type === 'salesAnalysis')    openSalesAnalysis();
 }
 
@@ -2320,12 +2420,9 @@ async function openEligibilityRegister() {
   document.getElementById('eligibilityRegisterOverlay').style.display = 'flex';
   // 清空所有欄位和選中清單
   eligSelectedUnits = [];
-  document.getElementById('eligUnitCode').value  = '';
-  document.getElementById('eligUnitName').value  = '';
+  document.getElementById('eligUnitSearch').value = '';
+  document.getElementById('eligUnitDropdown').style.display = 'none';
   document.getElementById('eligStartDatePicker').value = '';
-  document.getElementById('eligStartDate').value = '';
-  document.getElementById('eligEndDate').value   = '';
-  document.getElementById('eligSuggestions').style.display = 'none';
   renderEligSelectedList();
   await loadEligibleProducts();
 }
@@ -2336,55 +2433,64 @@ function closeEligibilityRegister() {
 
 async function loadEligibleProducts() {
   const sel = document.getElementById('eligProduct');
+  // 已有快取資料，直接渲染不重新請求 GAS
+  if (eligProducts.length > 0) {
+    sel.innerHTML = '<option value="">— 選擇達標品項 —</option>' +
+      eligProducts.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    return;
+  }
   sel.innerHTML = '<option value="">— 載入中 —</option>';
   try {
     const res = await cloudPost({ action: 'getEligibleProducts' });
     const r = await res.json();
-    if (r.success && r.products.length > 0) {
+    if (r.success && r.products && r.products.length > 0) {
       eligProducts = r.products;
       sel.innerHTML = '<option value="">— 選擇達標品項 —</option>' +
         r.products.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-    } else { sel.innerHTML = '<option value="">無資料</option>'; }
-  } catch(e) { sel.innerHTML = '<option value="">載入失敗</option>'; }
-}
-
-// ── 輸入代號自動帶入名稱 ──
-function onEligCodeInput(code) {
-  const c = code.trim().toUpperCase();
-  if (c.length < 2) return;
-  const match = allUnits.find(u => u.code === c);
-  if (match) {
-    document.getElementById('eligUnitName').value = match.name;
-    document.getElementById('eligSuggestions').style.display = 'none';
+    } else if (r.success) {
+      sel.innerHTML = '<option value="">商品參數無 K=Y 資料</option>';
+    } else {
+      sel.innerHTML = '<option value="">載入失敗，請關閉重開</option>';
+    }
+  } catch(e) {
+    sel.innerHTML = '<option value="">網路異常，請關閉重開</option>';
   }
 }
 
-// ── 名稱模糊搜尋 ──
-function onEligNameInput(val) {
-  const query = val.trim();
-  const box   = document.getElementById('eligSuggestions');
-  if (query.length < 1) { box.style.display = 'none'; return; }
-  const hits = allUnits.filter(u =>
-    (u.name && u.name.includes(query)) || (u.code && u.code.includes(query))
-  ).slice(0, 8);
-  if (hits.length === 0) { box.style.display = 'none'; return; }
-  box.innerHTML = hits.map(u =>
-    `<div class="suggestion-item" onclick="fillEligUnit('${u.code}','${encodeURIComponent(u.name)}')">
-       <span class="suggestion-name">${u.name}</span>
-       <span class="suggestion-code">${u.code}</span>
-     </div>`).join('');
-  box.style.display = 'block';
+// ── 通訊處搜尋（對齊早會登記 UX）──
+function filterEligUnit(query) {
+  var dd = document.getElementById('eligUnitDropdown');
+  var q  = query.trim();
+  if (!q) { dd.style.display = 'none'; return; }
+  var pool = allUnits.length ? allUnits : (mpUnits || []);
+  var matches = pool.filter(function(u) {
+    return ((u.name && u.name.includes(q)) || (u.code && u.code.includes(q))) &&
+           !eligSelectedUnits.some(function(s) { return s.code === u.code; });
+  }).slice(0, 8);
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(function(u) {
+    var safeName = u.name.replace(/'/g, "\\'");
+    return (
+      '<div class="mp-dropdown-item" onclick="addEligUnitDirect(\'' + u.code + '\',\'' + safeName + '\')">' +
+        '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
+        '<span style="flex:1;">' + u.name + '</span>' +
+      '</div>'
+    );
+  }).join('');
+  dd.style.display = 'block';
 }
 
-function fillEligUnit(code, encodedName) {
-  const name = decodeURIComponent(encodedName);
-  document.getElementById('eligUnitCode').value = code;
-  document.getElementById('eligUnitName').value = name;
-  document.getElementById('eligSuggestions').style.display = 'none';
+function addEligUnitDirect(code, name) {
+  if (eligSelectedUnits.some(function(u) { return u.code === code; })) {
+    showGlobalToast('⚠️ ' + name + ' 已加入'); return;
+  }
+  eligSelectedUnits.push({ code: code, name: name });
+  document.getElementById('eligUnitSearch').value = '';
+  document.getElementById('eligUnitDropdown').style.display = 'none';
+  renderEligSelectedList();
 }
 
-// ── 加入通訊處（防重複）──
-// ✅ 達標品項多選功能
+// ── 達標品項多選功能 ──
 function addEligProduct() {
   const sel  = document.getElementById('eligProduct');
   const name = sel.options[sel.selectedIndex]?.text;
@@ -2438,20 +2544,6 @@ function renderEligProductTags() {
       removeEligProduct(eligSelectedProducts[parseInt(wrapper.dataset.idx)]);
     });
   });
-}
-
-function addEligUnit() {
-  const code = document.getElementById('eligUnitCode').value.trim().toUpperCase();
-  const name = document.getElementById('eligUnitName').value.trim();
-  if (!code || !name) { showGlobalToast('⚠️ 請先輸入通訊處代號與名稱'); return; }
-  if (eligSelectedUnits.some(u => u.code === code)) {
-    showGlobalToast('⚠️ ' + name + ' 已加入'); return;
-  }
-  eligSelectedUnits.push({ code, name });
-  // 清空輸入欄，準備加入下一個
-  document.getElementById('eligUnitCode').value = '';
-  document.getElementById('eligUnitName').value = '';
-  renderEligSelectedList();
 }
 
 // ── 移除已選通訊處（手機左滑 / 桌機 hover X 共用）──
@@ -3385,7 +3477,7 @@ function showUnitSkeleton(show) {
     el.setAttribute('placeholder', '');
   } else {
     el.classList.remove('skeleton-input');
-    el.setAttribute('placeholder', '輸入名稱搜尋處名');
+    el.setAttribute('placeholder', '輸入代號or中文通訊處');
   }
 }
 // 指示器顯示/隱藏（使用 .visible class 控制 display:flex/none）
@@ -4552,7 +4644,416 @@ let _unitRankingData = []; // 全部通訊處資料，前端排序用
 let _unitRankSort    = 'amount'; // 'amount' | 'perPerson'
 let _unitManpowerMap = new Map(); // 通訊處名稱→人力，由 getUnitManpower 填充
 
-// ── 通訊處排名：前端排序切換（不重新請求 GAS）──
+// ════════════════════════════════════════════════════════
+// 🎙️ 早會登記功能
+// ════════════════════════════════════════════════════════
+
+// 預估業績公式：人力 × 1000，個位數1-5捨去到萬，6-9取x.5萬
+function calcVisitEstimate(manpower) {
+  if (!manpower || manpower <= 0) return 0;
+  var tens = Math.floor(manpower / 10);
+  var rem  = manpower % 10;
+  return rem >= 6 ? (tens * 10 + 5) * 1000 : tens * 10 * 1000;
+}
+
+function fmtEst(n) {
+  if (!n) return '0';
+  if (n >= 10000) return (n/10000).toFixed(1).replace('.0','') + '萬';
+  return n.toLocaleString() + '元';
+}
+
+// ── 全域狀態 ──
+var vpNewUnits    = [];  // 新增模式已選通訊處 [{name, power}]
+var vpEditUnits   = [];  // 修改模式已選通訊處
+var vpEditRowIdx  = null;
+var vpUnitPool    = [];  // 通訊處清單（重用 mpUnits）
+
+async function openVisitPlanner() {
+  document.getElementById('visitPlannerOverlay').style.display = 'flex';
+  vpNewUnits = [];
+  document.getElementById('vpSearchInput').value = '';
+  document.getElementById('vpDropdown').style.display = 'none';
+  document.getElementById('vpMonth').value = '';
+  document.getElementById('vpDay').value   = '';
+  showVpMode('new');
+  renderVpNewUnits();
+
+  // 若通訊處清單尚未載入，主動從 GAS 取得
+  if (!mpLoaded) {
+    try {
+      var res = await cloudPost({ action: 'getUnitManpower' });
+      var r   = await res.json();
+      if (r.success) { mpUnits = r.units; mpLoaded = true; }
+    } catch(e) {}
+  }
+  vpUnitPool = mpUnits;
+}
+
+function closeVisitPlanner() {
+  document.getElementById('visitPlannerOverlay').style.display = 'none';
+}
+
+function showVpMode(mode) {
+  document.getElementById('vpNewMode').style.display  = mode === 'new'  ? 'block' : 'none';
+  document.getElementById('vpViewMode').style.display = mode === 'view' ? 'flex'  : 'none';
+  if (mode === 'view') {
+    document.getElementById('vpViewMode').style.flexDirection = 'column';
+  }
+}
+
+function openVisitNew() { showVpMode('new'); }
+function openVisitView() {
+  showVpMode('view');
+  // 預填當月
+  var now = new Date();
+  var m = String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('vpViewStart').value = m + '01';
+  document.getElementById('vpViewEnd').value   = m + '31';
+  loadVisitPlans();
+}
+
+// ── 搜尋通訊處（新增 / 修改共用）──
+function filterVisit(query, ctx) {
+  var ddId = ctx === 'edit' ? 'vpEditDropdown' : 'vpDropdown';
+  var pool = ctx === 'edit' ? vpEditUnits     : vpNewUnits;
+  var dd   = document.getElementById(ddId);
+  if (!dd) return;
+  var q = query.trim();
+  if (!q) { dd.style.display = 'none'; return; }
+
+  if (!vpUnitPool.length && mpUnits.length) vpUnitPool = mpUnits;
+  var matches = vpUnitPool.filter(function(u) {
+    return (u.name.includes(q) || u.code.includes(q)) &&
+           !pool.find(function(s){ return s.name === u.name; });
+  });
+  if (!matches.length) { dd.style.display = 'none'; return; }
+
+  dd.innerHTML = matches.map(function(u) {
+    var safe = u.name.replace(/'/g,"\\'");
+    return (
+      '<div class="mp-dropdown-item" onclick="addVisitUnit(\'' + safe + '\',' + u.power + ',\'' + ctx + '\')">' +
+        '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
+        '<span style="flex:1;">' + u.name + '</span>' +
+        '<span style="color:var(--muted);font-size:12px;">' + u.power + '人</span>' +
+      '</div>'
+    );
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function addVisitUnit(name, power, ctx) {
+  var pool     = ctx === 'edit' ? vpEditUnits   : vpNewUnits;
+  var inputId  = ctx === 'edit' ? 'vpEditSearch' : 'vpSearchInput';
+  var ddId     = ctx === 'edit' ? 'vpEditDropdown' : 'vpDropdown';
+  if (pool.find(function(s){ return s.name === name; })) {
+    showGlobalToast('⚠️ 已在清單中'); return;
+  }
+  pool.push({ name: name, power: power });
+  document.getElementById(inputId).value = '';
+  document.getElementById(ddId).style.display = 'none';
+  if (ctx === 'edit') { renderVpEditUnits(); }
+  else { renderVpNewUnits(); }
+}
+
+function removeVisitUnit(i, ctx) {
+  if (ctx === 'edit') { vpEditUnits.splice(i,1); renderVpEditUnits(); }
+  else { vpNewUnits.splice(i,1); renderVpNewUnits(); }
+}
+
+// ── 渲染已選通訊處（新增）──
+function renderVpNewUnits() {
+  var el  = document.getElementById('vpUnitList');
+  var sum = document.getElementById('vpSummary');
+  if (!vpNewUnits.length) {
+    el.innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;">尚未加入通訊處</div>';
+    sum.style.display = 'none';
+    return;
+  }
+  el.innerHTML = vpNewUnits.map(function(u,i){
+    return (
+      '<div class="vp-unit-row">' +
+        '<span style="flex:1;font-weight:600;">' + u.name + '</span>' +
+        '<span style="color:var(--muted);font-size:11px;margin-right:6px;">' + u.power + '人</span>' +
+        '<span style="color:var(--danger);cursor:pointer;font-size:16px;font-weight:700;" onclick="removeVisitUnit(' + i + ',\'new\')">×</span>' +
+      '</div>'
+    );
+  }).join('');
+  var totalPower = vpNewUnits.reduce(function(a,u){ return a+u.power; }, 0);
+  var est = calcVisitEstimate(totalPower);
+  sum.style.display = 'block';
+  sum.innerHTML = '合計人力 <strong>' + totalPower + '人</strong>　預估業績 <strong>' + fmtEst(est) + '</strong>';
+}
+
+// ── 儲存這場 ──
+async function saveVisitPlan() {
+  var m = parseInt(document.getElementById('vpMonth').value) || 0;
+  var d = parseInt(document.getElementById('vpDay').value)   || 0;
+  if (!m || !d) { showGlobalToast('⚠️ 請填入月份和日期'); return; }
+  if (!vpNewUnits.length) { showGlobalToast('⚠️ 請加入至少一個通訊處'); return; }
+
+  var now = new Date();
+  var totalPower = vpNewUnits.reduce(function(a,u){ return a+u.power; }, 0);
+  var est = calcVisitEstimate(totalPower);
+  var unitsStr = vpNewUnits.map(function(u){ return u.name; }).join(',');
+
+  var res = await cloudPost({
+    action: 'saveVisitPlan',
+    year: now.getFullYear(), month: m, day: d,
+    units: unitsStr, manpower: totalPower, estimate: est
+  });
+  var r = await res.json();
+  if (r.success) {
+    showGlobalToast('✅ 已儲存');
+    vpNewUnits = [];
+    renderVpNewUnits();
+    document.getElementById('vpMonth').value = '';
+    document.getElementById('vpDay').value   = '';
+  } else {
+    showGlobalToast('❌ 儲存失敗：' + (r.message||''));
+  }
+}
+
+// ── 查看登記 ──
+async function loadVisitPlans() {
+  var s = document.getElementById('vpViewStart').value.trim();
+  var e = document.getElementById('vpViewEnd').value.trim();
+  var el = document.getElementById('vpPlanList');
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">載入中...</div>';
+
+  var payload = { action: 'getVisitPlans' };
+  if (s.length === 4 && e.length === 4) {
+    var now = new Date();
+    var sy = now.getFullYear(), ey = now.getFullYear();
+    payload.startTs = sy*10000 + parseInt(s.slice(0,2))*100 + parseInt(s.slice(2,4));
+    payload.endTs   = ey*10000 + parseInt(e.slice(0,2))*100 + parseInt(e.slice(2,4));
+  }
+  try {
+    var res = await cloudPost(payload);
+    var r   = await res.json();
+    if (r.success) renderVpPlans(r.plans);
+    else el.innerHTML = '<div style="text-align:center;padding:20px;color:#E24B4A;">載入失敗</div>';
+  } catch(e2) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#E24B4A;">網路異常</div>';
+  }
+}
+
+function toggleVpUnit(unitId) {
+  var el = document.getElementById(unitId);
+  if (!el) return;
+  if (el.style.whiteSpace === 'normal') {
+    el.style.whiteSpace    = 'nowrap';
+    el.style.overflow      = 'hidden';
+    el.style.textOverflow  = 'ellipsis';
+  } else {
+    el.style.whiteSpace    = 'normal';
+    el.style.overflow      = 'visible';
+    el.style.textOverflow  = 'clip';
+  }
+}
+
+function renderVpPlans(plans) {
+  var el = document.getElementById('vpPlanList');
+  if (!plans || !plans.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">此期間無約訪登記</div>';
+    return;
+  }
+  el.innerHTML = plans.map(function(p) {
+    var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
+    var rowId  = 'vpRow'   + p.rowIndex;
+    var unitId = 'vpUnit'  + p.rowIndex;
+    var swpId  = 'vpSwipe' + p.rowIndex;
+    return (
+      '<div class="vp-plan-row" id="' + rowId + '">' +
+        '<div class="vp-swipe-wrapper" id="' + swpId + '">' +
+          '<div class="vp-plan-content">' +
+            '<div style="width:36px;flex-shrink:0;font-weight:700;">' + p.month + '/' + p.day + '</div>' +
+            '<div id="' + unitId + '" onclick="toggleVpUnit(\'' + unitId + '\')" style="flex:1;min-width:0;font-size:12px;color:var(--muted);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + unitDisplay + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:40px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
+            '<div style="font-size:12px;font-weight:700;flex-shrink:0;width:44px;text-align:right;white-space:nowrap;margin-right:4px;">' + fmtEst(p.estimate) + '</div>' +
+            '<button class="unit-sort-btn" style="flex-shrink:0;" onclick="startEditVisitPlan(' + p.rowIndex + ')">修改</button>' +
+            '<span class="vp-plan-hover-del" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">×</span>' +
+          '</div>' +
+          '<div class="vp-plan-delete-btn" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">刪除</div>' +
+        '</div>' +
+        '<div id="vpEdit' + p.rowIndex + '" style="display:none;"></div>' +
+      '</div>'
+    );
+  }).join('');
+  window._vpPlans = plans;
+  // 綁定左滑事件
+  plans.forEach(function(p) {
+    var wrapper = document.getElementById('vpSwipe' + p.rowIndex);
+    if (wrapper) initVpSwipe(wrapper);
+  });
+}
+
+function startEditVisitPlan(rowIndex) {
+  var plan = (window._vpPlans||[]).find(function(p){ return p.rowIndex===rowIndex; });
+  if (!plan) return;
+  // 初始化 editUnits
+  vpEditUnits = plan.units.split(',').map(function(name){
+    name = name.trim();
+    var u = vpUnitPool.find(function(u){ return u.name === name; });
+    return { name: name, power: u ? u.power : 0 };
+  });
+  vpEditRowIdx = rowIndex;
+
+  var editEl = document.getElementById('vpEdit' + rowIndex);
+  if (!editEl) return;
+  editEl.style.display = 'block';
+  editEl.innerHTML = (
+    '<div class="vp-edit-box">' +
+      '<div style="display:flex;gap:6px;margin-bottom:8px;">' +
+        '<input id="vpEditMonth_' + rowIndex + '" type="tel" maxlength="2" value="' + plan.month + '" class="form-control allow-select" style="width:52px;text-align:center;" placeholder="月">' +
+        '<span style="color:var(--muted);line-height:40px;">/</span>' +
+        '<input id="vpEditDay_' + rowIndex + '" type="tel" maxlength="2" value="' + plan.day + '" class="form-control allow-select" style="width:52px;text-align:center;" placeholder="日">' +
+      '</div>' +
+      '<div style="position:relative;margin-bottom:8px;">' +
+        '<input id="vpEditSearch" type="text" class="form-control allow-select" placeholder="搜尋加入通訊處..." autocomplete="off" oninput="filterVisit(this.value,\'edit\')">' +
+        '<div id="vpEditDropdown" class="mp-dropdown"></div>' +
+      '</div>' +
+      '<div id="vpEditUnitList"></div>' +
+      '<div id="vpEditSummary" style="font-size:12px;color:var(--muted);padding:4px 0;"></div>' +
+      '<div style="display:flex;gap:6px;margin-top:8px;">' +
+        '<button class="btn-secondary" style="flex:1;padding:10px;" onclick="cancelEditVisitPlan(' + rowIndex + ')">取消</button>' +
+        '<button class="btn-primary" style="flex:1;padding:10px;" onclick="saveEditVisitPlan(' + rowIndex + ')">儲存</button>' +
+      '</div>' +
+    '</div>'
+  );
+  renderVpEditUnits();
+
+  // blur 關閉 dropdown
+  setTimeout(function(){
+    var inp = document.getElementById('vpEditSearch');
+    if (inp) inp.addEventListener('blur', function(){
+      setTimeout(function(){ 
+        var dd = document.getElementById('vpEditDropdown');
+        if (dd) dd.style.display='none';
+      }, 180);
+    });
+  }, 50);
+}
+
+function renderVpEditUnits() {
+  var el  = document.getElementById('vpEditUnitList');
+  var sum = document.getElementById('vpEditSummary');
+  if (!el) return;
+  el.innerHTML = vpEditUnits.map(function(u,i){
+    return (
+      '<div class="vp-unit-row">' +
+        '<span style="flex:1;font-weight:600;">' + u.name + '</span>' +
+        '<span style="color:var(--muted);font-size:11px;margin-right:6px;">' + u.power + '人</span>' +
+        '<span style="color:var(--danger);cursor:pointer;font-size:16px;font-weight:700;" onclick="removeVisitUnit(' + i + ',\'edit\')">×</span>' +
+      '</div>'
+    );
+  }).join('');
+  var totalPower = vpEditUnits.reduce(function(a,u){ return a+u.power; }, 0);
+  var est = calcVisitEstimate(totalPower);
+  if (sum) sum.innerHTML = '合計人力 <strong>' + totalPower + '人</strong>　預估業績 <strong>' + fmtEst(est) + '</strong>';
+}
+
+function cancelEditVisitPlan(rowIndex) {
+  var el = document.getElementById('vpEdit' + rowIndex);
+  if (el) el.style.display = 'none';
+  vpEditRowIdx = null;
+}
+
+async function saveEditVisitPlan(rowIndex) {
+  var mInp = document.getElementById('vpEditMonth_' + rowIndex);
+  var dInp = document.getElementById('vpEditDay_'   + rowIndex);
+  var m = parseInt(mInp ? mInp.value : 0) || 0;
+  var d = parseInt(dInp ? dInp.value : 0) || 0;
+  if (!m || !d) { showGlobalToast('⚠️ 請填入月份和日期'); return; }
+  if (!vpEditUnits.length) { showGlobalToast('⚠️ 請加入至少一個通訊處'); return; }
+
+  var now = new Date();
+  var totalPower = vpEditUnits.reduce(function(a,u){ return a+u.power; }, 0);
+  var est = calcVisitEstimate(totalPower);
+  var unitsStr = vpEditUnits.map(function(u){ return u.name; }).join(',');
+
+  var res = await cloudPost({
+    action: 'updateVisitPlan',
+    rowIndex: rowIndex,
+    year: now.getFullYear(), month: m, day: d,
+    units: unitsStr, manpower: totalPower, estimate: est
+  });
+  var r = await res.json();
+  if (r.success) {
+    showGlobalToast('✅ 已更新');
+    loadVisitPlans();
+  } else {
+    showGlobalToast('❌ 更新失敗：' + (r.message||''));
+  }
+}
+
+// ── 早會登記左滑刪除 ──
+var _vpSwipeActive = null;
+
+function initVpSwipe(wrapperEl) {
+  var content  = wrapperEl.querySelector('.vp-plan-content');
+  var startX   = 0, dragging = false;
+  var DELETE_W = 64;
+
+  function closeOthers() {
+    if (_vpSwipeActive && _vpSwipeActive !== wrapperEl) {
+      var oc = _vpSwipeActive.querySelector('.vp-plan-content');
+      if (oc) { oc.style.transition='transform 0.2s ease'; oc.style.transform='translateX(0)'; }
+      _vpSwipeActive = null;
+    }
+  }
+
+  content.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX; dragging = true;
+    content.style.transition = 'none';
+    closeOthers();
+  }, { passive: true });
+
+  content.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    var dx = e.touches[0].clientX - startX;
+    if (dx < 0) content.style.transform = 'translateX(' + Math.max(dx, -DELETE_W) + 'px)';
+  }, { passive: true });
+
+  content.addEventListener('touchend', function(e) {
+    if (!dragging) return;
+    dragging = false;
+    content.style.transition = 'transform 0.2s ease';
+    var dx = e.changedTouches[0].clientX - startX;
+    if (dx < -(DELETE_W/2)) {
+      content.style.transform = 'translateX(-' + DELETE_W + 'px)';
+      _vpSwipeActive = wrapperEl;
+    } else {
+      content.style.transform = 'translateX(0)';
+      _vpSwipeActive = null;
+    }
+  }, { passive: true });
+}
+
+async function deleteVisitPlanDirect(rowIndex, rowId) {
+  var res = await cloudPost({ action: 'deleteVisitPlan', rowIndex: rowIndex });
+  var r   = await res.json();
+  if (r.success) {
+    showGlobalToast('✅ 已刪除');
+    var el = document.getElementById(rowId);
+    if (el) el.remove();
+    if (_vpSwipeActive) { _vpSwipeActive = null; }
+  } else {
+    showGlobalToast('❌ 刪除失敗：' + (r.message||''));
+  }
+}
+
+// blur 延遲關閉 vpDropdown
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('vpSearchInput');
+  if (inp) inp.addEventListener('blur', function() {
+    setTimeout(function() {
+      var dd = document.getElementById('vpDropdown');
+      if (dd) dd.style.display = 'none';
+    }, 180);
+  });
+});
+
+
 function renderUnitRanking(sort) {
   _unitRankSort = sort;
   var btnAmt = document.getElementById('unitSortAmount');
@@ -5017,12 +5518,55 @@ function _renderAnalytics(data) {
       </div>
     </div>
 
+    <!-- 業績達成率 -->
+    ${(function(){
+      var plans = data.visitPlans || [];
+      if (!plans.length) return '';
+      var rows = plans.map(function(p, idx) {
+        var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
+        var rateColor = p.rate >= 100 ? '#1D9E75' : p.rate >= 70 ? 'var(--text)' : '#E24B4A';
+        var actualStr = p.actual >= 10000 ? (p.actual/10000).toFixed(1).replace('.0','')+'萬' : p.actual.toLocaleString()+'元';
+        var estStr    = p.estimate >= 10000 ? (p.estimate/10000).toFixed(1).replace('.0','')+'萬' : p.estimate.toLocaleString()+'元';
+        var unitId    = 'arUnit' + idx;
+        return (
+          '<div class="vp-rate-row">' +
+            '<div style="width:40px;flex-shrink:0;font-weight:700;">' + p.month + '/' + p.day + '</div>' +
+            '<div id="' + unitId + '" onclick="toggleVpUnit(\'' + unitId + '\')" style="flex:1;min-width:0;font-size:12px;color:var(--muted);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + unitDisplay + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:36px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
+            '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:44px;text-align:right;white-space:nowrap;">' + estStr + '</div>' +
+            '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:52px;text-align:right;white-space:nowrap;">' + actualStr + '</div>' +
+            '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:56px;text-align:right;white-space:nowrap;color:' + rateColor + ';">' + p.rate + '%</div>' +
+          '</div>'
+        );
+      }).join('');
+      var totalEst    = plans.reduce(function(a,p){ return a+p.estimate; }, 0);
+      var totalActual = plans.reduce(function(a,p){ return a+p.actual; }, 0);
+      var totalRate   = totalEst > 0 ? Math.round(totalActual/totalEst*1000)/10 : 0;
+      var totalRateColor = totalRate >= 100 ? '#1D9E75' : totalRate >= 70 ? 'var(--text)' : '#E24B4A';
+      var totalEstStr = totalEst >= 10000 ? (totalEst/10000).toFixed(1)+'萬' : totalEst.toLocaleString()+'元';
+      var totalActStr = totalActual >= 10000 ? (totalActual/10000).toFixed(1)+'萬' : totalActual.toLocaleString()+'元';
+      return (
+        '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
+          '<div class="analysis-chart-title">📋 業績達成率</div>' +
+          '<div class="analysis-chart-sub">' + periodLabel + ' · 單位人力 · 預估 · 實際 · 達成率</div>' +
+          '<div style="padding-top:4px;">' + rows + '</div>' +
+          '<div style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">' +
+            '<span style="font-size:12px;color:var(--muted);">本期合計　預估 ' + totalEstStr + '</span>' +
+            '<div style="display:flex;align-items:baseline;gap:6px;">' +
+              '<span style="font-size:12px;">實際 <strong>' + totalActStr + '</strong></span>' +
+              '<span style="font-size:15px;font-weight:900;color:' + totalRateColor + ';">' + totalRate + '%</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    })()}
+
     <!-- 通訊處排名 TOP 10 -->
     <div class="analysis-chart-card" style="margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div>
           <div class="analysis-chart-title">🏢 通訊處排名 TOP 10</div>
-          <div class="analysis-chart-sub">${periodLabel} · 通訊處 · 購買人數 · 總金額 · 人均購買</div>
+          <div class="analysis-chart-sub">${periodLabel} · 單位人力 · 購買人數 · 總金額 · 人均購買</div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;margin-top:2px;">
           <button id="unitSortAmount" class="unit-sort-btn active"
@@ -5037,7 +5581,7 @@ function _renderAnalytics(data) {
     <!-- LTV 排名 TOP 10 -->
     <div class="analysis-chart-card" style="margin-bottom:10px;">
       <div class="analysis-chart-title">💎 客戶 LTV 排名 TOP 10</div>
-      <div class="analysis-chart-sub">全史消費總額 · 由高到低 · 排名 · 姓名 · 通訊處 · 金額 · 次數</div>
+      <div class="analysis-chart-sub">全史消費總額排名 · 姓名 · 通訊處 · 金額 · 購買次數</div>
       <div style="padding-top:4px;">${ltvRows}</div>
     </div>
 
@@ -5359,6 +5903,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 180);
     });
   }
+  var eligInp = document.getElementById('eligUnitSearch');
+  if (eligInp) eligInp.addEventListener('blur', function() {
+    setTimeout(function() {
+      var dd = document.getElementById('eligUnitDropdown');
+      if (dd) dd.style.display = 'none';
+    }, 180);
+  });
 });
 
 function addMpUnit(code, name, power) {
