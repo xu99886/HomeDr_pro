@@ -3499,10 +3499,13 @@ async function fetchUnitData() {
     showGlobalToast('⚠️ 載入逾時，通訊處搜尋暫不可用');
   }, 10000);
 
-  // ✅ stale-while-revalidate：有快取就立刻用，無論新舊
+  // ✅ stale-while-revalidate + 24h TTL：快取有效期內立刻用，過期強制重新載入
+  const UNIT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 小時
   const cachedRaw = localStorage.getItem('unit_data_cache');
+  const cachedTs  = parseInt(localStorage.getItem('unit_data_cache_ts') || '0');
+  const cacheValid = cachedRaw && (Date.now() - cachedTs) < UNIT_CACHE_TTL;
   let hasCache = false;
-  if (cachedRaw) {
+  if (cacheValid) {
     try { allUnits = JSON.parse(cachedRaw); hasCache = true; } catch(e) {}
   }
 
@@ -4643,6 +4646,7 @@ let analyticsHeaderExpanded = false;
 let _unitRankingData = []; // 全部通訊處資料，前端排序用
 let _unitRankSort    = 'amount'; // 'amount' | 'perPerson'
 let _unitManpowerMap = new Map(); // 通訊處名稱→人力，由 getUnitManpower 填充
+let _analyticsLoading = false;   // 防止開始分析重複觸發
 
 // ════════════════════════════════════════════════════════
 // 🎙️ 早會登記功能
@@ -5229,6 +5233,9 @@ function switchAnalysisPeriod(period) {
  
 // ── 向 GAS 請求分析資料 ──
 async function loadAnalyticsData(period, customStart, customEnd) {
+  if (_analyticsLoading) return;  // 防止重複觸發
+  _analyticsLoading = true;
+
   const body = document.getElementById('analysisBody');
 
   // 開始載入時自動收合 header，讓結果區有更多空間
@@ -5275,6 +5282,7 @@ async function loadAnalyticsData(period, customStart, customEnd) {
 
     if (!analyticsJson.success) {
       body.innerHTML = `<div class="analysis-loading">⚠️ ${analyticsJson.message}</div>`;
+      _analyticsLoading = false;
       return;
     }
     analyticsData = analyticsJson;
@@ -5286,9 +5294,11 @@ async function loadAnalyticsData(period, customStart, customEnd) {
         body.innerHTML = `<div class="analysis-loading">⚠️ 渲染失敗，請重試</div>`;
         document.getElementById('analyticsShareBtn').style.display = 'none';
       }
+      _analyticsLoading = false;
     });
   } catch(e) {
     body.innerHTML = `<div class="analysis-loading">⚠️ 網路連線異常，請重試</div>`;
+    _analyticsLoading = false;
   }
 }
  
@@ -5298,7 +5308,10 @@ function _loadChartJS(callback) {
   const s   = document.createElement('script');
   s.src     = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
   s.onload  = callback;
-  s.onerror = () => showGlobalToast('⚠️ 圖表套件載入失敗，請確認網路連線');
+  s.onerror = () => {
+    showGlobalToast('⚠️ 圖表套件載入失敗，請確認網路連線');
+    _analyticsLoading = false;  // 確保失敗後可重新觸發
+  };
   document.head.appendChild(s);
 }
  
@@ -5519,47 +5532,7 @@ function _renderAnalytics(data) {
     </div>
 
     <!-- 業績達成率 -->
-    ${(function(){
-      var plans = data.visitPlans || [];
-      if (!plans.length) return '';
-      var rows = plans.map(function(p, idx) {
-        var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
-        var rateColor = p.rate >= 100 ? '#1D9E75' : p.rate >= 70 ? 'var(--text)' : '#E24B4A';
-        var actualStr = p.actual >= 10000 ? (p.actual/10000).toFixed(1).replace('.0','')+'萬' : p.actual.toLocaleString()+'元';
-        var estStr    = p.estimate >= 10000 ? (p.estimate/10000).toFixed(1).replace('.0','')+'萬' : p.estimate.toLocaleString()+'元';
-        var unitId    = 'arUnit' + idx;
-        return (
-          '<div class="vp-rate-row">' +
-            '<div style="width:40px;flex-shrink:0;font-weight:700;">' + p.month + '/' + p.day + '</div>' +
-            '<div id="' + unitId + '" onclick="toggleVpUnit(\'' + unitId + '\')" style="flex:1;min-width:0;font-size:12px;color:var(--muted);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + unitDisplay + '</div>' +
-            '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:36px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
-            '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:44px;text-align:right;white-space:nowrap;">' + estStr + '</div>' +
-            '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:52px;text-align:right;white-space:nowrap;">' + actualStr + '</div>' +
-            '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:56px;text-align:right;white-space:nowrap;color:' + rateColor + ';">' + p.rate + '%</div>' +
-          '</div>'
-        );
-      }).join('');
-      var totalEst    = plans.reduce(function(a,p){ return a+p.estimate; }, 0);
-      var totalActual = plans.reduce(function(a,p){ return a+p.actual; }, 0);
-      var totalRate   = totalEst > 0 ? Math.round(totalActual/totalEst*1000)/10 : 0;
-      var totalRateColor = totalRate >= 100 ? '#1D9E75' : totalRate >= 70 ? 'var(--text)' : '#E24B4A';
-      var totalEstStr = totalEst >= 10000 ? (totalEst/10000).toFixed(1)+'萬' : totalEst.toLocaleString()+'元';
-      var totalActStr = totalActual >= 10000 ? (totalActual/10000).toFixed(1)+'萬' : totalActual.toLocaleString()+'元';
-      return (
-        '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
-          '<div class="analysis-chart-title">📋 業績達成率</div>' +
-          '<div class="analysis-chart-sub">' + periodLabel + ' · 單位人力 · 預估 · 實際 · 達成率</div>' +
-          '<div style="padding-top:4px;">' + rows + '</div>' +
-          '<div style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">' +
-            '<span style="font-size:12px;color:var(--muted);">本期合計　預估 ' + totalEstStr + '</span>' +
-            '<div style="display:flex;align-items:baseline;gap:6px;">' +
-              '<span style="font-size:12px;">實際 <strong>' + totalActStr + '</strong></span>' +
-              '<span style="font-size:15px;font-weight:900;color:' + totalRateColor + ';">' + totalRate + '%</span>' +
-            '</div>' +
-          '</div>' +
-        '</div>'
-      );
-    })()}
+    ${_buildVisitAchievementHTML(data.visitPlans || [], periodLabel)}
 
     <!-- 通訊處排名 TOP 10 -->
     <div class="analysis-chart-card" style="margin-bottom:10px;">
@@ -5707,42 +5680,100 @@ function _renderAnalytics(data) {
 
   document.getElementById('analyticsShareBtn').style.display = '';
 
-  // ── 月份趨勢圖 ──
-  const trendCanvas = document.getElementById('chartTrend');
-  if (trendCanvas && data.monthlyTrend.length > 0) {
-    const trendDatasets = [];
-    if (data.source !== 'B') {
-      trendDatasets.push({label:'早會/場', data:data.monthlyTrend.map(d=>+(d.meeting/10000).toFixed(1)),    backgroundColor:'#185FA5', borderRadius:3, stack:'trend'});
-      trendDatasets.push({label:'回購',    data:data.monthlyTrend.map(d=>+(d.repurchase/10000).toFixed(1)), backgroundColor:'#1D9E75', borderRadius:3, stack:'trend'});
-    }
-    if (data.source !== 'A') {
-      trendDatasets.push({label:'團購',    data:data.monthlyTrend.map(d=>+((d.teamBuy||0)/10000).toFixed(1)), backgroundColor:'#E24B4A', borderRadius:3, stack:'trend'});
-    }
-    analyticsCharts.push(new Chart(trendCanvas, {
-      type:'bar',
-      data:{
-        labels: data.monthlyTrend.map(d=>d.label.replace(/^\d{4}\//,'')+'月'),
-        datasets: trendDatasets
-      },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw+'萬'}}},
-        scales:{
-          x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},
-          y:{stacked:true,ticks:{callback:v=>v+'萬',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}}
-        }
-      }
-    }));
-  }
+  // 月份趨勢圖 + 通訊處排名：各自由子函數處理
+  _initTrendChart(data);
+  _initUnitRanking(data);
+}
+ 
+// ── 子函數：業績達成率 HTML 區塊 ──
+function _buildVisitAchievementHTML(plans, periodLabel) {
+  var emptyState =
+    '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
+      '<div class="analysis-chart-title">📋 業績達成率</div>' +
+      '<div class="analysis-chart-sub">' + periodLabel + '</div>' +
+      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會開團登記</div>' +
+    '</div>';
 
-  // ── 通訊處排名初始化（前端排序，預設總金額）──
+  if (!plans || !plans.length) return emptyState;
+
+  var rows = plans.map(function(p, idx) {
+    var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
+    var rateColor   = p.rate >= 100 ? '#1D9E75' : p.rate >= 70 ? 'var(--text)' : '#E24B4A';
+    var actualStr   = p.actual >= 10000 ? (p.actual/10000).toFixed(1).replace('.0','')+'萬' : p.actual.toLocaleString()+'元';
+    var estStr      = p.estimate >= 10000 ? (p.estimate/10000).toFixed(1).replace('.0','')+'萬' : p.estimate.toLocaleString()+'元';
+    var unitId      = 'arUnit' + idx;
+    return (
+      '<div class="vp-rate-row">' +
+        '<div style="width:40px;flex-shrink:0;font-weight:700;">' + p.month + '/' + p.day + '</div>' +
+        '<div id="' + unitId + '" onclick="toggleVpUnit(\'' + unitId + '\')" style="flex:1;min-width:0;font-size:12px;color:var(--muted);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + unitDisplay + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:36px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:44px;text-align:right;white-space:nowrap;">' + estStr + '</div>' +
+        '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:52px;text-align:right;white-space:nowrap;">' + actualStr + '</div>' +
+        '<div style="font-size:12px;font-weight:800;flex-shrink:0;width:56px;text-align:right;white-space:nowrap;color:' + rateColor + ';">' + p.rate + '%</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  var totalEst    = plans.reduce(function(a,p){ return a+p.estimate; }, 0);
+  var totalActual = plans.reduce(function(a,p){ return a+p.actual; }, 0);
+  var totalRate   = totalEst > 0 ? Math.round(totalActual/totalEst*1000)/10 : 0;
+  var totalRateColor = totalRate >= 100 ? '#1D9E75' : totalRate >= 70 ? 'var(--text)' : '#E24B4A';
+  var totalEstStr = totalEst >= 10000 ? (totalEst/10000).toFixed(1)+'萬' : totalEst.toLocaleString()+'元';
+  var totalActStr = totalActual >= 10000 ? (totalActual/10000).toFixed(1)+'萬' : totalActual.toLocaleString()+'元';
+
+  return (
+    '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
+      '<div class="analysis-chart-title">📋 業績達成率</div>' +
+      '<div class="analysis-chart-sub">' + periodLabel + ' · 單位人力 · 預估 · 實際 · 達成率</div>' +
+      '<div style="padding-top:4px;">' + rows + '</div>' +
+      '<div style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:12px;color:var(--muted);">本期合計　預估 ' + totalEstStr + '</span>' +
+        '<div style="display:flex;align-items:baseline;gap:6px;">' +
+          '<span style="font-size:12px;">實際 <strong>' + totalActStr + '</strong></span>' +
+          '<span style="font-size:15px;font-weight:900;color:' + totalRateColor + ';">' + totalRate + '%</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+// ── 子函數：月份趨勢圖 Chart.js 初始化 ──
+function _initTrendChart(data) {
+  const trendCanvas = document.getElementById('chartTrend');
+  if (!trendCanvas || !data.monthlyTrend.length) return;
+  const trendDatasets = [];
+  if (data.source !== 'B') {
+    trendDatasets.push({label:'早會/場', data:data.monthlyTrend.map(d=>+(d.meeting/10000).toFixed(1)),    backgroundColor:'#185FA5', borderRadius:3, stack:'trend'});
+    trendDatasets.push({label:'回購',    data:data.monthlyTrend.map(d=>+(d.repurchase/10000).toFixed(1)), backgroundColor:'#1D9E75', borderRadius:3, stack:'trend'});
+  }
+  if (data.source !== 'A') {
+    trendDatasets.push({label:'團購',    data:data.monthlyTrend.map(d=>+((d.teamBuy||0)/10000).toFixed(1)), backgroundColor:'#E24B4A', borderRadius:3, stack:'trend'});
+  }
+  analyticsCharts.push(new Chart(trendCanvas, {
+    type:'bar',
+    data:{
+      labels: data.monthlyTrend.map(d=>d.label.replace(/^\d{4}\//,'')+'月'),
+      datasets: trendDatasets
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw+'萬'}}},
+      scales:{
+        x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},
+        y:{stacked:true,ticks:{callback:v=>v+'萬',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}}
+      }
+    }
+  }));
+}
+
+// ── 子函數：通訊處排名資料初始化 ──
+function _initUnitRanking(data) {
   _unitRankingData = data.unitRanking || [];
   _unitRankSort    = 'amount';
   renderUnitRanking('amount');
-
 }
- 
-// ── 截圖並分享（html2canvas → Web Share API / 桌機直接下載）──
+
+
 async function shareAnalytics() {
   if (!analyticsData) return;
  
