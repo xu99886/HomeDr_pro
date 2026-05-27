@@ -74,7 +74,7 @@
     /* ✅ UI：JS touchstart 動態加上此 class 觸發光暈，350ms 後移除 */
     .btn-pressed { animation: btnGlow 0.35s ease-out forwards; }
 
-    body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 180px; -webkit-user-select: none; user-select: none; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: calc(180px + env(safe-area-inset-bottom)); -webkit-user-select: none; user-select: none; }
     input, textarea, select, .print-area, .allow-select { -webkit-user-select: text !important; user-select: text !important; }
 
     /* ════════════════════════════════
@@ -446,7 +446,7 @@
     .modal { background: #fff; border-radius: 24px; width: 100%; max-width: 500px; padding: 25px; }
     .print-area { white-space: pre-wrap; font-size: 14px; background: #f8f9fa; padding: 18px; border-radius: var(--radius-md); border: 1px solid #eee; max-height: 50vh; overflow-y: auto; }
 
-    #toast { position: fixed; bottom: 180px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 2000; pointer-events: none; white-space: nowrap; }
+    #toast { position: fixed; bottom: calc(180px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 2000; pointer-events: none; white-space: nowrap; }
     #toast.toast-top { bottom: auto; top: calc(80px + env(safe-area-inset-top)); }
     #toast.show { opacity: 1; }
 
@@ -1996,14 +1996,17 @@
 
     <!-- 新增模式 -->
     <div id="vpNewMode" class="vp-mode active">
-      <!-- 日期輸入 -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <!-- 日期輸入（年/月/日）-->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
         <span style="font-size:13px;color:var(--muted);flex-shrink:0;">日期</span>
+        <input id="vpYear" type="tel" maxlength="4" placeholder="年" class="form-control allow-select"
+               style="width:70px;text-align:center;flex-shrink:0;">
+        <span style="font-size:12px;color:var(--muted);flex-shrink:0;">年</span>
         <input id="vpMonth" type="tel" maxlength="2" placeholder="月" class="form-control allow-select"
-               style="width:56px;text-align:center;">
+               style="width:52px;text-align:center;">
         <span style="color:var(--muted);">/</span>
         <input id="vpDay" type="tel" maxlength="2" placeholder="日" class="form-control allow-select"
-               style="width:56px;text-align:center;">
+               style="width:52px;text-align:center;">
       </div>
       <!-- 搜尋通訊處 -->
       <div style="position:relative;margin-bottom:10px;">
@@ -2393,6 +2396,8 @@ function doMsgClear() {
 }
 
 function parseMsgInput() {
+  clearTimeout(_dbt.parseMsg);
+  _dbt.parseMsg = setTimeout(function() {
   const raw   = document.getElementById('msgParserInput').value.trim();
   const list  = document.getElementById('msgParserList');
   const result= document.getElementById('msgParserResult');
@@ -2438,6 +2443,7 @@ function parseMsgInput() {
         ${hasVal ? '' : 'disabled'}>複製</button>
     </div>`;
   }).join('');
+  }, 220);
 }
 
 function copyMsgField(btn, text, toastMsg) {
@@ -2499,13 +2505,14 @@ let eligSwipeActiveItem  = null;
 
 async function openEligibilityRegister() {
   document.getElementById('eligibilityRegisterOverlay').style.display = 'flex';
-  // 清空所有欄位和選中清單
   eligSelectedUnits = [];
   document.getElementById('eligUnitSearch').value = '';
   document.getElementById('eligUnitDropdown').style.display = 'none';
   document.getElementById('eligStartDatePicker').value = '';
   renderEligSelectedList();
   await loadEligibleProducts();
+  // ✅ 有未完成草稿時自動恢復
+  loadEligDraft();
 }
 
 function closeEligibilityRegister() {
@@ -2538,29 +2545,34 @@ async function loadEligibleProducts() {
   }
 }
 
+// ── Debounce timer 集中管理（避免手機連續輸入重複觸發 DOM 重建 / API 呼叫）──
+const _dbt = {};
+
 // ── 通訊處搜尋（對齊早會登記 UX）──
 function filterEligUnit(query) {
-  var dd = document.getElementById('eligUnitDropdown');
-  var q  = query.trim();
-  if (!q) { dd.style.display = 'none'; return; }
-  var pool = allUnits.length ? allUnits : (mpUnits || []);
-  var matches = pool.filter(function(u) {
-    return ((u.name && u.name.includes(q)) || (u.code && u.code.includes(q))) &&
-           !eligSelectedUnits.some(function(s) { return s.code === u.code; });
-  }).slice(0, 8);
-  if (!matches.length) { dd.style.display = 'none'; return; }
-  dd.innerHTML = matches.map(function(u) {
-    var safeName = u.name.replace(/'/g, "\\'");
-    return (
-      '<div class="mp-dropdown-item" onclick="addEligUnitDirect(\'' + u.code + '\',\'' + safeName + '\')">' +
-        '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
-        '<span style="flex:1;">' + u.name + '</span>' +
-      '</div>'
-    );
-  }).join('');
-  dd.style.display = 'block';
+  clearTimeout(_dbt.filterEligUnit);
+  _dbt.filterEligUnit = setTimeout(function() {
+    var dd = document.getElementById('eligUnitDropdown');
+    var q  = query.trim();
+    if (!q) { dd.style.display = 'none'; return; }
+    var pool = allUnits.length ? allUnits : (mpUnits || []);
+    var matches = pool.filter(function(u) {
+      return ((u.name && u.name.includes(q)) || (u.code && u.code.includes(q))) &&
+             !eligSelectedUnits.some(function(s) { return s.code === u.code; });
+    }).slice(0, 8);
+    if (!matches.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = matches.map(function(u) {
+      var safeName = u.name.replace(/'/g, "\'");
+      return (
+        '<div class="mp-dropdown-item" onclick="addEligUnitDirect(\'' + u.code + '\',\'' + safeName + '\')">' +
+          '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
+          '<span style="flex:1;">' + u.name + '</span>' +
+        '</div>'
+      );
+    }).join('');
+    dd.style.display = 'block';
+  }, 180);
 }
-
 function addEligUnitDirect(code, name) {
   if (eligSelectedUnits.some(function(u) { return u.code === code; })) {
     showGlobalToast('⚠️ ' + name + ' 已加入'); return;
@@ -2569,6 +2581,7 @@ function addEligUnitDirect(code, name) {
   document.getElementById('eligUnitSearch').value = '';
   document.getElementById('eligUnitDropdown').style.display = 'none';
   renderEligSelectedList();
+  saveEligDraft();
 }
 
 // ── 達標品項多選功能 ──
@@ -2584,6 +2597,7 @@ function addEligProduct() {
   eligSelectedProducts.push(name);
   sel.value = '';
   renderEligProductTags();
+  saveEligDraft();
 }
 
 function removeEligProduct(name) {
@@ -2595,6 +2609,7 @@ function removeEligProduct(name) {
 function removeEligProductByIdx(idx) {
   eligSelectedProducts.splice(idx, 1);
   renderEligProductTags();
+  saveEligDraft();
 }
 
 function renderEligProductTags() {
@@ -2629,6 +2644,7 @@ function renderEligProductTags() {
 function removeEligUnit(idx) {
   eligSelectedUnits.splice(idx, 1);
   renderEligSelectedList();
+  saveEligDraft();
 }
 
 // ── 渲染已選清單 ──
@@ -2673,6 +2689,7 @@ function onEligDateChange() {
     display.value = '';
   }
   calcEligEndDate();
+  saveEligDraft();
 }
 
 // ── 計算到期日（+90 天）──
@@ -2701,9 +2718,9 @@ async function submitEligibility() {
     const res = await cloudPost({ action: 'saveEligibility', unitCode, unitName, products: eligSelectedProducts, startDate });
     const r = await res.json();
     if (r.success) {
+      clearEligDraft(); // ✅ 儲存成功後清除草稿
       eligCache = { valid: null, expired: null };
-      const count = eligSelectedProducts.length; // ✅ 正確的已選品項數量
-      // ✅ 儲存成功後清空達標商品清單
+      const count = eligSelectedProducts.length;
       eligSelectedProducts = [];
       renderEligProductTags();
       showGlobalToast('✅ 優惠資格已登記（' + count + ' 項）');
@@ -2747,30 +2764,36 @@ function closeEligibilityQuery() {
 
 // 快查：輸入代號自動帶入通訊處名稱（與客戶頁邏輯相同）
 function onSearchCodeInput(code) {
-  const c = code.trim().toUpperCase();
-  if (c.length < 2) return;
-  const match = allUnits.find(u => u.code === c);
-  if (match) {
-    document.getElementById('eligSearchName').value = match.name;
-    document.getElementById('eligSearchSuggestions').style.display = 'none';
-  }
+  clearTimeout(_dbt.searchCode);
+  _dbt.searchCode = setTimeout(function() {
+    const c = code.trim().toUpperCase();
+    if (c.length < 2) return;
+    const match = allUnits.find(u => u.code === c);
+    if (match) {
+      document.getElementById('eligSearchName').value = match.name;
+      document.getElementById('eligSearchSuggestions').style.display = 'none';
+    }
+  }, 300);
 }
 
 // 快查：通訊處名稱模糊搜尋建議清單
 function onSearchNameInput(val) {
-  const query = val.trim();
-  const box   = document.getElementById('eligSearchSuggestions');
-  if (query.length < 1) { box.style.display = 'none'; return; }
-  const hits  = allUnits.filter(u =>
-    (u.name && u.name.includes(query)) || (u.code && u.code.includes(query))
-  ).slice(0, 8);
-  if (hits.length === 0) { box.style.display = 'none'; return; }
-  box.innerHTML = hits.map(u =>
-    `<div class="suggestion-item" onclick="fillSearchUnit('${u.code}','${encodeURIComponent(u.name)}')">
-       <span class="suggestion-name">${u.name}</span>
-       <span class="suggestion-code">${u.code}</span>
-     </div>`).join('');
-  box.style.display = 'block';
+  clearTimeout(_dbt.searchName);
+  _dbt.searchName = setTimeout(function() {
+    const query = val.trim();
+    const box   = document.getElementById('eligSearchSuggestions');
+    if (query.length < 1) { box.style.display = 'none'; return; }
+    const hits  = allUnits.filter(u =>
+      (u.name && u.name.includes(query)) || (u.code && u.code.includes(query))
+    ).slice(0, 8);
+    if (hits.length === 0) { box.style.display = 'none'; return; }
+    box.innerHTML = hits.map(u =>
+      `<div class="suggestion-item" onclick="fillSearchUnit('${u.code}','${encodeURIComponent(u.name)}')">
+         <span class="suggestion-name">${u.name}</span>
+         <span class="suggestion-code">${u.code}</span>
+       </div>`).join('');
+    box.style.display = 'block';
+  }, 300);
 }
 
 // 快查：點選建議後填入代號和名稱
@@ -3472,8 +3495,80 @@ function discardDraft() {
 // 每 30 秒自動儲存
 setInterval(saveDraft, 30000);
 // ✅ 修正：關閉/離開頁面瞬間強制存一次草稿
-// 解決「填完資料在 30 秒內關閉瀏覽器，下次開啟找不到草稿」的問題
 window.addEventListener('beforeunload', function() { saveDraft(); });
+
+// ════════════════════════════════════════════════════════════
+// 草稿系統擴展：優惠登記 / 早會開團
+// ════════════════════════════════════════════════════════════
+const ELIG_DRAFT_KEY = 'homedr_elig_draft';
+const VP_DRAFT_KEY   = 'homedr_vp_draft';
+
+// ── 優惠登記草稿 ──
+function saveEligDraft() {
+  try {
+    const picker = document.getElementById('eligStartDatePicker');
+    localStorage.setItem(ELIG_DRAFT_KEY, JSON.stringify({
+      units:     eligSelectedUnits,
+      products:  eligSelectedProducts,
+      startDate: picker ? picker.value : '',
+      savedAt:   Date.now()
+    }));
+  } catch(e) {}
+}
+function loadEligDraft() {
+  try {
+    const raw = localStorage.getItem(ELIG_DRAFT_KEY);
+    if (!raw) return false;
+    const draft = JSON.parse(raw);
+    if (Date.now() - draft.savedAt > 24*60*60*1000) { localStorage.removeItem(ELIG_DRAFT_KEY); return false; }
+    if (!draft.units?.length && !draft.products?.length) return false;
+    eligSelectedUnits    = draft.units    || [];
+    eligSelectedProducts = draft.products || [];
+    if (draft.startDate) {
+      const picker = document.getElementById('eligStartDatePicker');
+      if (picker) { picker.value = draft.startDate; onEligDateChange(); }
+    }
+    renderEligSelectedList();
+    renderEligProductTags();
+    return true;
+  } catch(e) { return false; }
+}
+function clearEligDraft() { try { localStorage.removeItem(ELIG_DRAFT_KEY); } catch(e) {} }
+
+// ── 早會開團草稿 ──
+function saveVpDraft() {
+  try {
+    const yearEl  = document.getElementById('vpYear');
+    const monthEl = document.getElementById('vpMonth');
+    const dayEl   = document.getElementById('vpDay');
+    localStorage.setItem(VP_DRAFT_KEY, JSON.stringify({
+      units:   vpNewUnits,
+      year:    yearEl  ? yearEl.value  : '',
+      month:   monthEl ? monthEl.value : '',
+      day:     dayEl   ? dayEl.value   : '',
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+function loadVpDraft() {
+  try {
+    const raw = localStorage.getItem(VP_DRAFT_KEY);
+    if (!raw) return false;
+    const draft = JSON.parse(raw);
+    if (Date.now() - draft.savedAt > 24*60*60*1000) { localStorage.removeItem(VP_DRAFT_KEY); return false; }
+    if (!draft.units?.length && !draft.month) return false;
+    vpNewUnits = draft.units || [];
+    const yearEl  = document.getElementById('vpYear');
+    const monthEl = document.getElementById('vpMonth');
+    const dayEl   = document.getElementById('vpDay');
+    if (yearEl  && draft.year)  yearEl.value  = draft.year;
+    if (monthEl && draft.month) monthEl.value = draft.month;
+    if (dayEl   && draft.day)   dayEl.value   = draft.day;
+    renderVpNewUnits();
+    return true;
+  } catch(e) { return false; }
+}
+function clearVpDraft() { try { localStorage.removeItem(VP_DRAFT_KEY); } catch(e) {} }
 
 // ─── CLOUD URL & 資料常數 ────────────────────────────────
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwxT-I2err4twsbrLDVQpyeV9hNdPL6xNlM4DsWfLINr3AC-69DXFX7tVrYUGHTXH4r/exec";
@@ -4732,6 +4827,8 @@ let analyticsHeaderExpanded = false;
 let _unitRankingData = []; // 全部通訊處資料，前端排序用
 let _unitRankSort    = 'amount'; // 'amount' | 'perPerson'
 let _unitManpowerMap = new Map(); // 通訊處名稱→人力，由 getUnitManpower 填充
+let _unitManpowerTs  = 0;        // 上次載入時間戳（ms）
+const _MP_CACHE_TTL  = 30 * 60 * 1000; // 30 分鐘過期
 let _analyticsLoading = false;   // 防止開始分析重複觸發
 
 // ════════════════════════════════════════════════════════
@@ -4763,17 +4860,19 @@ async function openVisitPlanner() {
   vpNewUnits = [];
   document.getElementById('vpSearchInput').value = '';
   document.getElementById('vpDropdown').style.display = 'none';
+  document.getElementById('vpYear').value  = new Date().getFullYear();
   document.getElementById('vpMonth').value = '';
   document.getElementById('vpDay').value   = '';
   showVpMode('new');
-  renderVpNewUnits();
+  // ✅ 有未完成草稿時自動恢復，否則渲染空列表
+  if (!loadVpDraft()) renderVpNewUnits();
 
-  // 若通訊處清單尚未載入，主動從 GAS 取得
-  if (!mpLoaded) {
+  // 若通訊處清單尚未載入或已超過 30 分鐘，重新從 GAS 取得
+  if (!mpLoaded || (Date.now() - mpLoadedTs) > _MP_CACHE_TTL) {
     try {
       var res = await cloudPost({ action: 'getUnitManpower' });
       var r   = await res.json();
-      if (r.success) { mpUnits = r.units; mpLoaded = true; }
+      if (r.success) { mpUnits = r.units; mpLoaded = true; mpLoadedTs = Date.now(); }
     } catch(e) {}
   }
   vpUnitPool = mpUnits;
@@ -4791,7 +4890,11 @@ function showVpMode(mode) {
   }
 }
 
-function openVisitNew() { showVpMode('new'); }
+function openVisitNew() {
+  showVpMode('new');
+  // ✅ 有未完成草稿時自動恢復
+  if (!loadVpDraft()) renderVpNewUnits();
+}
 function openVisitView() {
   showVpMode('view');
   // 預填當年當月
@@ -4805,33 +4908,33 @@ function openVisitView() {
 
 // ── 搜尋通訊處（新增 / 修改共用）──
 function filterVisit(query, ctx) {
-  var ddId = ctx === 'edit' ? 'vpEditDropdown' : 'vpDropdown';
-  var pool = ctx === 'edit' ? vpEditUnits     : vpNewUnits;
-  var dd   = document.getElementById(ddId);
-  if (!dd) return;
-  var q = query.trim();
-  if (!q) { dd.style.display = 'none'; return; }
-
-  if (!vpUnitPool.length && mpUnits.length) vpUnitPool = mpUnits;
-  var matches = vpUnitPool.filter(function(u) {
-    return (u.name.includes(q) || u.code.includes(q)) &&
-           !pool.find(function(s){ return s.name === u.name; });
-  });
-  if (!matches.length) { dd.style.display = 'none'; return; }
-
-  dd.innerHTML = matches.map(function(u) {
-    var safe = u.name.replace(/'/g,"\\'");
-    return (
-      '<div class="mp-dropdown-item" onclick="addVisitUnit(\'' + safe + '\',' + u.power + ',\'' + ctx + '\')">' +
-        '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
-        '<span style="flex:1;">' + u.name + '</span>' +
-        '<span style="color:var(--muted);font-size:12px;">' + u.power + '人</span>' +
-      '</div>'
-    );
-  }).join('');
-  dd.style.display = 'block';
+  clearTimeout(_dbt.filterVisit);
+  _dbt.filterVisit = setTimeout(function() {
+    var ddId = ctx === 'edit' ? 'vpEditDropdown' : 'vpDropdown';
+    var pool = ctx === 'edit' ? vpEditUnits     : vpNewUnits;
+    var dd   = document.getElementById(ddId);
+    if (!dd) return;
+    var q = query.trim();
+    if (!q) { dd.style.display = 'none'; return; }
+    if (!vpUnitPool.length && mpUnits.length) vpUnitPool = mpUnits;
+    var matches = vpUnitPool.filter(function(u) {
+      return (u.name.includes(q) || u.code.includes(q)) &&
+             !pool.find(function(s){ return s.name === u.name; });
+    });
+    if (!matches.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = matches.map(function(u) {
+      var safe = u.name.replace(/'/g,"\'");
+      return (
+        '<div class="mp-dropdown-item" onclick="addVisitUnit(\'' + safe + '\',' + u.power + ',\'' + ctx + '\')">' +
+          '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
+          '<span style="flex:1;">' + u.name + '</span>' +
+          '<span style="color:var(--muted);font-size:12px;">' + u.power + '人</span>' +
+        '</div>'
+      );
+    }).join('');
+    dd.style.display = 'block';
+  }, 180);
 }
-
 function addVisitUnit(name, power, ctx) {
   var pool     = ctx === 'edit' ? vpEditUnits   : vpNewUnits;
   var inputId  = ctx === 'edit' ? 'vpEditSearch' : 'vpSearchInput';
@@ -4843,12 +4946,12 @@ function addVisitUnit(name, power, ctx) {
   document.getElementById(inputId).value = '';
   document.getElementById(ddId).style.display = 'none';
   if (ctx === 'edit') { renderVpEditUnits(); }
-  else { renderVpNewUnits(); }
+  else { renderVpNewUnits(); saveVpDraft(); }
 }
 
 function removeVisitUnit(i, ctx) {
   if (ctx === 'edit') { vpEditUnits.splice(i,1); renderVpEditUnits(); }
-  else { vpNewUnits.splice(i,1); renderVpNewUnits(); }
+  else { vpNewUnits.splice(i,1); renderVpNewUnits(); saveVpDraft(); }
 }
 
 // ── 渲染已選通訊處（新增）──
@@ -4896,26 +4999,28 @@ function renderVpNewUnits() {
 
 // ── 儲存這場 ──
 async function saveVisitPlan() {
+  var y = parseInt(document.getElementById('vpYear').value)  || new Date().getFullYear();
   var m = parseInt(document.getElementById('vpMonth').value) || 0;
   var d = parseInt(document.getElementById('vpDay').value)   || 0;
   if (!m || !d) { showGlobalToast('⚠️ 請填入月份和日期'); return; }
   if (!vpNewUnits.length) { showGlobalToast('⚠️ 請加入至少一個通訊處'); return; }
 
-  var now = new Date();
   var totalPower = vpNewUnits.reduce(function(a,u){ return a+u.power; }, 0);
   var est = calcVisitEstimate(totalPower);
   var unitsStr = vpNewUnits.map(function(u){ return u.name; }).join(',');
 
   var res = await cloudPost({
     action: 'saveVisitPlan',
-    year: now.getFullYear(), month: m, day: d,
+    year: y, month: m, day: d,
     units: unitsStr, manpower: totalPower, estimate: est
   });
   var r = await res.json();
   if (r.success) {
     showGlobalToast('✅ 已儲存');
+    clearVpDraft();
     vpNewUnits = [];
     renderVpNewUnits();
+    document.getElementById('vpYear').value  = new Date().getFullYear();
     document.getElementById('vpMonth').value = '';
     document.getElementById('vpDay').value   = '';
   } else {
@@ -5019,6 +5124,8 @@ function startEditVisitPlan(rowIndex) {
   editEl.innerHTML = (
     '<div class="vp-edit-box">' +
       '<div style="display:flex;gap:6px;margin-bottom:8px;">' +
+        '<input id="vpEditYear_' + rowIndex + '" type="tel" maxlength="4" value="' + (plan.year || new Date().getFullYear()) + '" class="form-control allow-select" style="width:66px;text-align:center;" placeholder="年">' +
+        '<span style="color:var(--muted);line-height:40px;font-size:12px;">年</span>' +
         '<input id="vpEditMonth_' + rowIndex + '" type="tel" maxlength="2" value="' + plan.month + '" class="form-control allow-select" style="width:52px;text-align:center;" placeholder="月">' +
         '<span style="color:var(--muted);line-height:40px;">/</span>' +
         '<input id="vpEditDay_' + rowIndex + '" type="tel" maxlength="2" value="' + plan.day + '" class="form-control allow-select" style="width:52px;text-align:center;" placeholder="日">' +
@@ -5093,14 +5200,15 @@ function cancelEditVisitPlan(rowIndex) {
 }
 
 async function saveEditVisitPlan(rowIndex) {
+  var yInp = document.getElementById('vpEditYear_'  + rowIndex);
   var mInp = document.getElementById('vpEditMonth_' + rowIndex);
   var dInp = document.getElementById('vpEditDay_'   + rowIndex);
+  var y = parseInt(yInp ? yInp.value : 0) || new Date().getFullYear();
   var m = parseInt(mInp ? mInp.value : 0) || 0;
   var d = parseInt(dInp ? dInp.value : 0) || 0;
   if (!m || !d) { showGlobalToast('⚠️ 請填入月份和日期'); return; }
   if (!vpEditUnits.length) { showGlobalToast('⚠️ 請加入至少一個通訊處'); return; }
 
-  var now = new Date();
   var totalPower = vpEditUnits.reduce(function(a,u){ return a+u.power; }, 0);
   var est = calcVisitEstimate(totalPower);
   var unitsStr = vpEditUnits.map(function(u){ return u.name; }).join(',');
@@ -5108,7 +5216,7 @@ async function saveEditVisitPlan(rowIndex) {
   var res = await cloudPost({
     action: 'updateVisitPlan',
     rowIndex: rowIndex,
-    year: now.getFullYear(), month: m, day: d,
+    year: y, month: m, day: d,
     units: unitsStr, manpower: totalPower, estimate: est
   });
   var r = await res.json();
@@ -5438,8 +5546,9 @@ async function loadAnalyticsData(period, customStart, customEnd) {
       payload.endDate   = customEnd;
     }
 
-    // ── 通訊處人力：有快取（_unitManpowerMap 非空）則跳過請求，減少 GAS 呼叫 ──
-    const mpPromise = _unitManpowerMap.size > 0
+    // ── 通訊處人力：有效快取（非空且未過期 30 分鐘）則跳過請求 ──
+    const mpExpired = _unitManpowerMap.size === 0 || (Date.now() - _unitManpowerTs) > _MP_CACHE_TTL;
+    const mpPromise = !mpExpired
       ? Promise.resolve(null)
       : cloudPost({ action: 'getUnitManpower' }).then(function(r) { return r.json(); });
 
@@ -5453,6 +5562,7 @@ async function loadAnalyticsData(period, customStart, customEnd) {
     // mpJson 為 null 代表命中快取，直接沿用現有 _unitManpowerMap，跳過更新
     if (mpJson && mpJson.success && mpJson.units) {
       _unitManpowerMap = new Map();
+      _unitManpowerTs  = Date.now(); // ✅ 更新快取時間戳
       mpJson.units.forEach(function(u) {
         var key = String(u.name).trim().normalize('NFC');
         if (key) _unitManpowerMap.set(key, u.power);
@@ -6051,6 +6161,7 @@ async function shareAnalytics() {
 let mpUnits    = [];    // 從 GAS 載入的通訊處完整清單
 let mpSelected = [];    // 使用者已加入的清單
 let mpLoaded   = false; // 是否已載入
+let mpLoadedTs = 0;     // 上次載入時間戳（同樣使用 _MP_CACHE_TTL 30 分鐘）
 
 async function openManpowerCalc() {
   document.getElementById('manpowerOverlay').style.display = 'flex';
@@ -6058,7 +6169,8 @@ async function openManpowerCalc() {
   document.getElementById('mpSearchInput').value = '';
   document.getElementById('mpDropdown').style.display = 'none';
 
-  if (!mpLoaded) {
+  if (!mpLoaded || (Date.now() - mpLoadedTs) > _MP_CACHE_TTL) {
+    const hadData = mpLoaded && mpUnits.length > 0; // ✅ 記錄是否有舊快取
     document.getElementById('mpListBody').innerHTML =
       '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">載入中...</div>';
     document.getElementById('mpTotal').style.display = 'none';
@@ -6066,12 +6178,19 @@ async function openManpowerCalc() {
       const res = await cloudPost({ action: 'getUnitManpower' });
       const r   = await res.json();
       if (!r.success) throw new Error(r.message || '載入失敗');
-      mpUnits  = r.units;
-      mpLoaded = true;
+      mpUnits    = r.units;
+      mpLoaded   = true;
+      mpLoadedTs = Date.now(); // ✅ 更新快取時間戳
     } catch(e) {
-      document.getElementById('mpListBody').innerHTML =
-        '<div style="text-align:center;padding:24px;color:#E24B4A;font-size:13px;">⚠️ 載入失敗，請重試</div>';
-      return;
+      if (hadData) {
+        // ✅ 有舊快取：靜默沿用，不顯示錯誤讓用戶無法操作
+        showGlobalToast('⚠️ 資料更新失敗，顯示快取資料');
+      } else {
+        // 首次載入失敗：無資料可顯示
+        document.getElementById('mpListBody').innerHTML =
+          '<div style="text-align:center;padding:24px;color:#E24B4A;font-size:13px;">⚠️ 載入失敗，請重試</div>';
+        return;
+      }
     }
   }
   renderMpList();
@@ -6083,31 +6202,30 @@ function closeManpowerCalc() {
 }
 
 function filterManpower(query) {
-  const q  = query.trim();
-  const dd = document.getElementById('mpDropdown');
-  if (!q) { dd.style.display = 'none'; return; }
-
-  const matches = mpUnits.filter(function(u) {
-    return (u.name.includes(q) || u.code.includes(q)) &&
-           !mpSelected.find(function(s) { return s.name === u.name; });
-  });
-
-  if (matches.length === 0) { dd.style.display = 'none'; return; }
-
-  dd.innerHTML = matches.map(function(u) {
-    var safeCode = u.code.replace(/'/g,"\\'");
-    var safeName = u.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return (
-      '<div class="mp-dropdown-item" onclick="addMpUnit(\'' + safeCode + '\',\'' + safeName + '\',' + u.power + ')">' +
-        '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
-        '<span style="flex:1;">' + u.name + '</span>' +
-        '<span style="color:var(--muted);font-size:12px;flex-shrink:0;">' + u.power + ' 人</span>' +
-      '</div>'
-    );
-  }).join('');
-  dd.style.display = 'block';
+  clearTimeout(_dbt.filterManpower);
+  _dbt.filterManpower = setTimeout(function() {
+    const q  = query.trim();
+    const dd = document.getElementById('mpDropdown');
+    if (!q) { dd.style.display = 'none'; return; }
+    const matches = mpUnits.filter(function(u) {
+      return (u.name.includes(q) || u.code.includes(q)) &&
+             !mpSelected.find(function(s) { return s.name === u.name; });
+    });
+    if (matches.length === 0) { dd.style.display = 'none'; return; }
+    dd.innerHTML = matches.map(function(u) {
+      var safeCode = u.code.replace(/'/g,"\'");
+      var safeName = u.name.replace(/\\/g,'\\\\').replace(/'/g,"\'");
+      return (
+        '<div class="mp-dropdown-item" onclick="addMpUnit(\'' + safeCode + '\',\'' + safeName + '\',' + u.power + ')">' +
+          '<span style="font-size:11px;color:var(--muted);font-weight:600;min-width:44px;flex-shrink:0;">' + u.code + '</span>' +
+          '<span style="flex:1;">' + u.name + '</span>' +
+          '<span style="color:var(--muted);font-size:12px;flex-shrink:0;">' + u.power + ' 人</span>' +
+        '</div>'
+      );
+    }).join('');
+    dd.style.display = 'block';
+  }, 180);
 }
-
 // 搜尋框失焦時延遲關閉 dropdown（保留點選時間）
 document.addEventListener('DOMContentLoaded', function() {
   var inp = document.getElementById('mpSearchInput');
