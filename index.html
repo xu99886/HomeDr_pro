@@ -462,8 +462,8 @@
     }
     .sales-picker-overlay.active { display: flex; }
     .sales-picker-box { background: #fff; border-radius: 24px; width: 100%; max-width: 320px; padding: 28px 24px; }
-    .sales-picker-box h3 { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 6px; text-align: center; }
-    .sales-picker-box p  { font-size: 13px; color: var(--muted); margin-bottom: 14px; text-align: center; }
+    .sales-picker-box h3 { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 6px; }
+    .sales-picker-box p  { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
     .sales-picker-box select { width: 100%; padding: 13px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 16px; font-weight: 700; margin-bottom: 14px; outline: none; }
     .sales-picker-box select:focus { border-color: var(--color-reply); }
     .sales-picker-btns { display: flex; gap: 10px; }
@@ -485,8 +485,8 @@
     }
     .sales-result-overlay.active { display: flex; }
     .sales-result-box { background: #fff; border-radius: 24px; width: 100%; max-width: 360px; padding: 24px 20px; }
-    .sales-result-box .result-label { font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; text-align: center; }
-    .sales-result-box .result-name  { font-size: 15px; font-weight: 900; color: #003366; margin-bottom: 14px; text-align: center; }
+    .sales-result-box .result-label { font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+    .sales-result-box .result-name  { font-size: 15px; font-weight: 900; color: #003366; margin-bottom: 14px; }
     /* ✅ 新增：明細表格容器（最高 38vh，超過可捲動） */
     .sales-detail-wrap { max-height: 38vh; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; }
     .sales-detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -499,7 +499,7 @@
     .sales-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; margin-bottom: 14px; border-top: 2px solid var(--primary); font-weight: 900; color: #003366; font-size: 14px; }
     .sales-result-btns { display: flex; gap: 10px; }
     .sales-result-btns button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
-    .btn-close-sales { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+
     .btn-copy-sales  { background: var(--primary); color: #fff; }
 
     /* ✅ 新增：複製業績確認彈窗 */
@@ -529,8 +529,8 @@
     }
     .weekly-overlay.active { display: flex; }
     .weekly-box { background: #fff; border-radius: 24px; width: 100%; max-width: 420px; padding: 24px 20px; margin: auto; }
-    .weekly-box h3  { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 4px; text-align: center; }
-    .weekly-box .sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px; }
+    .weekly-box h3  { font-size: 18px; font-weight: 900; color: #2d3436; margin-bottom: 4px; }
+    .weekly-box .sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
     .weekly-box .weekly-person-select { width: 100%; padding: 13px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: 15px; font-weight: 700; margin-bottom: 14px; outline: none; background: #fff; color: var(--text); }
     .weekly-box .weekly-person-select:focus { border-color: var(--primary); }
 
@@ -576,8 +576,8 @@
     }
     .weekly-result-overlay.active { display: flex; }
     .weekly-result-box { background: #fff; border-radius: 24px; width: 100%; max-width: 480px; padding: 24px 20px; margin: auto; }
-    .weekly-result-box h3 { font-size: 17px; font-weight: 900; color: #003366; margin-bottom: 4px; text-align: center; }
-    .weekly-result-box .result-meta { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px; }
+    .weekly-result-box h3 { font-size: 17px; font-weight: 900; color: #003366; margin-bottom: 4px; }
+    .weekly-result-box .result-meta { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
     .weekly-table-wrap { overflow-x: auto; max-height: 52vh; overflow-y: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 14px; }
     .weekly-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .weekly-table th { background: #003366; color: #fff; padding: 10px; text-align: left; font-weight: 700; position: sticky; top: 0; }
@@ -588,7 +588,7 @@
     .weekly-table .total-row td { background: #f0f4ff; font-weight: 900; color: #003366; border-top: 2px solid var(--primary); }
     .weekly-result-btns { display: flex; gap: 10px; }
     .weekly-result-btns button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
-    .btn-close-report { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
+
     .btn-copy-report  { background: var(--primary); color: #fff; }
 
 
@@ -678,9 +678,20 @@
     .elig-row-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .elig-row-date  { font-size: 13px; color: var(--color-reply); font-weight: 700; white-space: nowrap; }
     .elig-void-btn  {
-      flex-shrink: 0; background: transparent;
-      border: 1px solid var(--border); border-radius: 6px;
-      padding: 4px 8px; font-size: 13px; color: var(--muted); cursor: pointer;
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: transparent; border: none;
+      color: var(--muted);
+      font-size: 18px; font-weight: 300; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+      visibility: visible;               /* 手機：始終可見（無左滑替代）*/
+      transition: color 0.15s ease;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .elig-void-btn { visibility: hidden; }    /* 桌機：保留空間但隱藏 */
+      .elig-item-row:hover .elig-void-btn { visibility: visible; }
+      .elig-void-btn:hover { color: var(--danger); }
     }
     .elig-query-btns {
       display: flex; justify-content: space-between; align-items: center;
@@ -776,16 +787,19 @@
     .mp-name-label { font-size:14px; font-weight:600; flex:1; }
     .mp-power-label { font-size:13px; color:var(--muted); flex-shrink:0; }
     .mp-hover-delete {
-      display:none; width:26px; height:26px; border-radius:50%;
-      background:var(--danger-light); color:var(--danger);
-      border:1px solid var(--danger-border);
-      align-items:center; justify-content:center;
-      cursor:pointer; font-size:15px; font-weight:700;
-      flex-shrink:0; transition:background 0.15s, color 0.15s;
+      width: 28px; height: 28px;
+      background: transparent; border: none;
+      color: var(--muted);
+      font-size: 18px; font-weight: 300; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+      visibility: hidden;                /* 保留空間，hover 才現身 */
+      flex-shrink: 0;
+      transition: color 0.15s ease;
     }
-    .mp-hover-delete:hover { background:var(--danger); color:#fff; }
     @media (hover: hover) {
-      .mp-row:hover .mp-hover-delete { display:flex; }
+      .mp-row:hover .mp-hover-delete { visibility: visible; }
+      .mp-hover-delete:hover { color: var(--danger); }
     }
     .mp-delete-btn {
       position:absolute; right:0; top:0; bottom:0; width:64px;
@@ -810,11 +824,6 @@
     /* ── 早會登記 ── */
     .vp-mode { display:none; }
     .vp-mode.active { display:block; }
-    .vp-unit-row {
-      display:flex; align-items:center; gap:8px; padding:10px 4px;
-      border-bottom:1px solid var(--border); font-size:13px;
-    }
-    .vp-unit-row:last-child { border-bottom:none; }
     .vp-plan-row { border-bottom:1px solid var(--border); }
     .vp-plan-row:last-child { border-bottom:none; }
     .vp-swipe-wrapper { overflow:hidden; position:relative; }
@@ -829,16 +838,19 @@
       font-size:13px; font-weight:700; cursor:pointer; z-index:0;
     }
     .vp-plan-hover-del {
-      display:none; width:26px; height:26px; border-radius:50%;
-      background:var(--danger-light); color:var(--danger);
-      border:1px solid var(--danger-border);
-      align-items:center; justify-content:center;
-      cursor:pointer; font-size:15px; font-weight:700;
-      flex-shrink:0; transition:background 0.15s, color 0.15s;
+      width: 28px; height: 28px;
+      background: transparent; border: none;
+      color: var(--muted);
+      font-size: 18px; font-weight: 300; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+      visibility: hidden;                /* 保留空間，hover 才現身 */
+      flex-shrink: 0;
+      transition: color 0.15s ease;
     }
-    .vp-plan-hover-del:hover { background:var(--danger); color:#fff; }
     @media (hover: hover) {
-      .vp-swipe-wrapper:hover .vp-plan-hover-del { display:flex; }
+      .vp-swipe-wrapper:hover .vp-plan-hover-del { visibility: visible; }
+      .vp-plan-hover-del:hover { color: var(--danger); }
     }
     .vp-edit-box {
       background:rgba(128,128,128,0.06); border-radius:var(--radius-sm);
@@ -878,26 +890,6 @@
       overflow: hidden;
     }
     /* 每個已選通訊處 - 滑動外層 */
-    .elig-sel-wrapper {
-      position: relative; overflow: hidden;
-      border-bottom: 1px solid var(--border);
-    }
-    .elig-sel-wrapper:last-child { border-bottom: none; }
-    /* 左滑露出的紅色移除區 */
-    .elig-sel-bg {
-      position: absolute; top: 0; right: 0; bottom: 0;
-      width: 80px; background: var(--danger);
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 700; font-size: 13px;
-    }
-    /* 可滑動的項目 */
-    .elig-sel-item {
-      position: relative; background: var(--card);
-      padding: 9px 12px;
-      display: flex; align-items: center;
-      transition: transform 0.2s ease;
-      font-size: 13px; color: var(--text);
-    }
     /* 查詢結果：多通訊處 tags */
     .elig-unit-tags {
       display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;
@@ -906,38 +898,49 @@
       font-weight: 700; font-size: 15px; color: var(--color-reply);
     }
     .elig-unit-tag:not(:last-child)::after { content: "　"; }
-    .elig-expand-btn {
-      background: transparent; border: none;
-      font-size: 14px; cursor: pointer; padding: 2px 4px; line-height: 1;
-    }
-    /* 固定右側，垂直對齊第一行文字中線
-       font-size:15px line-height:~21px → 文字中線在 ~10px
-       按鈕高度 ~18px → top:1px 讓按鈕中線在 ~10px，對齊文字 */
-    .elig-expand-fixed {
-      position: absolute;
-      right: 4px;           /* 距右邊 4px，不受通訊處字數影響 */
-      top: 1px;             /* 垂直對齊第一行文字中線 */
-      display: flex;
-      align-items: center;
-      height: 21px;         /* 等於一行文字高度，確保垂直置中 */
-    }
     .elig-unit-line { font-weight: 700; font-size: 15px; color: var(--color-reply); display: block; margin-bottom: 2px; }
-    /* 桌機 hover 刪除按鈕（複用主列表設計） */
-    .elig-sel-delete-btn {
-      position: absolute; top: 50%; right: 10px;
-      transform: translateY(-50%);
-      width: 24px; height: 24px;
-      background: var(--danger-light); color: var(--danger);
-      border: 1px solid var(--danger-border); border-radius: 50%;
+    /* 多通訊處收合時的 ... 提示 */
+    .elig-ellipsis { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 1px; }
+    /* ✅ 桌機常駐刪除按鈕（isHoverDevice 路徑，不依賴 hover/opacity，避免 stacking context 遮蔽問題）*/
+    .elig-del-pc {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: transparent; border: none;
+      color: var(--muted);
+      font-size: 18px; font-weight: 300; line-height: 1;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: bold;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.18s ease, background 0.15s ease;
-      cursor: pointer; z-index: 10;
+      cursor: pointer; padding: 0;
+      visibility: hidden;                /* 保留空間，不顯示 */
+      transition: color 0.15s ease;
     }
     @media (hover: hover) and (pointer: fine) {
-      .elig-sel-wrapper:hover .elig-sel-delete-btn { opacity: 1; pointer-events: auto; }
-      .elig-sel-delete-btn:hover { background: var(--danger); color: #fff; }
+      .elig-pc-row:hover .elig-del-pc { visibility: visible; }
+      .elig-del-pc:hover { color: var(--danger); }
+    }
+    /* 桌機選中清單列（通訊處 / 品項共用）*/
+    .elig-pc-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .elig-pc-row:last-child { border-bottom: none; }
+    .elig-pc-row-label { flex: 1; font-size: 13px; color: var(--text); }
+    /* ✅ 通用左滑刪除結構（手機端：早會開團 / 優惠登記 共用）*/
+    .swipe-del-wrapper {
+      overflow: hidden; position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    .swipe-del-wrapper:last-child { border-bottom: none; }
+    .swipe-del-bg {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 80px;
+      background: var(--danger); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .swipe-del-content {
+      position: relative; background: var(--card);
+      display: flex; align-items: center;
+      transition: transform 0.2s ease;
     }
     /* 區塊標題 */
     .elig-section-label {
@@ -964,18 +967,18 @@
     .line-hover-delete {
       position: absolute; top: 50%; right: 8px;
       transform: translateY(-50%);
-      width: 22px; height: 22px;
-      background: var(--danger-light); color: var(--danger);
-      border: 1px solid var(--danger-border); border-radius: 50%;
+      width: 24px; height: 24px;
+      background: transparent; border: none;
+      color: var(--muted);
+      font-size: 18px; font-weight: 300; line-height: 1;
       display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: bold;
       opacity: 0; pointer-events: none;
-      transition: opacity 0.18s ease;
-      cursor: pointer; z-index: 5;
+      transition: color 0.15s ease, opacity 0.15s ease;
+      cursor: pointer; z-index: 5; padding: 0;
     }
     @media (hover: hover) and (pointer: fine) {
       .line-swipe-wrapper:hover .line-hover-delete { opacity: 1; pointer-events: auto; }
-      .line-hover-delete:hover { background: var(--danger); color: #fff; }
+      .line-hover-delete:hover { color: var(--danger); }
     }
     /* 左滑刪除 wrapper */
     .line-swipe-wrapper {
@@ -1090,8 +1093,6 @@
       .btn-cancel-sales         { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
       .btn-cancel-copy          { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
       .btn-cancel-report        { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
-      .btn-close-sales          { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
-      .btn-close-report         { background: var(--btn-sec-bg); color: var(--btn-sec-color); }
 
       /* ── 確認彈窗 ── */
       .confirm-box              { background: #2c2c2e; }
@@ -1326,6 +1327,38 @@
       .analysis-alert-box.yellow { background:#2a2010; border-color:#5a4520; color:#ffddaa; }
       .analysis-alert-box.green  { background:#0f2010; border-color:#204520; color:#aaddaa; }
     }
+
+    /* ════════════════════════════════════════════════════════════
+       手機預設寬度（原始值，media query 在桌機另行覆蓋）
+       ════════════════════════════════════════════════════════════ */
+    .line-report-text-box { max-width: 420px; }
+    .msg-parser-box       { max-width: 480px; }
+
+    /* ════════════════════════════════════════════════════════════
+       桌機自適應（≥ 768px）
+       - 功能面板加寬至 640 ~ 820px，讓桌機畫面不留大片空白
+       - 確認彈窗（confirm-box / sales-picker-box / 作廢確認 inline 320px）
+         均不在此 query 內，維持窄版設計
+       ════════════════════════════════════════════════════════════ */
+    @media (min-width: 768px) {
+      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會開團 等）*/
+      .elig-box              { max-width: 640px; }
+      /* 文案編輯 / 訊息拆解（原 inline 已改為 class，此處統一覆蓋）*/
+      .line-report-text-box  { max-width: 640px; }
+      .msg-parser-box        { max-width: 640px; }
+      /* 每週報表 */
+      .weekly-box            { max-width: 640px; }
+      /* 每週結果（有表格，稍寬）*/
+      .weekly-result-box     { max-width: 680px; }
+      /* 檔案下載 */
+      .file-dl-box           { max-width: 640px; }
+      /* 業績報表（快速查詢）*/
+      .sales-result-box      { max-width: 480px; }
+      /* 通用 modal */
+      .modal                 { max-width: 680px; }
+      /* 業績分析（資料量大，給最寬）*/
+      .analysis-box          { max-width: 820px; }
+    }
     </style>
 </head>
 <body>
@@ -1425,7 +1458,7 @@
     </div>
     <div class="sales-result-btns">
       <!-- 關閉(左) / 複製金額(右) -->
-      <button class="btn-close-sales" onclick="closeSalesResult()">關閉</button>
+      <button class="btn-secondary" onclick="closeSalesResult()">關閉</button>
       <button class="btn-copy-sales"  onclick="copySalesResult()">複製金額</button>
     </div>
   </div>
@@ -1513,7 +1546,7 @@
       </table>
     </div>
     <div class="weekly-result-btns">
-      <button class="btn-close-report" onclick="closeWeeklyResult()">關閉</button>
+      <button class="btn-secondary" onclick="closeWeeklyResult()">關閉</button>
       <button class="btn-copy-report"  onclick="copyWeeklyReport()">複製</button>
     </div>
   </div>
@@ -1873,7 +1906,7 @@
      ✉️ 文案編輯 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="lineReportTextOverlay" style="display:none;z-index:850;">
-  <div class="elig-box" style="max-width:420px;">
+  <div class="elig-box line-report-text-box">
     <h3>✉️ 回報文案</h3>
     <p class="elig-sub">可手動編輯後再複製</p>
     <textarea id="lineReportTextarea"
@@ -1889,7 +1922,7 @@
      📝 訊息拆解 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="msgParserOverlay" style="display:none;">
-  <div class="elig-box" style="max-width:480px;width:90%;">
+  <div class="elig-box msg-parser-box" style="width:90%;">
     <h3>📝 訊息拆解</h3>
     <textarea id="msgParserInput" class="form-control"
       placeholder="貼入整串訊息&#10;範例如下&#10;服務單位：吉伊通訊處&#10;訂購人：烏薩奇&#10;聯絡電話：0912345678"
@@ -1996,8 +2029,11 @@
 
     <!-- 查看模式 -->
     <div id="vpViewMode" class="vp-mode" style="display:flex;flex-direction:column;flex:1;min-height:0;">
-      <!-- 日期篩選 -->
+      <!-- 日期篩選（年 + MMDD 起～迄）-->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-shrink:0;">
+        <input id="vpViewYear" type="tel" maxlength="4" placeholder="2026" class="form-control allow-select"
+               style="width:70px;flex-shrink:0;text-align:center;">
+        <span style="color:var(--muted);flex-shrink:0;font-size:12px;font-weight:700;">年</span>
         <input id="vpViewStart" type="tel" maxlength="4" placeholder="0501" class="form-control allow-select"
                style="flex:1;text-align:center;">
         <span style="color:var(--muted);">～</span>
@@ -2010,9 +2046,9 @@
       <!-- 底部 -->
       <div style="display:flex;gap:8px;margin-top:14px;flex-shrink:0;">
         <button class="btn-secondary" style="flex:1;padding:13px;"
-                onclick="openVisitNew()">＋ 新增場次</button>
-        <button class="btn-secondary" style="flex:1;padding:13px;"
                 onclick="closeVisitPlanner()">關閉</button>
+        <button class="btn-primary" style="flex:1;padding:13px;"
+                onclick="openVisitNew()">＋ 新增場次</button>
       </div>
     </div>
   </div>
@@ -2428,6 +2464,31 @@ function copyMsgField(btn, text, toastMsg) {
   });
 }
 
+// ✅ 通用左滑刪除 helper（手機端：早會 / 優惠 共用）
+// containerEl : 包含 .swipe-del-wrapper 的父容器
+// onDeleteByIdx : function(idx) 刪除指定索引的項目
+function _mountSwipeDelete(containerEl, onDeleteByIdx) {
+  containerEl.querySelectorAll('.swipe-del-wrapper').forEach(function(wrapper) {
+    var content = wrapper.querySelector('.swipe-del-content');
+    var startX  = 0;
+    wrapper.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+      // 收起其他已展開的項目
+      containerEl.querySelectorAll('.swipe-del-content').forEach(function(el) {
+        if (el !== content) el.style.transform = '';
+      });
+    }, { passive: true });
+    wrapper.addEventListener('touchend', function(e) {
+      var delta = e.changedTouches[0].clientX - startX;
+      if (delta < -50)     content.style.transform = 'translateX(-80px)';
+      else if (delta > 20) content.style.transform = '';
+    }, { passive: true });
+    wrapper.querySelector('.swipe-del-bg').addEventListener('click', function() {
+      onDeleteByIdx(parseInt(wrapper.dataset.idx));
+    });
+  });
+}
+
 // 🏷️ 優惠登記功能
 // ════════════════════════════════════════════════════════
 let eligProducts    = [];  // 快取 K=Y 的商品清單
@@ -2530,6 +2591,12 @@ function removeEligProduct(name) {
   renderEligProductTags();
 }
 
+// ✅ 修正：onclick 用 index 而非 JSON.stringify(name)，避免品項名稱內的雙引號截斷 HTML 屬性
+function removeEligProductByIdx(idx) {
+  eligSelectedProducts.splice(idx, 1);
+  renderEligProductTags();
+}
+
 function renderEligProductTags() {
   const container = document.getElementById('eligProductTags');
   if (!container) return;
@@ -2537,77 +2604,62 @@ function renderEligProductTags() {
     container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何達標商品</p>';
     return;
   }
-  // ✅ 條列式，與通訊處清單相同格式
-  container.innerHTML = eligSelectedProducts.map((name, i) =>
-    `<div class="elig-sel-wrapper" data-idx="${i}">
-       <div class="elig-sel-bg">移除</div>
-       <div class="elig-sel-item">
-         ${name}
-         <button class="elig-sel-delete-btn" onclick="event.stopPropagation();removeEligProduct(${JSON.stringify(name)})">✕</button>
-       </div>
-     </div>`
-  ).join('');
-  // ✅ 左滑事件（手機）
-  container.querySelectorAll('.elig-sel-wrapper').forEach(wrapper => {
-    const item = wrapper.querySelector('.elig-sel-item');
-    let startX = 0;
-    wrapper.addEventListener('touchstart', e => {
-      startX = e.touches[0].clientX;
-      container.querySelectorAll('.elig-sel-item').forEach(el => { if (el !== item) el.style.transform = ''; });
-    }, { passive: true });
-    wrapper.addEventListener('touchend', e => {
-      const delta = e.changedTouches[0].clientX - startX;
-      if (delta < -50) item.style.transform = 'translateX(-80px)';
-      else if (delta > 20) item.style.transform = '';
-    }, { passive: true });
-    wrapper.querySelector('.elig-sel-bg').addEventListener('click', () => {
-      removeEligProduct(eligSelectedProducts[parseInt(wrapper.dataset.idx)]);
-    });
-  });
+
+  if (isHoverDevice) {
+    // ✅ 桌機：常駐 × 按鈕，完全不依賴 hover/opacity，避免 stacking context 遮蔽問題
+    container.innerHTML = eligSelectedProducts.map((name, i) =>
+      `<div class="elig-pc-row">
+         <span class="elig-pc-row-label">${name}</span>
+         <button class="elig-del-pc" onclick="removeEligProductByIdx(${i})">✕</button>
+       </div>`
+    ).join('');
+  } else {
+    // ✅ 手機：左滑兩段式刪除（統一使用 swipe-del-* + _mountSwipeDelete）
+    container.innerHTML = eligSelectedProducts.map((name, i) =>
+      `<div class="swipe-del-wrapper" data-idx="${i}">
+         <div class="swipe-del-bg">移除</div>
+         <div class="swipe-del-content" style="padding:9px 12px;">${name}</div>
+       </div>`
+    ).join('');
+    _mountSwipeDelete(container, function(idx) { removeEligProductByIdx(idx); });
+  }
 }
 
-// ── 移除已選通訊處（手機左滑 / 桌機 hover X 共用）──
+// ── 移除已選通訊處 ──
 function removeEligUnit(idx) {
   eligSelectedUnits.splice(idx, 1);
   renderEligSelectedList();
 }
 
 // ── 渲染已選清單 ──
-// 手機：左滑兩段式刪除　桌機：滑鼠 hover 顯示右上 X（複用主列表設計）
+// 桌機：常駐 × 按鈕（不依賴 hover/opacity，避免 stacking context 遮蔽問題）
+// 手機：左滑兩段式刪除
 function renderEligSelectedList() {
   const container = document.getElementById('eligSelectedList');
+  if (!container) return;
   if (eligSelectedUnits.length === 0) {
     container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何通訊處</p>';
     return;
   }
-  container.innerHTML = eligSelectedUnits.map((u, i) =>
-    `<div class="elig-sel-wrapper" data-idx="${i}" style="position:relative;">
-       <div class="elig-sel-bg">移除</div>
-       <div class="elig-sel-item">
-         ${u.code} ${u.name}
-         <button class="elig-sel-delete-btn" onclick="event.stopPropagation();removeEligUnit(${i})">✕</button>
-       </div>
-     </div>`
-  ).join('');
-  // 掛載左滑事件（手機觸控）
-  container.querySelectorAll('.elig-sel-wrapper').forEach(wrapper => {
-    const item = wrapper.querySelector('.elig-sel-item');
-    let startX = 0;
-    wrapper.addEventListener('touchstart', e => {
-      startX = e.touches[0].clientX;
-      container.querySelectorAll('.elig-sel-item').forEach(el => {
-        if (el !== item) el.style.transform = '';
-      });
-    }, { passive: true });
-    wrapper.addEventListener('touchend', e => {
-      const delta = e.changedTouches[0].clientX - startX;
-      if (delta < -50)     item.style.transform = 'translateX(-80px)';
-      else if (delta > 20) item.style.transform = '';
-    }, { passive: true });
-    wrapper.querySelector('.elig-sel-bg').addEventListener('click', () => {
-      removeEligUnit(parseInt(wrapper.dataset.idx));
-    });
-  });
+
+  if (isHoverDevice) {
+    // ✅ 桌機：常駐 × 按鈕，不依賴 hover/opacity
+    container.innerHTML = eligSelectedUnits.map((u, i) =>
+      `<div class="elig-pc-row">
+         <span class="elig-pc-row-label">${u.code} ${u.name}</span>
+         <button class="elig-del-pc" onclick="removeEligUnit(${i})">✕</button>
+       </div>`
+    ).join('');
+  } else {
+    // ✅ 手機：左滑兩段式刪除（統一使用 swipe-del-* + _mountSwipeDelete）
+    container.innerHTML = eligSelectedUnits.map((u, i) =>
+      `<div class="swipe-del-wrapper" data-idx="${i}">
+         <div class="swipe-del-bg">移除</div>
+         <div class="swipe-del-content" style="padding:9px 12px;">${u.code} ${u.name}</div>
+       </div>`
+    ).join('');
+    _mountSwipeDelete(container, function(idx) { removeEligUnit(idx); });
+  }
 }
 
 // ── date picker 變更時：格式化顯示為 YYYY/MM/DD 並計算到期日 ──
@@ -2808,15 +2860,13 @@ function renderSearchResults(records) {
     const first   = `${codes[0]} ${names[0] || ''}`;
 
     const unitHtml = isMulti
-      ? `<div style="position:relative;padding-right:34px;width:100%;">
+      ? `<div style="cursor:pointer;" onclick="toggleSearchGroup(${gi})">
            <div id="esrch-col-${gi}">
-             <span class="elig-unit-tag">${first}</span>
+             <span class="elig-unit-tag">${first}<span class="elig-ellipsis">...</span></span>
            </div>
            <div id="esrch-exp-${gi}" style="display:none;">
              ${codes.map((c, i) => `<span class="elig-unit-line">${c} ${names[i] || ''}</span>`).join('')}
            </div>
-           <button id="esrch-btn-${gi}" class="elig-expand-btn elig-expand-fixed"
-                   onclick="toggleSearchGroup(${gi})">🔒</button>
          </div>`
       : `<span class="elig-unit-tag">${first}</span>`;
 
@@ -2843,12 +2893,10 @@ function renderSearchResults(records) {
 function toggleSearchGroup(gi) {
   const col = document.getElementById('esrch-col-' + gi);
   const exp = document.getElementById('esrch-exp-' + gi);
-  const btn = document.getElementById('esrch-btn-' + gi);
-  if (!col || !exp || !btn) return;
+  if (!col || !exp) return;
   const isExpanded = col.style.display === 'none';
   col.style.display = isExpanded ? '' : 'none';
   exp.style.display = isExpanded ? 'none' : '';
-  btn.textContent   = isExpanded ? '🔒' : '🔓';
 }
 
 async function loadEligibilityData(statusFilter) {
@@ -2963,33 +3011,28 @@ function renderEligibilityList(records, statusFilter) {
   });
 
   // ✅ 步驟三：渲染
-  // - 單一通訊處：直接顯示，不加折疊按鈕
-  // - 多通訊處：預設收合只顯示第一個 + 🔒，點擊展開全部
+  // - 單一通訊處：直接顯示
+  // - 多通訊處：預設收合只顯示第一個 + ...，點擊整區展開/收合
   list.innerHTML = groups.map((group, gi) => {
     const codes      = group.unitCode.split('+');
     const names      = group.unitName.split('+');
     const isMulti    = codes.length > 1;
     const firstUnit  = `${codes[0]} ${names[0] || ''}`;
 
-    // 收合狀態：只顯示第一個通訊處 + 🔒
-    // 多通訊處：容器設 position:relative + padding-right:26px（為按鈕留空間）
-    // 🔒/🔓 按鈕用 position:absolute right:4px top:6px，不隨文字長度移動
     const collapsedHtml = isMulti
-      ? `<div style="position:relative;padding-right:34px;width:100%;">
+      ? `<div style="cursor:pointer;" onclick="toggleEligGroup(${gi})">
            <div id="elig-col-${gi}">
-             <span class="elig-unit-tag">${firstUnit}</span>
+             <span class="elig-unit-tag">${firstUnit}<span class="elig-ellipsis">...</span></span>
            </div>
            <div id="elig-exp-${gi}" style="display:none;">
              ${codes.map((c, i) => `<span class="elig-unit-line">${c} ${names[i] || ''}</span>`).join('')}
            </div>
-           <button id="elig-btn-${gi}" class="elig-expand-btn elig-expand-fixed"
-                   onclick="toggleEligGroup(${gi})">🔒</button>
          </div>`
       : `<span class="elig-unit-tag">${firstUnit}</span>`;
 
     const itemsHtml = group.items.map(item => {
       const voidBtn = isValid
-        ? `<button class="elig-void-btn" onclick="confirmMarkVoid(${item.rowIndex},'${encodeURIComponent(group.unitName)}','${encodeURIComponent(item.product)}')">❌</button>`
+        ? `<button class="elig-void-btn" onclick="confirmMarkVoid(${item.rowIndex},'${encodeURIComponent(group.unitName)}','${encodeURIComponent(item.product)}')">✕</button>`
         : `<span style="font-size:11px;color:var(--muted);">${item.status}</span>`;
       return `<div class="elig-item-row">
         <span class="elig-item-product">${item.product}</span>
@@ -3007,16 +3050,14 @@ function renderEligibilityList(records, statusFilter) {
   }).join('');
 }
 
-// 折疊/展開單一群組（🔒=收合 / 🔓=展開）
+// 折疊/展開單一群組（收合=顯示第一個+... / 展開=顯示全部）
 function toggleEligGroup(gi) {
   const col = document.getElementById('elig-col-' + gi);
   const exp = document.getElementById('elig-exp-' + gi);
-  const btn = document.getElementById('elig-btn-' + gi);
-  if (!col || !exp || !btn) return;
+  if (!col || !exp) return;
   const isExpanded = col.style.display === 'none';
   col.style.display = isExpanded ? '' : 'none';
   exp.style.display = isExpanded ? 'none' : '';
-  btn.textContent   = isExpanded ? '🔒' : '🔓'; // 收合=🔒 展開=🔓
 }
 
 
@@ -4753,9 +4794,10 @@ function showVpMode(mode) {
 function openVisitNew() { showVpMode('new'); }
 function openVisitView() {
   showVpMode('view');
-  // 預填當月
+  // 預填當年當月
   var now = new Date();
   var m = String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('vpViewYear').value  = now.getFullYear();
   document.getElementById('vpViewStart').value = m + '01';
   document.getElementById('vpViewEnd').value   = m + '31';
   loadVisitPlans();
@@ -4818,15 +4860,34 @@ function renderVpNewUnits() {
     sum.style.display = 'none';
     return;
   }
-  el.innerHTML = vpNewUnits.map(function(u,i){
-    return (
-      '<div class="vp-unit-row">' +
-        '<span style="flex:1;font-weight:600;">' + u.name + '</span>' +
-        '<span style="color:var(--muted);font-size:11px;margin-right:6px;">' + u.power + '人</span>' +
-        '<span style="color:var(--danger);cursor:pointer;font-size:16px;font-weight:700;" onclick="removeVisitUnit(' + i + ',\'new\')">×</span>' +
-      '</div>'
-    );
-  }).join('');
+
+  if (isHoverDevice) {
+    // ✅ 桌機：常駐 × 按鈕（與優惠登記對齊）
+    el.innerHTML = vpNewUnits.map(function(u, i) {
+      return (
+        '<div class="elig-pc-row">' +
+          '<span class="elig-pc-row-label" style="font-weight:600;">' + u.name + '</span>' +
+          '<span style="color:var(--muted);font-size:11px;white-space:nowrap;margin-right:4px;">' + u.power + '人</span>' +
+          '<button class="elig-del-pc" onclick="removeVisitUnit(' + i + ',\'new\')">✕</button>' +
+        '</div>'
+      );
+    }).join('');
+  } else {
+    // ✅ 手機：左滑兩段式刪除（與優惠登記對齊）
+    el.innerHTML = vpNewUnits.map(function(u, i) {
+      return (
+        '<div class="swipe-del-wrapper" data-idx="' + i + '">' +
+          '<div class="swipe-del-bg">移除</div>' +
+          '<div class="swipe-del-content" style="padding:10px 4px;gap:8px;">' +
+            '<span style="flex:1;font-weight:600;">' + u.name + '</span>' +
+            '<span style="color:var(--muted);font-size:11px;">' + u.power + '人</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+    _mountSwipeDelete(el, function(idx) { removeVisitUnit(idx, 'new'); });
+  }
+
   var totalPower = vpNewUnits.reduce(function(a,u){ return a+u.power; }, 0);
   var est = calcVisitEstimate(totalPower);
   sum.style.display = 'block';
@@ -4871,10 +4932,15 @@ async function loadVisitPlans() {
 
   var payload = { action: 'getVisitPlans' };
   if (s.length === 4 && e.length === 4) {
-    var now = new Date();
-    var sy = now.getFullYear(), ey = now.getFullYear();
-    payload.startTs = sy*10000 + parseInt(s.slice(0,2))*100 + parseInt(s.slice(2,4));
-    payload.endTs   = ey*10000 + parseInt(e.slice(0,2))*100 + parseInt(e.slice(2,4));
+    var now     = new Date();
+    // ✅ 讀取年份輸入（無效時 fallback 當年）
+    var sy      = parseInt(document.getElementById('vpViewYear').value) || now.getFullYear();
+    var startMM = parseInt(s.slice(0,2));
+    var endMM   = parseInt(e.slice(0,2));
+    // ✅ 跨年判斷：結束月 < 起始月（如 12月～1月），結束年自動 +1
+    var ey = (endMM > 0 && endMM < startMM) ? sy + 1 : sy;
+    payload.startTs = sy*10000 + startMM*100 + parseInt(s.slice(2,4));
+    payload.endTs   = ey*10000 + endMM  *100 + parseInt(e.slice(2,4));
   }
   try {
     var res = await cloudPost(payload);
@@ -4920,7 +4986,7 @@ function renderVpPlans(plans) {
             '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:40px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
             '<div style="font-size:12px;font-weight:700;flex-shrink:0;width:44px;text-align:right;white-space:nowrap;margin-right:4px;">' + fmtEst(p.estimate) + '</div>' +
             '<button class="unit-sort-btn" style="flex-shrink:0;" onclick="startEditVisitPlan(' + p.rowIndex + ')">修改</button>' +
-            '<span class="vp-plan-hover-del" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">×</span>' +
+            '<span class="vp-plan-hover-del" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">✕</span>' +
           '</div>' +
           '<div class="vp-plan-delete-btn" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">刪除</div>' +
         '</div>' +
@@ -4987,15 +5053,34 @@ function renderVpEditUnits() {
   var el  = document.getElementById('vpEditUnitList');
   var sum = document.getElementById('vpEditSummary');
   if (!el) return;
-  el.innerHTML = vpEditUnits.map(function(u,i){
-    return (
-      '<div class="vp-unit-row">' +
-        '<span style="flex:1;font-weight:600;">' + u.name + '</span>' +
-        '<span style="color:var(--muted);font-size:11px;margin-right:6px;">' + u.power + '人</span>' +
-        '<span style="color:var(--danger);cursor:pointer;font-size:16px;font-weight:700;" onclick="removeVisitUnit(' + i + ',\'edit\')">×</span>' +
-      '</div>'
-    );
-  }).join('');
+
+  if (isHoverDevice) {
+    // ✅ 桌機：常駐 × 按鈕（與優惠登記對齊）
+    el.innerHTML = vpEditUnits.map(function(u, i) {
+      return (
+        '<div class="elig-pc-row">' +
+          '<span class="elig-pc-row-label" style="font-weight:600;">' + u.name + '</span>' +
+          '<span style="color:var(--muted);font-size:11px;white-space:nowrap;margin-right:4px;">' + u.power + '人</span>' +
+          '<button class="elig-del-pc" onclick="removeVisitUnit(' + i + ',\'edit\')">✕</button>' +
+        '</div>'
+      );
+    }).join('');
+  } else {
+    // ✅ 手機：左滑兩段式刪除（與優惠登記對齊）
+    el.innerHTML = vpEditUnits.map(function(u, i) {
+      return (
+        '<div class="swipe-del-wrapper" data-idx="' + i + '">' +
+          '<div class="swipe-del-bg">移除</div>' +
+          '<div class="swipe-del-content" style="padding:10px 4px;gap:8px;">' +
+            '<span style="flex:1;font-weight:600;">' + u.name + '</span>' +
+            '<span style="color:var(--muted);font-size:11px;">' + u.power + '人</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+    _mountSwipeDelete(el, function(idx) { removeVisitUnit(idx, 'edit'); });
+  }
+
   var totalPower = vpEditUnits.reduce(function(a,u){ return a+u.power; }, 0);
   var est = calcVisitEstimate(totalPower);
   if (sum) sum.innerHTML = '合計人力 <strong>' + totalPower + '人</strong>　預估業績 <strong>' + fmtEst(est) + '</strong>';
@@ -5353,15 +5438,21 @@ async function loadAnalyticsData(period, customStart, customEnd) {
       payload.endDate   = customEnd;
     }
 
-    // 兩個 GAS 請求平行執行：業績分析 + 通訊處人力
+    // ── 通訊處人力：有快取（_unitManpowerMap 非空）則跳過請求，減少 GAS 呼叫 ──
+    const mpPromise = _unitManpowerMap.size > 0
+      ? Promise.resolve(null)
+      : cloudPost({ action: 'getUnitManpower' }).then(function(r) { return r.json(); });
+
+    // 業績分析 + 通訊處人力平行執行（有快取時只發一個 GAS 請求）
     const [analyticsJson, mpJson] = await Promise.all([
       cloudPost(payload).then(function(r) { return r.json(); }),
-      cloudPost({ action: 'getUnitManpower' }).then(function(r) { return r.json(); })
+      mpPromise
     ]);
 
     // 建立通訊處人力對照表（NFC 標準化，確保名稱比對一致）
-    _unitManpowerMap = new Map();
+    // mpJson 為 null 代表命中快取，直接沿用現有 _unitManpowerMap，跳過更新
     if (mpJson && mpJson.success && mpJson.units) {
+      _unitManpowerMap = new Map();
       mpJson.units.forEach(function(u) {
         var key = String(u.name).trim().normalize('NFC');
         if (key) _unitManpowerMap.set(key, u.power);
@@ -5543,7 +5634,7 @@ function _renderAnalytics(data) {
       </div>
       <div class="analysis-kpi-card ${s.lostCustomers>0||s.warningCustomers>0?'alert':'good'}">
         <div class="analysis-kpi-label">活躍客戶</div>
-        <div class="analysis-kpi-value">${Math.round(s.activeCustomers/s.allTotalCustomers*1000)/10}<span class="analysis-kpi-unit">%</span></div>
+        <div class="analysis-kpi-value">${s.allTotalCustomers > 0 ? Math.round(s.activeCustomers/s.allTotalCustomers*1000)/10 : 0}<span class="analysis-kpi-unit">%</span></div>
         <div class="analysis-kpi-sub">全史${s.allTotalCustomers}人基準 ≤60天</div>
       </div>
       <div class="analysis-kpi-card ${s.repurchaseRate<20?'alert':'good'}">
@@ -6080,7 +6171,7 @@ function renderMpList() {
           '<span class="mp-code">' + u.code + '</span>' +
           '<span class="mp-name-label">' + u.name + '</span>' +
           '<span class="mp-power-label">' + u.power + ' 人</span>' +
-          '<span class="mp-hover-delete" onclick="removeMpUnit(' + i + ')">×</span>' +
+          '<span class="mp-hover-delete" onclick="removeMpUnit(' + i + ')">✕</span>' +
         '</div>' +
         '<div class="mp-delete-btn" onclick="removeMpUnit(' + i + ')">刪除</div>' +
       '</div>'
