@@ -925,7 +925,41 @@
     }
     .elig-pc-row:last-child { border-bottom: none; }
     .elig-pc-row-label { flex: 1; font-size: 13px; color: var(--text); }
-    /* ✅ 通用左滑刪除結構（手機端：早會開團 / 優惠登記 共用）*/
+    /* ✅ 預購品項標記樣式 */
+    .preorder-check {
+      display: flex; align-items: center; gap: 3px;
+      flex-shrink: 0; cursor: pointer; margin-right: 4px;
+      -webkit-user-select: none; user-select: none;
+    }
+    .preorder-check input[type="checkbox"] {
+      width: 14px; height: 14px; margin: 0;
+      accent-color: #FFA500; cursor: pointer; flex-shrink: 0;
+    }
+    .pre-label { font-size: 10px; font-weight: 700; color: var(--muted); }
+    /* ✅ 預購標記：只改「預」字顏色，不加底色（避免與左滑刪除衝突）*/
+    .order-item.preorder-item .pre-label { color: #FFA500; }
+
+    /* ✅ 預購待出面板 */
+    .preorder-group-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 14px; cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .preorder-group-header:hover { background: rgba(255,255,255,0.03); }
+    .pg-date  { font-weight: 700; color: var(--color-reply); flex-shrink: 0; }
+    .pg-unit  { color: var(--muted); font-size: 12px; flex-shrink: 0; }
+    .pg-cust  { flex: 1; font-weight: 600; }
+    .pg-arrow { font-size: 11px; color: var(--muted); flex-shrink: 0; transition: transform 0.2s; }
+    .pg-arrow.open { transform: rotate(90deg); }
+    .preorder-group-body { padding: 10px 14px 12px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.06); }
+    .pg-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; }
+    .pg-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; }
+    .pg-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+    .pg-done-label { color: var(--muted); text-decoration: line-through; font-size: 12px; }
+    .preorder-group.done-group .preorder-group-header { opacity: 0.45; }
+
+    /* ✅ 通用左滑刪除結構（手機端：早會結團 / 優惠登記 共用）*/
     .swipe-del-wrapper {
       overflow: hidden; position: relative;
       border-bottom: 1px solid var(--border);
@@ -1341,7 +1375,7 @@
          均不在此 query 內，維持窄版設計
        ════════════════════════════════════════════════════════════ */
     @media (min-width: 768px) {
-      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會開團 等）*/
+      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會結團 等）*/
       .elig-box              { max-width: 640px; }
       /* 文案編輯 / 訊息拆解（原 inline 已改為 class，此處統一覆蓋）*/
       .line-report-text-box  { max-width: 640px; }
@@ -1407,9 +1441,10 @@
     <a onclick="handleMenuAction('eligibilityQuery')" data-tooltip="大組價資格查詢"><span>🔍</span> 優惠資格</a>
     <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
     <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
-    <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="多通訊處人力加總"><span>👥</span> 人力計算</a>
-    <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會/開團與業績預估"><span>🎙️</span> 早會開團</a>
-<a onclick="handleMenuAction('salesAnalysis')" data-tooltip="業績儀表板分析"><span>📒</span> 業績分析</a>
+    <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="通訊處人力加總計算機"><span>👥</span> 人力計算</a>
+    <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會結團時間&業績預估"><span>🎙️</span> 早會結團</a>
+<a onclick="handleMenuAction('salesAnalysis')" data-tooltip="專屬🌱業績儀表板分析"><span>📒</span> 業績分析</a>
+    <a onclick="handleMenuAction('preorderPanel')" data-tooltip="預購已付款&口頭預購未付款"><span>🛒</span> 預購管理</a>
   </div>
 </div>
 
@@ -1556,12 +1591,26 @@
 <div id="customerSection" class="section" style="display:none;">
   <div class="card">
     <div class="card-title">👤 客戶詳細資訊</div>
-    <!-- ✅ 預約出單 -->
+    <!-- ✅ 預約出單 + 出貨文件 + 預購未付款 同列 -->
     <div class="form-group" style="margin-bottom:14px;">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-        <input type="checkbox" id="scheduleToggle" onchange="onScheduleToggle()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);">
-        <span class="form-label" style="margin-bottom:0;">預約出單</span>
-      </label>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="scheduleToggle" onchange="onScheduleToggle()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);">
+          <span class="form-label" style="margin-bottom:0;">預約出單</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="skipSalesToggle"
+                 onchange="if(this.checked){document.getElementById('unpaidPreorderToggle').checked=false;}"
+                 style="width:18px;height:18px;cursor:pointer;accent-color:#E24B4A;">
+          <span class="form-label" style="margin-bottom:0;color:var(--muted);">出貨文件（不計業績）</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="unpaidPreorderToggle"
+                 onchange="if(this.checked){document.getElementById('skipSalesToggle').checked=false;}"
+                 style="width:18px;height:18px;cursor:pointer;accent-color:#FFA500;">
+          <span class="form-label" style="margin-bottom:0;color:var(--muted);">預購未付款</span>
+        </label>
+      </div>
       <div id="scheduleDateBox" style="display:none;margin-top:10px;position:relative;">
         <input type="date" id="scheduleDatePicker"
                style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;z-index:1;"
@@ -1603,7 +1652,17 @@
       </div>
       <input type="text" id="customerName" class="form-control allow-select" placeholder="收件人姓名" oninput="clearFieldError(this)">
     </div>
-    <div class="form-group"><label class="form-label">送貨地址<span class="required-mark">*</span></label><input type="text" id="shippingAddress" class="form-control allow-select" placeholder="送貨地址" autocomplete="off" oninput="clearFieldError(this)"></div>
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <label class="form-label" style="margin-bottom:0;">送貨地址<span class="required-mark">*</span></label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:13px;color:var(--muted);">
+          <input type="checkbox" id="selfPickupToggle" onchange="onSelfPickupToggle()"
+                 style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);">
+          自取
+        </label>
+      </div>
+      <input type="text" id="shippingAddress" class="form-control allow-select" placeholder="送貨地址" autocomplete="off" oninput="clearFieldError(this)">
+    </div>
     <div class="form-group"><label class="form-label">連絡電話<span class="required-mark">*</span></label><input type="tel" id="contactPhone" class="form-control allow-select" placeholder="聯絡電話" maxlength="10" inputmode="numeric" oninput="clearFieldError(this)"></div>
     <div class="form-group"><label class="form-label">營管</label><input type="text" id="managerUnit" class="form-control allow-select" placeholder="營管名稱" autocomplete="off"></div>
     <div class="form-group"><label class="form-label">區部</label><input type="text" id="districtUnit" class="form-control allow-select" placeholder="區部名稱" autocomplete="off"></div>
@@ -1670,6 +1729,94 @@
     <div class="confirm-btns">
       <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeConfirm()">取消</button>
       <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doClrAll()">確認清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 出貨文件（不計業績）二次確認彈窗 -->
+<div class="confirm-overlay" id="skipSalesConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 出貨文件（不計業績）</h3>
+    <p>此單同步後<strong>不會</strong>計入個人業績<br>及通訊處業績總表。<br><br>PDF 出貨單與 DO 物流檔案照常產出。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelSkipSalesSync()">返回修改</button>
+      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="confirmSkipSalesSync()">確認同步</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 預購未付款 確認彈窗 -->
+<div class="confirm-overlay" id="unpaidPreorderConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>📝 預購未付款</h3>
+    <p>將記錄預訂資料，<strong>不計業績</strong>、<br><strong>不產出</strong>出貨單及物流檔案。<br><br>待客戶付款後再正式出單。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelUnpaidPreorderSync()">返回修改</button>
+      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="confirmUnpaidPreorderSync()">確認記錄</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 部分品項預購確認彈窗 -->
+<div class="confirm-overlay" id="somePreorderConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 部分品項預購</h3>
+    <p>下列品項標記為預購，<strong>此次不出貨</strong>，<br>已加入預購待出清單：</p>
+    <div id="somePreorderItemList" style="margin:10px 0;padding:10px;background:rgba(255,165,0,0.1);border-radius:8px;font-size:13px;text-align:left;line-height:1.8;"></div>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelPreorderSync()">返回修改</button>
+      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="confirmPreorderSync()">確認同步</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 全部品項預購確認彈窗 -->
+<div class="confirm-overlay" id="allPreorderConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 全部品項預購</h3>
+    <p>所有品項均標記為預購，<strong>無實際出貨</strong>。<br><br>業績照常記錄，不產出出貨單及物流檔案。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelAllPreorderSync()">返回修改</button>
+      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="confirmPreorderSync()">確認同步</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 匯入預購覆蓋確認彈窗 -->
+<div class="confirm-overlay" id="preorderOverrideOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3>⚠️ 目前有未完成訂單</h3>
+    <p>匯入預購資料將覆蓋目前的品項與客戶資料，<br>此動作無法還原。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelPreorderOverride()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="confirmPreorderOverride()">確認覆蓋</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 預購管理面板 -->
+<div class="overlay-backdrop" id="preorderOverlay" style="display:none;">
+  <div class="elig-box" style="max-height:88vh;display:flex;flex-direction:column;gap:0;">
+    <div style="padding:14px 18px 0;flex-shrink:0;border-bottom:1px solid var(--border);">
+      <div style="font-size:17px;font-weight:900;margin-bottom:10px;">🛒 預購管理</div>
+      <!-- Tab 切換 -->
+      <div style="display:flex;gap:0;">
+        <button id="tabBtnPaid" onclick="switchPreorderTab('paid')"
+                style="flex:1;padding:8px;border:none;border-bottom:2px solid var(--primary);background:transparent;font-size:13px;font-weight:700;color:var(--primary);cursor:pointer;">
+          預購已付
+        </button>
+        <button id="tabBtnUnpaid" onclick="switchPreorderTab('unpaid')"
+                style="flex:1;padding:8px;border:none;border-bottom:2px solid transparent;background:transparent;font-size:13px;font-weight:400;color:var(--muted);cursor:pointer;">
+          預購未付
+        </button>
+      </div>
+    </div>
+    <div id="preorderPanelBody" style="flex:1;overflow-y:auto;min-height:60px;">
+      <div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">載入中...</div>
+    </div>
+    <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closePreorderPanel()">關閉</button>
+      <button id="toggleDoneBtn" class="btn-primary" style="flex:1;padding:13px;display:none;" onclick="togglePreorderDone()">顯示已完成</button>
     </div>
   </div>
 </div>
@@ -1987,12 +2134,12 @@
 </div>
 
 <!-- ════════════════════════════════
-     🎙️ 早會開團 Overlay
+     🎙️ 早會結團 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="visitPlannerOverlay" style="display:none;"
      onclick="if(event.target===this)closeVisitPlanner()">
   <div class="elig-box" style="max-height:85vh;display:flex;flex-direction:column;gap:0;">
-    <h3 style="margin-bottom:12px;">🎙️ 早會開團</h3>
+    <h3 style="margin-bottom:12px;">🎙️ 早會結團</h3>
 
     <!-- 新增模式 -->
     <div id="vpNewMode" class="vp-mode active">
@@ -2364,6 +2511,7 @@ function handleMenuAction(type) {
   else if (type === 'manpowerCalc')          openManpowerCalc();
   else if (type === 'visitPlanner')          openVisitPlanner();
   else if (type === 'salesAnalysis')    openSalesAnalysis();
+  else if (type === 'preorderPanel')    openPreorderPanel();
 }
 
 
@@ -2710,8 +2858,8 @@ async function submitEligibility() {
   const startDate = document.getElementById('eligStartDatePicker').value;
   if (!startDate) { showGlobalToast('⚠️ 請選擇達標日期'); return; }
 
-  const unitCode = eligSelectedUnits.map(u => u.code).join('+');
-  const unitName = eligSelectedUnits.map(u => u.name).join('+');
+  const unitCode = eligSelectedUnits.map(u => u.code).join(',');
+  const unitName = eligSelectedUnits.map(u => u.name).join(',');
 
   showSyncMask('儲存中...');
   try {
@@ -2823,8 +2971,8 @@ async function searchEligibility() {
 
     // 1. 篩選：unitCode 或 unitName 的任一分段包含搜尋詞
     const matched = r.records.filter(rec => {
-      const codes = rec.unitCode.split('+').map(s => s.trim().toUpperCase());
-      const names = rec.unitName.split('+').map(s => s.trim());
+      const codes = rec.unitCode.split(/[+,]/).map(s => s.trim().toUpperCase());
+      const names = rec.unitName.split(/[+,]/).map(s => s.trim());
       if (codeQ && codes.some(c => c.includes(codeQ))) return true;
       if (nameQ && names.some(n => n.includes(nameQ)))  return true;
       return false;
@@ -2877,8 +3025,8 @@ function renderSearchResults(records) {
   });
 
   list.innerHTML = groups.map((group, gi) => {
-    const codes   = group.unitCode.split('+');
-    const names   = group.unitName.split('+');
+    const codes   = group.unitCode.split(/[+,]/);
+    const names   = group.unitName.split(/[+,]/);
     const isMulti = codes.length > 1;
     const first   = `${codes[0]} ${names[0] || ''}`;
 
@@ -3037,8 +3185,8 @@ function renderEligibilityList(records, statusFilter) {
   // - 單一通訊處：直接顯示
   // - 多通訊處：預設收合只顯示第一個 + ...，點擊整區展開/收合
   list.innerHTML = groups.map((group, gi) => {
-    const codes      = group.unitCode.split('+');
-    const names      = group.unitName.split('+');
+    const codes      = group.unitCode.split(/[+,]/);
+    const names      = group.unitName.split(/[+,]/);
     const isMulti    = codes.length > 1;
     const firstUnit  = `${codes[0]} ${names[0] || ''}`;
 
@@ -3093,7 +3241,7 @@ function confirmMarkVoid(rowIndex, encodedName, encodedProduct) {
   pendingVoidRowIndex = rowIndex;
 
   // 多通訊處時，+ 分隔顯示為多行
-  const namesDisplay = name.split('+').join('<br>');
+  const namesDisplay = name.split(/[+,]/).join('<br>');
   document.getElementById('voidConfirmMsg').innerHTML =
     `確定要將以下資格標記為作廢？<br><br><span style="color:var(--color-reply);font-weight:700;font-size:16px;line-height:2;">${namesDisplay}</span><br><span style="color:var(--text);font-size:13px;">${product}</span>`;
   document.getElementById('voidConfirmOverlay').style.display = 'flex';
@@ -3414,7 +3562,17 @@ async function executeSyncWithPayload(payload) {
       hideSyncMask(); // ✅ 成功：解除遮罩
       tr.innerHTML = '<span>同步成功</span>';
       tr.classList.add('sync-success');
-      showGlobalToast('✅ 雲端同步完成');
+      showGlobalToast(
+        payload.allPreorder    ? '✅ 業績已記錄，全數品項預購，無實際出貨' :
+        payload.unpaidPreorder ? '✅ 預購未付款已記錄' :
+        '✅ 雲端同步完成'
+      );
+      // ✅ 補貨出貨同步成功後，自動標記預購記錄為已完成
+      if (_preorderUidsToComplete.length > 0) {
+        const uidsToMark = [..._preorderUidsToComplete];
+        _preorderUidsToComplete = []; // 立即清空，防止重複觸發
+        markPreorderDone(uidsToMark);
+      }
       localStorage.removeItem(DRAFT_KEY);
       setTimeout(() => { tr.classList.remove('sync-success'); tr.innerHTML='<span>快樂上班</span><span>效率出單</span>'; }, 3000);
     } else {
@@ -3498,7 +3656,7 @@ setInterval(saveDraft, 30000);
 window.addEventListener('beforeunload', function() { saveDraft(); });
 
 // ════════════════════════════════════════════════════════════
-// 草稿系統擴展：優惠登記 / 早會開團
+// 草稿系統擴展：優惠登記 / 早會結團
 // ════════════════════════════════════════════════════════════
 const ELIG_DRAFT_KEY = 'homedr_elig_draft';
 const VP_DRAFT_KEY   = 'homedr_vp_draft';
@@ -3535,7 +3693,7 @@ function loadEligDraft() {
 }
 function clearEligDraft() { try { localStorage.removeItem(ELIG_DRAFT_KEY); } catch(e) {} }
 
-// ── 早會開團草稿 ──
+// ── 早會結團草稿 ──
 function saveVpDraft() {
   try {
     const yearEl  = document.getElementById('vpYear');
@@ -3860,6 +4018,19 @@ function setMode(m) {
 }
 
 // ✅ 性質變更時自動帶入人力
+// ✅ 自取勾選：自動填入「自取」或清空送貨地址
+function onSelfPickupToggle() {
+  const cb   = document.getElementById('selfPickupToggle');
+  const addr = document.getElementById('shippingAddress');
+  if (!addr) return;
+  if (cb.checked) {
+    addr.value = '自取';
+    addr.classList.remove('field-error');
+  } else {
+    addr.value = '';
+  }
+}
+
 // ✅ 預約出單
 function onScheduleToggle() {
   const checked = document.getElementById('scheduleToggle').checked;
@@ -3899,7 +4070,7 @@ function onSelectProduct(code) {
   if(!code)return;
   const p=allParams.find(x=>x.code===code);
   const isDuplicate = orderItems.some(x=>x.param.code===code);
-  orderItems.push({id:idCounter++,param:p,qty:1,manualMode:''});
+  orderItems.push({id:idCounter++,param:p,qty:1,manualMode:'',preorder:false});
   renderAll();
   if(isDuplicate) showGlobalToast('📦 重複品項已加入，記得設為不計價');
   document.getElementById('productSelect').value='';
@@ -3950,14 +4121,20 @@ function renderAll() {
       else if(item.manualMode==='🟡不計價') colorClass='color-yellow';
       else if(item.manualMode==='🟢混合價') colorClass='color-green';
     }
+    // ✅ 預購標記：淡橘底色 + 左側橘邊框
+    if (item.preorder === true) colorClass += ' preorder-item';
     return `
       <div class="swipe-wrapper" data-item-id="${item.id}">
         <div class="swipe-action-bg">🗑️ 刪除</div>
         <div class="order-item ${colorClass}">
           <!-- ✅ 桌機 hover ✕ 按鈕（手機不可見） -->
           <button class="delete-btn-hover" onclick="removeItem(${item.id})">✕</button>
-          <!-- ✅ 新版單行排版：[品名 flex:1] [金額 fixed] [- qty + fixed=--action-width] -->
+          <!-- ✅ 新版單行排版：[預購checkbox] [品名 flex:1] [金額 fixed] [- qty + fixed] -->
           <div class="item-main-row">
+            <label class="preorder-check" onclick="event.stopPropagation()">
+              <input type="checkbox" ${item.preorder?'checked':''} onchange="togglePreorder(${item.id},this.checked)">
+              <span class="pre-label">預</span>
+            </label>
             <div class="item-name-text">${item.param.name}</div>
             <span class="item-price-tag">${price<=0?'贈送':'$'+price.toLocaleString()}</span>
             <div class="qty-control">
@@ -4178,12 +4355,372 @@ function updateSummary(){
 
 function confirmClear(){document.getElementById('confirmOverlay').style.display='flex';}
 function closeConfirm() {document.getElementById('confirmOverlay').style.display='none';}
+
+// ✅ 不計入業績確認彈窗
+function confirmSkipSalesSync() {
+  document.getElementById('skipSalesConfirmOverlay').style.display = 'none';
+  executeSyncWithPayload(lastSyncPayload);
+}
+function cancelSkipSalesSync() {
+  document.getElementById('skipSalesConfirmOverlay').style.display = 'none';
+}
+
+// ✅ 預購未付款確認函數
+function confirmUnpaidPreorderSync() {
+  document.getElementById('unpaidPreorderConfirmOverlay').style.display = 'none';
+  executeSyncWithPayload(lastSyncPayload);
+}
+function cancelUnpaidPreorderSync() {
+  document.getElementById('unpaidPreorderConfirmOverlay').style.display = 'none';
+}
+
+// ✅ Tab 切換：預購已付 / 預購未付
+function switchPreorderTab(tab) {
+  _activePreorderTab = tab;
+  _showDone = false;
+  const btnPaid   = document.getElementById('tabBtnPaid');
+  const btnUnpaid = document.getElementById('tabBtnUnpaid');
+  if (btnPaid && btnUnpaid) {
+    btnPaid.style.borderBottomColor   = tab === 'paid'   ? 'var(--primary)' : 'transparent';
+    btnPaid.style.color               = tab === 'paid'   ? 'var(--primary)' : 'var(--muted)';
+    btnPaid.style.fontWeight          = tab === 'paid'   ? '700' : '400';
+    btnUnpaid.style.borderBottomColor = tab === 'unpaid' ? 'var(--primary)' : 'transparent';
+    btnUnpaid.style.color             = tab === 'unpaid' ? 'var(--primary)' : 'var(--muted)';
+    btnUnpaid.style.fontWeight        = tab === 'unpaid' ? '700' : '400';
+  }
+  renderPreorderPanel();
+}
+
+// ✅ 預購確認函數
+function cancelPreorderSync() {
+  document.getElementById('somePreorderConfirmOverlay').style.display = 'none';
+}
+function cancelAllPreorderSync() {
+  document.getElementById('allPreorderConfirmOverlay').style.display = 'none';
+}
+function confirmPreorderSync() {
+  document.getElementById('somePreorderConfirmOverlay').style.display = 'none';
+  document.getElementById('allPreorderConfirmOverlay').style.display = 'none';
+  executeSyncWithPayload(lastSyncPayload);
+}
+
+// ✅ togglePreorder：品項切換預購狀態
+function togglePreorder(id, checked) {
+  const it = orderItems.find(x => x.id === id);
+  if (it) { it.preorder = checked; renderAll(); }
+}
+
+// ════════════════════════════════════════════════════════
+// 🛒 預購待出功能
+// ════════════════════════════════════════════════════════
+let _preorderGroups  = [];
+let _showDone        = false;
+let _activePreorderTab      = 'paid'; // ✅ 目前顯示的 Tab：'paid' | 'unpaid'
+let _pendingPreorderFill    = null;
+let _preorderUidsToComplete = [];
+
+function openPreorderPanel() {
+  _activePreorderTab = 'paid';
+  _showDone = false;
+  document.getElementById('preorderOverlay').style.display = 'flex';
+  // ✅ 只更新 Tab 樣式，不呼叫 renderPreorderPanel（資料未載入，避免閃現「無記錄」）
+  const btnPaid   = document.getElementById('tabBtnPaid');
+  const btnUnpaid = document.getElementById('tabBtnUnpaid');
+  if (btnPaid)   { btnPaid.style.borderBottomColor   = 'var(--primary)'; btnPaid.style.color   = 'var(--primary)'; btnPaid.style.fontWeight   = '700'; }
+  if (btnUnpaid) { btnUnpaid.style.borderBottomColor = 'transparent';    btnUnpaid.style.color = 'var(--muted)';   btnUnpaid.style.fontWeight = '400'; }
+  loadPreorders();
+}
+function closePreorderPanel() {
+  document.getElementById('preorderOverlay').style.display = 'none';
+}
+
+async function loadPreorders() {
+  const body = document.getElementById('preorderPanelBody');
+  body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">載入中...</div>';
+  try {
+    const res = await cloudPost({ action: 'getPreorders' });
+    const r   = await res.json();
+    if (!r.success) throw new Error(r.message || '載入失敗');
+    _preorderGroups = buildPreorderGroups(r.rows);
+    renderPreorderPanel();
+  } catch(e) {
+    body.innerHTML = '<div style="text-align:center;padding:32px;color:#E24B4A;font-size:13px;">⚠️ 載入失敗，請重試</div>';
+  }
+}
+
+// 將 flat rows 依訂單分組
+function buildPreorderGroups(rows) {
+  const map = new Map();
+  rows.forEach(function(row) {
+    const key = (row.platformOrderNo||'無單號') + '|' + (row.unitCode||'') + '|'
+              + row.year + row.month + row.day + '|' + (row.sender||'');
+    if (!map.has(key)) {
+      map.set(key, {
+        key:             key,
+        platformOrderNo: row.platformOrderNo,
+        date:            row.year + '/' + String(row.month).padStart(2,'0') + '/' + String(row.day).padStart(2,'0'),
+        unitCode:        row.unitCode,
+        unitName:        row.unitName,
+        sender:          row.sender,
+        customer:        row.customer,
+        address:         row.address,
+        phone:           row.phone,
+        orderType:       row.orderType,
+        salesName:       row.salesName,
+        issuerName:      row.issuerName,
+        items:           []
+      });
+    }
+    map.get(key).items.push({
+      itemName: row.itemName, qty: row.qty,
+      status:   row.status,  doneDate: row.doneDate, uid: row.uid
+    });
+  });
+  return Array.from(map.values());
+}
+
+function renderPreorderPanel() {
+  const body    = document.getElementById('preorderPanelBody');
+  const doneBtn = document.getElementById('toggleDoneBtn');
+
+  // ✅ 依 Tab 篩選：已付 → 待出，未付 → 未付款
+  const activeStatus = _activePreorderTab === 'paid' ? '待出' : '未付款';
+  const pending = _preorderGroups.filter(g => g.items.some(it => it.status === activeStatus));
+  // ✅ 已完成不分 Tab，兩邊都顯示全部
+  const done = _preorderGroups.filter(g => g.items.every(it => it.status === '已完成'));
+
+  if (pending.length === 0 && done.length === 0) {
+    const msg = _activePreorderTab === 'paid' ? '目前沒有待補貨記錄 🎉' : '目前沒有預購未付款記錄';
+    body.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;">${msg}</div>`;
+    doneBtn.style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  if (_showDone) {
+    html = done.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;">尚無已完成記錄</div>'
+      : done.map(function(g, i) { return renderPreorderGroup(g, true, i); }).join('');
+  } else {
+    html = pending.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;">所有項目均已完成 🎉</div>'
+      : pending.map(function(g, i) { return renderPreorderGroup(g, false, i); }).join('');
+  }
+
+  body.innerHTML = html;
+  doneBtn.textContent = _showDone ? '返回預購' : '顯示已完成';
+  doneBtn.style.display = done.length > 0 || _showDone ? 'block' : 'none';
+}
+
+function renderPreorderGroup(g, isDoneGroup, idx) {
+  // ✅ 依 Tab 精確過濾 pendingItems，避免跨狀態誤判
+  const activeStatus = _activePreorderTab === 'paid' ? '待出' : '未付款';
+  const pendingItems = isDoneGroup
+    ? []
+    : g.items.filter(it => it.status === activeStatus);
+  const pgId = 'pg' + idx;   // ✅ 純數字 index，不再用 safeKey，徹底避免 ID 衝突
+  return (
+    '<div class="preorder-group' + (isDoneGroup ? ' done-group' : '') + '">' +
+      '<div class="preorder-group-header" onclick="togglePGExpand(\'' + pgId + '\')">' +
+        '<span class="pg-date">' + g.date + '</span>' +
+        '<span class="pg-unit">' + (g.unitName || g.unitCode) + '</span>' +
+        '<span class="pg-cust">' + (g.sender || g.customer) + '</span>' +
+        '<span class="pg-arrow" id="pga_' + pgId + '">▶</span>' +
+      '</div>' +
+      '<div class="preorder-group-body" id="pgb_' + pgId + '" style="display:none;">' +
+        g.items.map(function(it) {
+          const done = it.status === '已完成';
+          return (
+            '<div class="pg-item">' +
+              '<label>' +
+                '<input type="checkbox" value="' + it.uid + '"' +
+                  (done ? ' disabled' : ' data-pending="1"') +
+                  ' onchange="onPGCheck(\'' + pgId + '\')">' +
+                '<span class="' + (done ? 'pg-done-label' : '') + '">' +
+                  it.itemName + ' × ' + it.qty +
+                  (done ? ' ✅' : '') +
+                '</span>' +
+              '</label>' +
+            '</div>'
+          );
+        }).join('') +
+        (!isDoneGroup && pendingItems.length > 0 ?
+          '<div style="margin-top:10px;">' +
+            '<button id="pgbtn_' + pgId + '" class="btn-primary" ' +
+              'style="width:100%;padding:10px;font-size:14px;" disabled ' +
+              'onclick="handlePreorderShip(\'' + pgId + '\',\'' + encodeURIComponent(JSON.stringify(g)) + '\')">出貨</button>' +
+          '</div>' : '') +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function togglePGExpand(pgId) {
+  const body  = document.getElementById('pgb_' + pgId);
+  const arrow = document.getElementById('pga_' + pgId);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display  = isOpen ? 'none' : 'block';
+  if (arrow) { arrow.classList.toggle('open', !isOpen); }
+}
+
+function onPGCheck(pgId) {
+  const body    = document.getElementById('pgb_' + pgId);
+  const btn     = document.getElementById('pgbtn_' + pgId);
+  if (!body || !btn) return;
+  const anyChecked = body.querySelectorAll('input[data-pending]:checked').length > 0;
+  btn.disabled = !anyChecked;
+
+  // ✅ 有勾選時鎖定其他所有訂單的待出 checkbox，防止跨訂單混出
+  document.querySelectorAll('.preorder-group-body').forEach(function(otherBody) {
+    if (otherBody === body) return;
+    otherBody.querySelectorAll('input[data-pending]').forEach(function(cb) {
+      cb.disabled = anyChecked;
+    });
+  });
+}
+
+function togglePreorderDone() {
+  _showDone = !_showDone;
+  renderPreorderPanel();
+}
+
+function handlePreorderShip(safeKey, encodedGroup) {
+  const body = document.getElementById('pgb_' + safeKey);
+  if (!body) return;
+  const checked = Array.from(body.querySelectorAll('input[type=checkbox]:not([disabled]):checked'));
+  const uids    = checked.map(cb => cb.value);
+  if (uids.length === 0) return;
+
+  const group = JSON.parse(decodeURIComponent(encodedGroup));
+  _pendingPreorderFill = { uids, group };
+
+  // ✅ 如果主畫面有資料，先確認覆蓋
+  const hasData = orderItems.length > 0 ||
+    ['unitCode','senderName','customerName','platformOrderNo']
+      .some(id => (document.getElementById(id)?.value||'').trim() !== '');
+  if (hasData) {
+    document.getElementById('preorderOverrideOverlay').style.display = 'flex';
+  } else {
+    doPreorderFill();
+  }
+}
+
+function cancelPreorderOverride() {
+  document.getElementById('preorderOverrideOverlay').style.display = 'none';
+}
+function confirmPreorderOverride() {
+  document.getElementById('preorderOverrideOverlay').style.display = 'none';
+  doPreorderFill();
+}
+
+function doPreorderFill() {
+  if (!_pendingPreorderFill) return;
+  const { uids, group } = _pendingPreorderFill;
+  const uidSet = new Set(uids);
+  const selectedItems = group.items.filter(it => uidSet.has(it.uid));
+
+  // 清空訂單
+  orderItems = []; idCounter = 0;
+
+  const fill = function(id, val) { const el=document.getElementById(id); if(el) el.value=val||''; };
+
+  // ✅ 帶入通訊處相關欄位（直接取值，不呼叫 fillUnitFields 避免副作用）
+  const unitMatch = (allUnits || []).find(function(u) { return u.code === group.unitCode; });
+  fill('unitCode',     group.unitCode);
+  fill('unitName',     group.unitName);
+  fill('managerUnit',  unitMatch ? (unitMatch.mgnt || '') : '');
+  fill('districtUnit', unitMatch ? (unitMatch.dist || '') : '');
+  // 清除連動紅框
+  ['unitCode','unitName','shippingAddress'].forEach(function(id) {
+    const el = document.getElementById(id); if (el) el.classList.remove('field-error');
+  });
+
+  // ✅ 客戶資料覆蓋
+  fill('senderName',      group.sender);
+  fill('customerName',    group.customer);
+  if (group.address) fill('shippingAddress', group.address);
+  fill('contactPhone',    group.phone);
+  fill('salesName',       group.salesName);
+  fill('issuerName',      group.issuerName);
+  fill('platformOrderNo', '');
+  fill('orderSuffix', '');
+  // ✅ 自取 checkbox 一起取消，避免帶入後地址被誤蓋
+  const sp = document.getElementById('selfPickupToggle'); if (sp) sp.checked = false;
+
+  // ✅ 性質帶入後呼叫 onOrderTypeChange，自動帶入人力（單位早會會讀 unitCode 計算）
+  const otEl = document.getElementById('orderType');
+  if (otEl) otEl.value = group.orderType || '回購';
+  onOrderTypeChange();
+
+  // 帶入品項（依名稱比對品項庫）
+  selectedItems.forEach(function(preItem) {
+    const param = allParams.find(function(p) { return p.name === preItem.itemName; });
+    if (param) {
+      orderItems.push({ id: idCounter++, param: param, qty: preItem.qty, manualMode: '', preorder: false });
+    } else {
+      // 品項已下架：建立最小替代物件，讓資料仍可帶入
+      orderItems.push({ id: idCounter++,
+        param: { code: '', name: preItem.itemName, price: 0, groupPrice: 0, promo: 0,
+                 group: '', groupQty: 0, buy6: false, combo: 0 },
+        qty: preItem.qty, manualMode: '🟡不計價', preorder: false });
+      showGlobalToast('⚠️ 品項「' + preItem.itemName + '」已從品項庫中移除，請確認');
+    }
+  });
+
+  // ✅ 已付款補貨：自動勾「出貨文件（不計業績）」
+  // ✅ 未付款出貨：不勾，走正常出單計業績
+  const sst = document.getElementById('skipSalesToggle');
+  if (sst) sst.checked = (_activePreorderTab === 'paid');
+  const upt = document.getElementById('unpaidPreorderToggle');
+  if (upt) upt.checked = false;
+
+  // ✅ 記錄要在同步成功後標記為已完成的 UIDs
+  _preorderUidsToComplete = uids;
+
+  // 清空提示紅框
+  ['unitCode','senderName','customerName','platformOrderNo']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('field-error'); });
+
+  // 關閉面板、切到客戶模式、重新渲染
+  closePreorderPanel();
+  setMode('standard');
+  renderAll();
+  showGlobalToast('📦 已帶入 ' + selectedItems.length + ' 件補貨品項，請填入新訂單號碼');
+
+  // 聚焦平台訂單號
+  setTimeout(function() {
+    const el = document.getElementById('platformOrderNo');
+    if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }, 350);
+}
+
+async function markPreorderDone(uids) {
+  try {
+    const res = await cloudPost({ action: 'completePreorder', uids: uids });
+    const r   = await res.json();
+    if (r.success) {
+      showGlobalToast('✅ 已標記完成');
+      loadPreorders(); // 重新載入清單
+    } else {
+      showGlobalToast('⚠️ 標記失敗：' + (r.message||''));
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
+  }
+}
 function doClrAll(){
   orderItems=[];
   ['unitCode','unitName','customerName','senderName','shippingAddress','contactPhone','platformOrderNo','managerUnit','districtUnit','orderSuffix'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
   const cb=document.getElementById('syncSender');if(cb)cb.checked=false;
-  // ✅ 清空預約出單
+  // ✅ 清空預約出單 + 出貨文件 + 預購未付款 + 自取
   const st=document.getElementById('scheduleToggle');if(st)st.checked=false;
+  const ss2=document.getElementById('skipSalesToggle');if(ss2)ss2.checked=false;
+  const up=document.getElementById('unpaidPreorderToggle');if(up)up.checked=false;
+  const sp=document.getElementById('selfPickupToggle');if(sp)sp.checked=false;
+  // ✅ 清空預購待出帶入的暫存
+  _pendingPreorderFill    = null;
+  _preorderUidsToComplete = [];
   document.getElementById('scheduleDateBox').style.display='none';
   document.getElementById('scheduleDatePicker').value='';
   document.getElementById('scheduleDateDisplay').value='';
@@ -4273,6 +4810,31 @@ async function handleSync() {
     showGlobalToast('⚠️ 已勾選預約出單，請選擇出單日期');
     return;
   }
+  // ✅ 預購未付款：放寬驗證（只需通訊處+客戶名+品項），不需地址電話訂單號
+  if (document.getElementById('unpaidPreorderToggle').checked) {
+    const unitCode = document.getElementById('unitCode').value.trim();
+    const sender   = document.getElementById('senderName').value.trim();
+    if (!unitCode) { showGlobalToast('⚠️ 請填入通訊處代號'); return; }
+    if (!sender)   { showGlobalToast('⚠️ 請填入訂購人/寄件人'); return; }
+    if (orderItems.length === 0) { showGlobalToast('❌ 清單內無產品品項'); return; }
+    lastSyncPayload = {
+      action:      'syncOrderToSheet',
+      unpaidPreorder: true,
+      unitCode:    unitCode,
+      unitName:    document.getElementById('unitName').value.trim(),
+      sender:      sender,
+      customer:    document.getElementById('customerName').value.trim() || '一般客戶(未指名)',
+      address:     document.getElementById('shippingAddress').value.trim(),
+      phone:       document.getElementById('contactPhone').value.trim(),
+      orderType:   document.getElementById('orderType').value,
+      salesName:   document.getElementById('salesName').value,
+      issuerName:  document.getElementById('issuerName').value,
+      items: orderItems.map(it=>({code:it.param.code, name:it.param.name, qty:it.qty, price:0})),
+    };
+    document.getElementById('unpaidPreorderConfirmOverlay').style.display = 'flex';
+    return;
+  }
+
   // ✅ 防呆修正：不論在哪個模式，先驗證客戶必填欄位
   //    → 不強制跳轉，只彈窗提示 + 保留紅框，用戶自行回客戶頁補填
   const REQUIRED_FIELDS = [
@@ -4311,12 +4873,36 @@ async function handleSync() {
     orderSuffix: document.getElementById('orderSuffix').value.trim(),
     manpower:   Number(document.getElementById('manpower').value) || 0,
     scheduledDate: document.getElementById('scheduleToggle').checked
-      ? document.getElementById('scheduleDatePicker').value  // YYYY-MM-DD 或空字串
+      ? document.getElementById('scheduleDatePicker').value
       : '',
-    items: orderItems.map(it=>({code:it.param.code,name:it.param.name,qty:it.qty,price:calcPrice(it)})),
+    // ✅ 不計入業績旗標：true 時 GAS 跳過業績雙軌寫入，PDF/DO 照常產出
+    skipSales: document.getElementById('skipSalesToggle').checked,
+    // ✅ 預購旗標隨品項帶入
+    items: orderItems.map(it=>({code:it.param.code,name:it.param.name,qty:it.qty,price:calcPrice(it),preorder:it.preorder===true})),
     totalQty: orderItems.reduce((s,x)=>s+x.qty,0),
-    totalAmount: document.getElementById('totalAmount').textContent
+    totalAmount: document.getElementById('totalAmount').textContent,
+    // ✅ 全部預購旗標（前端預計算，GAS 同步確認）
+    allPreorder: orderItems.every(it => it.preorder === true)
   };
+
+  // ✅ skipSales 優先：勾選時直接跳到 skipSales 確認，不再檢查預購
+  if (lastSyncPayload.skipSales) {
+    document.getElementById('skipSalesConfirmOverlay').style.display = 'flex';
+    return;
+  }
+
+  // ✅ 預購邏輯：全部預購 or 部分預購
+  const preorderItems = orderItems.filter(it => it.preorder === true);
+  if (preorderItems.length > 0) {
+    if (lastSyncPayload.allPreorder) {
+      document.getElementById('allPreorderConfirmOverlay').style.display = 'flex';
+    } else {
+      document.getElementById('somePreorderItemList').innerHTML =
+        preorderItems.map(it => '・' + it.param.name + ' × ' + it.qty).join('<br>');
+      document.getElementById('somePreorderConfirmOverlay').style.display = 'flex';
+    }
+    return;
+  }
   await executeSyncWithPayload(lastSyncPayload);
 }
 
@@ -5985,7 +6571,7 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
     '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
       '<div class="analysis-chart-title">📋 業績達成率</div>' +
       '<div class="analysis-chart-sub">' + periodLabel + '</div>' +
-      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會開團登記</div>' +
+      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會結團登記</div>' +
     '</div>';
 
   if (!plans || !plans.length) return emptyState;
