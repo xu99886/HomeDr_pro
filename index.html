@@ -78,50 +78,62 @@
     input, textarea, select, .print-area, .allow-select { -webkit-user-select: text !important; user-select: text !important; }
 
     /* ════════════════════════════════
-       側邊選單
-       ✅ UI：寬度 280px → 250px（微收窄，不壓縮內容）
+       側邊選單 — 飄浮卡片風格
        ════════════════════════════════ */
     .side-menu {
       position: fixed;
-      top: 0;
-      left: -250px;       /* ✅ 改：原 -280px */
-      width: 250px;       /* ✅ 改：原 280px */
-      height: 100%;
-      background-color: var(--sidebar-bg);
+      top: 12px;
+      bottom: 12px;
+      left: calc(-250px - 16px);
+      width: 250px;
+      background: rgba(18, 29, 49, 0.96);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
       color: white;
       z-index: 9999;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+      border-radius: 0 18px 18px 0;
+      box-shadow: 4px 0 32px rgba(0,0,0,0.45),
+                  1px 0 0 rgba(255,255,255,0.06);
+      transition: transform 0.38s cubic-bezier(0.34, 1.3, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .side-menu.active { transform: translateX(250px); } /* ✅ 改：原 translateX(280px) */
+    .side-menu.active { transform: translateX(calc(250px + 16px)); }
 
     .side-menu-header {
-      padding: 20px;
-      padding-top: calc(20px + env(safe-area-inset-top)); /* ✅ 避開狀態列 */
-      background-color: #121d31;
+      padding: 18px 20px 16px;
+      padding-top: calc(18px + env(safe-area-inset-top));
+      background: rgba(255,255,255,0.04);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 8px;
+      font-size: 16px;
       font-weight: 700;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
     }
-    .side-menu-header button { background: none; border: none; color: white; font-size: 24px; }
 
-    /* ✅ UI：側邊欄選單項目加入彈簧縮放 */
+    /* ✅ UI：側邊欄選單項目 — iOS 設定圓角卡片風格 */
     .side-menu-content {
-      padding: 10px 0;
+      padding: 14px 14px;
       overflow-y: auto;
-      /* ✅ header 高度約 70px，剩餘空間可滾動 */
       max-height: calc(100vh - 70px - env(safe-area-inset-top));
+    }
+    .side-menu-group {
+      background: rgba(255,255,255,0.07);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 12px;
     }
     .side-menu-content a {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 16px 20px;
+      gap: 12px;
+      padding: 14px 16px;
       color: #ecf0f1;
       text-decoration: none;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
       font-size: 15px;
       font-weight: 500;
       cursor: pointer;
@@ -130,16 +142,18 @@
                   background-color 0.15s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .side-menu-content a:active { background-color: #2980b9; transform: scale(0.97); filter: brightness(1.1); }
+    .side-menu-group a:last-child { border-bottom: none; }
+    .side-menu-content a:active { background-color: rgba(41,128,185,0.5); transform: scale(0.98); filter: brightness(1.1); }
 
     /* ✅ iOS修正：選單遮罩補上 -webkit-backdrop-filter */
     .menu-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      -webkit-backdrop-filter: blur(2px);
-      backdrop-filter: blur(2px);
+      background: rgba(0,0,0,0.45);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
       display: none;
       z-index: 9998;
+      transition: opacity 0.3s ease;
     }
     .menu-overlay.active { display: block; }
 
@@ -562,7 +576,7 @@
     .weekly-manual-row span { font-size: 13px; color: var(--muted); font-weight: 700; flex-shrink: 0; }
 
     .weekly-action-row { display: flex; gap: 10px; }
-    .weekly-action-row button { flex: 1; padding: 14px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
+    .weekly-action-row button { flex: 1; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; }
     .btn-gen-report    { background: var(--primary); color: #fff; }
     .btn-cancel-report { background: var(--btn-sec-bg); color: var(--btn-sec-color); border: 1px solid var(--border); }
 
@@ -780,7 +794,7 @@
     .mp-row:last-child { border-bottom:none; }
     .mp-row-content {
       display:flex; align-items:center; gap:8px; padding:13px 4px;
-      background:var(--bg); position:relative; z-index:1;
+      background:var(--card); position:relative; z-index:1;
       will-change:transform;
     }
     .mp-code { font-size:11px; color:var(--muted); font-weight:600; flex-shrink:0; min-width:42px; }
@@ -802,7 +816,7 @@
       .mp-hover-delete:hover { color: var(--danger); }
     }
     .mp-delete-btn {
-      position:absolute; right:0; top:0; bottom:0; width:64px;
+      position:absolute; right:0; top:0; bottom:1px; width:64px;
       background:var(--danger); color:#fff;
       display:flex; align-items:center; justify-content:center;
       font-size:13px; font-weight:700; cursor:pointer; z-index:0;
@@ -829,7 +843,7 @@
     .vp-swipe-wrapper { overflow:hidden; position:relative; }
     .vp-plan-content {
       display:flex; align-items:center; gap:4px; padding:10px 4px;
-      background:var(--bg); position:relative; z-index:1; will-change:transform;
+      background:var(--card); position:relative; z-index:1; will-change:transform;
     }
     .vp-plan-delete-btn {
       position:absolute; right:0; top:0; bottom:1px; width:64px;
@@ -945,8 +959,11 @@
       padding: 11px 14px; cursor: pointer;
       border-bottom: 1px solid var(--border);
       font-size: 13px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    .preorder-group-header:hover { background: rgba(255,255,255,0.03); }
+    .preorder-group-header:hover  { background: rgba(255,255,255,0.03); }
+    .preorder-group-header:active { background: transparent; }
     .pg-date  { font-weight: 700; color: var(--color-reply); flex-shrink: 0; }
     .pg-unit  { color: var(--muted); font-size: 12px; flex-shrink: 0; }
     .pg-cust  { flex: 1; font-weight: 600; }
@@ -1068,7 +1085,7 @@
       background: var(--border); border-radius: 2px;
       height: 4px; margin-top: 10px; overflow: hidden;
     }
-    .elig-tab-btn { flex: 1; padding: 13px 0; font-size: 15px; font-weight: 700; border: none; border-radius: var(--radius-md); }
+    .elig-tab-btn { flex: 1; padding: 9px 0; font-size: 13px; font-weight: 700; border: none; border-radius: var(--radius-md); }
     .elig-tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
     /* 深色模式補充 */
@@ -1426,25 +1443,33 @@
 <!-- 側邊滑入選單 -->
 <div id="sideMenu" class="side-menu">
   <div class="side-menu-header">
-    <span>功能選單</span>
-    <button onclick="toggleSidebar()">&times;</button>
+    <span>⚙️</span><span>功能選單</span>
   </div>
   <div class="side-menu-content">
-    <a onclick="handleMenuAction('copySales')" data-tooltip="一鍵至公司試算表貼上"><span>📈</span> 複製業績</a>
-    <a onclick="handleMenuAction('clearSales')" data-tooltip="展開新的一天"><span>🗑️</span> 清除業績</a>
-    <!-- ✅ iOS修正：檔案列表改為原生 <a> 標籤 -->
-    <a href="https://drive.google.com/drive/folders/1X_l5QwBpHqaxMRfW3cpcNp0JQTp3u7qF?usp=drive_link" target="_blank" rel="noopener noreferrer" onclick="forceCloseOverlay()" data-tooltip="快速查閱，Mac 下載專用"><span>☁️</span> 雲端列表</a>
-    <a onclick="handleMenuAction('fileDownload')" data-tooltip="iPhone、Windows 下載專用"><span>📥</span> 檔案下載</a>
-    <a onclick="handleMenuAction('todayPerformance')" data-tooltip="查詢今日出單總額"><span>💰</span> 今日業績</a>
-    <a onclick="handleMenuAction('weeklyReport')" data-tooltip="一鍵產出樞紐報表"><span>📊</span> 業績週報</a>
-    <a onclick="handleMenuAction('eligibilityRegister')" data-tooltip="大組價資格登記"><span>🏷️</span> 優惠登記</a>
-    <a onclick="handleMenuAction('eligibilityQuery')" data-tooltip="大組價資格查詢"><span>🔍</span> 優惠資格</a>
-    <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
-    <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
-    <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="通訊處人力加總計算機"><span>👥</span> 人力計算</a>
-    <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會結團時間&業績預估"><span>🎙️</span> 早會結團</a>
-<a onclick="handleMenuAction('salesAnalysis')" data-tooltip="專屬🌱業績儀表板分析"><span>📒</span> 業績分析</a>
-    <a onclick="handleMenuAction('preorderPanel')" data-tooltip="預購已付款&口頭預購未付款"><span>🛒</span> 預購管理</a>
+    <div class="side-menu-group">
+      <a onclick="handleMenuAction('copySales')" data-tooltip="一鍵至公司試算表貼上"><span>📈</span> 複製業績</a>
+      <a onclick="handleMenuAction('clearSales')" data-tooltip="展開新的一天"><span>🗑️</span> 清除業績</a>
+    </div>
+    <div class="side-menu-group">
+      <!-- ✅ iOS修正：檔案列表改為原生 <a> 標籤 -->
+      <a href="https://drive.google.com/drive/folders/1X_l5QwBpHqaxMRfW3cpcNp0JQTp3u7qF?usp=drive_link" target="_blank" rel="noopener noreferrer" onclick="forceCloseOverlay()" data-tooltip="快速查閱，Mac 下載專用"><span>☁️</span> 雲端列表</a>
+      <a onclick="handleMenuAction('fileDownload')" data-tooltip="iPhone、Windows 下載專用"><span>📥</span> 檔案下載</a>
+    </div>
+    <div class="side-menu-group">
+      <a onclick="handleMenuAction('todayPerformance')" data-tooltip="查詢今日出單總額"><span>💰</span> 今日業績</a>
+      <a onclick="handleMenuAction('weeklyReport')" data-tooltip="一鍵產出樞紐報表"><span>📊</span> 業績週報</a>
+      <a onclick="handleMenuAction('salesAnalysis')" data-tooltip="專屬🌱業績儀表板分析"><span>📒</span> 業績分析</a>
+    </div>
+    <div class="side-menu-group">
+      <a onclick="handleMenuAction('eligibilityManage')" data-tooltip="優惠登記與資格查詢"><span>🏷️</span> 優惠管理</a>
+      <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會結團時間&業績預估"><span>🎙️</span> 團購管理</a>
+      <a onclick="handleMenuAction('preorderPanel')" data-tooltip="預購已付款&口頭預購未付款"><span>🛒</span> 預購管理</a>
+    </div>
+    <div class="side-menu-group">
+      <a onclick="handleMenuAction('lineReport')" data-tooltip="產出文案後可編輯"><span>✉️</span> LINE 回報</a>
+      <a onclick="handleMenuAction('msgParser')" data-tooltip="貼入訊息自動拆解欄位"><span>📝</span> 訊息拆解</a>
+      <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="通訊處人力加總計算機"><span>👥</span> 人力計算</a>
+    </div>
   </div>
 </div>
 
@@ -1727,8 +1752,8 @@
     <h3>⚠️ 確認清空？</h3>
     <p>品項清單與客戶資料將全部清除，<br>此動作無法還原。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeConfirm()">取消</button>
-      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doClrAll()">確認清空</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="doClrAll()">確認清空</button>
     </div>
   </div>
 </div>
@@ -1739,8 +1764,8 @@
     <h3>⚠️ 出貨文件（不計業績）</h3>
     <p>此單同步後<strong>不會</strong>計入個人業績<br>及通訊處業績總表。<br><br>PDF 出貨單與 DO 物流檔案照常產出。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelSkipSalesSync()">返回修改</button>
-      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="confirmSkipSalesSync()">確認同步</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="cancelSkipSalesSync()">返回修改</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="confirmSkipSalesSync()">確認同步</button>
     </div>
   </div>
 </div>
@@ -1751,8 +1776,8 @@
     <h3>📝 預購未付款</h3>
     <p>將記錄預訂資料，<strong>不計業績</strong>、<br><strong>不產出</strong>出貨單及物流檔案。<br><br>待客戶付款後再正式出單。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelUnpaidPreorderSync()">返回修改</button>
-      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="confirmUnpaidPreorderSync()">確認記錄</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="cancelUnpaidPreorderSync()">返回修改</button>
+      <button class="btn-primary"   style="flex:1;padding:13px;" onclick="confirmUnpaidPreorderSync()">確認記錄</button>
     </div>
   </div>
 </div>
@@ -1764,8 +1789,8 @@
     <p>下列品項標記為預購，<strong>此次不出貨</strong>，<br>已加入預購待出清單：</p>
     <div id="somePreorderItemList" style="margin:10px 0;padding:10px;background:rgba(255,165,0,0.1);border-radius:8px;font-size:13px;text-align:left;line-height:1.8;"></div>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelPreorderSync()">返回修改</button>
-      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="confirmPreorderSync()">確認同步</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="cancelPreorderSync()">返回修改</button>
+      <button class="btn-primary"   style="flex:1;padding:13px;" onclick="confirmPreorderSync()">確認同步</button>
     </div>
   </div>
 </div>
@@ -1776,8 +1801,8 @@
     <h3>⚠️ 全部品項預購</h3>
     <p>所有品項均標記為預購，<strong>無實際出貨</strong>。<br><br>業績照常記錄，不產出出貨單及物流檔案。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelAllPreorderSync()">返回修改</button>
-      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="confirmPreorderSync()">確認同步</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="cancelAllPreorderSync()">返回修改</button>
+      <button class="btn-primary"   style="flex:1;padding:13px;" onclick="confirmPreorderSync()">確認同步</button>
     </div>
   </div>
 </div>
@@ -1788,8 +1813,8 @@
     <h3>⚠️ 目前有未完成訂單</h3>
     <p>匯入預購資料將覆蓋目前的品項與客戶資料，<br>此動作無法還原。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="cancelPreorderOverride()">取消</button>
-      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="confirmPreorderOverride()">確認覆蓋</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="cancelPreorderOverride()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="confirmPreorderOverride()">確認覆蓋</button>
     </div>
   </div>
 </div>
@@ -1797,16 +1822,16 @@
 <!-- ✅ 預購管理面板 -->
 <div class="overlay-backdrop" id="preorderOverlay" style="display:none;">
   <div class="elig-box" style="max-height:88vh;display:flex;flex-direction:column;gap:0;">
-    <div style="padding:14px 18px 0;flex-shrink:0;border-bottom:1px solid var(--border);">
-      <div style="font-size:17px;font-weight:900;margin-bottom:10px;">🛒 預購管理</div>
-      <!-- Tab 切換 -->
-      <div style="display:flex;gap:0;">
-        <button id="tabBtnPaid" onclick="switchPreorderTab('paid')"
-                style="flex:1;padding:8px;border:none;border-bottom:2px solid var(--primary);background:transparent;font-size:13px;font-weight:700;color:var(--primary);cursor:pointer;">
+    <div style="flex-shrink:0;border-bottom:1px solid var(--border);padding-bottom:0;">
+      <h3 style="margin-bottom:10px;">🛒 預購管理</h3>
+      <!-- Tab 切換：膠囊樣式，對齊優惠查詢 tab 設計 -->
+      <div style="display:flex;gap:6px;padding-bottom:12px;">
+        <button id="tabBtnPaid" class="btn-secondary elig-tab-btn active"
+                onclick="switchPreorderTab('paid')" style="flex:1;">
           預購已付
         </button>
-        <button id="tabBtnUnpaid" onclick="switchPreorderTab('unpaid')"
-                style="flex:1;padding:8px;border:none;border-bottom:2px solid transparent;background:transparent;font-size:13px;font-weight:400;color:var(--muted);cursor:pointer;">
+        <button id="tabBtnUnpaid" class="btn-secondary elig-tab-btn"
+                onclick="switchPreorderTab('unpaid')" style="flex:1;">
           預購未付
         </button>
       </div>
@@ -1827,8 +1852,8 @@
     <h3>⚠️ 確認清除今日業績？</h3>
     <p>業績回報 今日業績將全部清除，<br>此動作無法還原。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeClearSalesConfirm()">取消</button>
-      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doClrSales()">確認清除</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeClearSalesConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="doClrSales()">確認清除</button>
     </div>
   </div>
 </div>
@@ -1839,8 +1864,8 @@
     <h3>⚠️ 同步失敗</h3>
     <p id="syncFailMsg">伺服器連線異常，請確認網路後重試。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="closeSyncFail()">取消</button>
-      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="retrySyncOrder()">重試</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeSyncFail()">取消</button>
+      <button class="btn-primary"   style="flex:1;padding:13px;" onclick="retrySyncOrder()">重試</button>
     </div>
   </div>
 </div>
@@ -1851,8 +1876,8 @@
     <h3>📝 發現未完成草稿</h3>
     <p>偵測到上次未送出的出單資料，<br>是否還原繼續編輯？</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="discardDraft()">捨棄</button>
-      <button class="btn-primary"   style="flex:1;padding:14px;" onclick="restoreDraft()">還原草稿</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="discardDraft()">捨棄</button>
+      <button class="btn-primary"   style="flex:1;padding:13px;" onclick="restoreDraft()">還原草稿</button>
     </div>
   </div>
 </div>
@@ -1863,7 +1888,7 @@
     <h3>⚠️ 請填寫必填欄位</h3>
     <p id="validationMsg" style="text-align:left;line-height:1.9;"></p>
     <div class="confirm-btns">
-      <button class="btn-primary" style="flex:1;padding:14px;" onclick="closeValidation()">返回填寫</button>
+      <button class="btn-primary" style="flex:1;padding:13px;" onclick="closeValidation()">返回填寫</button>
     </div>
   </div>
 </div>
@@ -1874,8 +1899,8 @@
     <h3 id="modalTitle" style="color:#004691;margin-bottom:10px;">📋 內容預覽</h3>
     <div class="print-area allow-select" id="printContent"></div>
     <div style="margin-top:20px;display:flex;gap:12px;">
-      <button class="btn-secondary" style="flex:1;padding:16px;" onclick="closeModal()">關閉</button>
-      <button id="copyBtn" class="btn-primary" style="flex:2;padding:16px;" onclick="copyOrder()">複製內容</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeModal()">關閉</button>
+      <button id="copyBtn" class="btn-primary" style="flex:2;padding:13px;" onclick="copyOrder()">複製內容</button>
     </div>
   </div>
 </div>
@@ -1884,111 +1909,116 @@
      🏷️ 優惠登記 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="eligibilityRegisterOverlay" style="display:none;">
-  <div class="elig-box">
-    <h3>🏷️ 優惠登記</h3>
-    <p class="elig-sub">登記通訊處大組價優惠資格（有效期 90 天）</p>
+  <div class="elig-box elig-query-box">
 
-    <!-- 通訊處搜尋（對齊早會登記 UX）-->
-    <div style="position:relative;margin-bottom:13px;">
-      <label class="elig-label">通訊處</label>
-      <input type="text" id="eligUnitSearch" class="form-control allow-select"
-             placeholder="輸入代號or中文通訊處..." autocomplete="off"
-             oninput="filterEligUnit(this.value)">
-      <div id="eligUnitDropdown" class="mp-dropdown"></div>
-    </div>
-
-    <!-- 已選中通訊處 -->
-    <div class="elig-field">
-      <label class="elig-label">已選中通訊處</label>
-      <div id="eligSelectedList" class="elig-selected-container">
-        <p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何通訊處</p>
+    <!-- 標題 + Tab -->
+    <div style="padding-bottom:0;">
+      <h3 style="margin-bottom:10px;">🏷️ 優惠管理</h3>
+      <div style="display:flex;gap:6px;padding-bottom:12px;">
+        <button id="eligTabBtnRegister" class="btn-secondary elig-tab-btn active"
+                onclick="switchEligTab('register')" style="flex:1;">
+          優惠登記
+        </button>
+        <button id="eligTabBtnQuery" class="btn-secondary elig-tab-btn"
+                onclick="switchEligTab('query')" style="flex:1;">
+          資格查詢
+        </button>
       </div>
     </div>
 
-    <!-- 達標品項 -->
-    <div class="elig-field">
-      <label class="elig-label">達標品項</label>
-      <select id="eligProduct" class="form-control" onchange="addEligProduct()">
-        <option value="">— 選擇加入品項 —</option>
-      </select>
-      <!-- 已選品項標籤 -->
-      <div id="eligProductTags" class="elig-selected-container" style="margin-top:8px;"></div>
-    </div>
+    <!-- ── 優惠登記 Tab 內容 ── -->
+    <div id="eligRegisterContent">
+      <p class="elig-sub" style="margin-bottom:12px;">登記通訊處大組價優惠資格（有效期 90 天）</p>
 
-    <!-- 達標日期：隱藏 date picker 負責選擇，顯示欄位格式化為 YYYY/MM/DD -->
-    <div class="elig-field">
-      <label class="elig-label">達標日期</label>
-      <div style="position:relative;">
-        <input type="date" id="eligStartDatePicker"
-               style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;z-index:1;"
-               onchange="onEligDateChange()">
-        <input type="text" id="eligStartDate" class="form-control elig-date-input"
-               placeholder="選擇達標日期" readonly
-               style="cursor:pointer;text-align:center;"
-               onclick="const p=document.getElementById('eligStartDatePicker');try{p.showPicker()}catch(e){p.click()}">
+      <div style="position:relative;margin-bottom:13px;">
+        <label class="elig-label">通訊處</label>
+        <input type="text" id="eligUnitSearch" class="form-control allow-select"
+               placeholder="輸入代號or中文通訊處..." autocomplete="off"
+               oninput="filterEligUnit(this.value)">
+        <div id="eligUnitDropdown" class="mp-dropdown"></div>
+      </div>
+
+      <div class="elig-field">
+        <label class="elig-label">已選中通訊處</label>
+        <div id="eligSelectedList" class="elig-selected-container">
+          <p style="color:var(--muted);font-size:12px;padding:8px 12px;margin:0;">尚未加入任何通訊處</p>
+        </div>
+      </div>
+
+      <div class="elig-field">
+        <label class="elig-label">達標品項</label>
+        <select id="eligProduct" class="form-control" onchange="addEligProduct()">
+          <option value="">— 選擇加入品項 —</option>
+        </select>
+        <div id="eligProductTags" class="elig-selected-container" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="elig-field">
+        <label class="elig-label">達標日期</label>
+        <div style="position:relative;">
+          <input type="date" id="eligStartDatePicker"
+                 style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;z-index:1;"
+                 onchange="onEligDateChange()">
+          <input type="text" id="eligStartDate" class="form-control elig-date-input"
+                 placeholder="選擇達標日期" readonly
+                 style="cursor:pointer;text-align:center;"
+                 onclick="const p=document.getElementById('eligStartDatePicker');try{p.showPicker()}catch(e){p.click()}">
+        </div>
+      </div>
+
+      <div class="elig-field">
+        <label class="elig-label">到期日期（自動 +90 天）</label>
+        <input type="text" id="eligEndDate" class="form-control" placeholder="請先選擇達標日期" readonly
+               style="background:var(--bg);color:var(--muted);text-align:center;">
       </div>
     </div>
 
-    <!-- 到期日期（自動計算） -->
-    <div class="elig-field">
-      <label class="elig-label">到期日期（自動 +90 天）</label>
-      <input type="text" id="eligEndDate" class="form-control" placeholder="請先選擇達標日期" readonly
-             style="background:var(--bg);color:var(--muted);text-align:center;">
+    <!-- ── 資格查詢 Tab 內容 ── -->
+    <div id="eligQueryContent" style="display:none;">
+      <div class="elig-section-label">快查</div>
+      <div style="display:flex;gap:10px;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <input type="text" id="eligSearchCode" class="form-control" placeholder="代號"
+                 autocomplete="off" style="padding:9px 10px;font-size:13px;"
+                 oninput="onSearchCodeInput(this.value)">
+        </div>
+        <div style="flex:2.5;min-width:0;position:relative;">
+          <input type="text" id="eligSearchName" class="form-control" placeholder="中文通訊處"
+                 autocomplete="off" style="padding:9px 10px;font-size:13px;"
+                 oninput="onSearchNameInput(this.value)">
+          <div id="eligSearchSuggestions" class="unit-suggestions" style="display:none;"></div>
+        </div>
+        <button class="btn-primary" style="flex-shrink:0;padding:9px 14px;font-size:13px;font-weight:700;border-radius:var(--radius-sm);"
+                onclick="searchEligibility()">搜尋</button>
+      </div>
+      <div id="eligSearchList" class="elig-list elig-search-list">
+        <p style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">輸入代號或名稱後按搜尋</p>
+      </div>
+
+      <div class="elig-section-label" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">資格清單</div>
+      <div id="eligQueryList" class="elig-list">
+        <p style="text-align:center;color:var(--muted);padding:24px;">載入中...</p>
+      </div>
     </div>
 
-    <div class="confirm-btns" style="margin-top:16px;">
-      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeEligibilityRegister()">取消</button>
+    <!-- ── 底部按鈕（依 Tab 切換）── -->
+    <div id="eligBottomRegister" class="confirm-btns" style="margin-top:16px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeEligibilityPanel()">取消</button>
       <button class="btn-primary"   style="flex:1;padding:13px;" onclick="submitEligibility()">儲存</button>
     </div>
+    <div id="eligBottomQuery" class="elig-query-btns" style="display:none;">
+      <button class="btn-secondary elig-tab-btn" style="flex:1;"   onclick="closeEligibilityPanel()">關閉</button>
+      <button id="eligBtnExpired" class="btn-secondary elig-tab-btn" style="flex:1;" onclick="loadEligibilityData('失效')">失效</button>
+      <button id="eligBtnValid"   class="btn-secondary elig-tab-btn active" style="flex:2;" onclick="loadEligibilityData('有效')">有效</button>
+    </div>
+
   </div>
 </div>
 
 <!-- ════════════════════════════════
-     🔍 優惠資格查詢 Overlay
+     🔍 優惠資格查詢 Overlay（已合併至優惠管理，保留空殼供舊引用）
      ════════════════════════════════ -->
-<div class="overlay-backdrop" id="eligibilityQueryOverlay" style="display:none;">
-  <div class="elig-box elig-query-box">
-    <h3>🔍 優惠資格查詢</h3>
-
-    <!-- ① 第一區塊：快查（代號帶名稱 + 名稱模糊建議，與客戶頁邏輯相同）-->
-    <div class="elig-section-label">快查</div>
-    <div style="display:flex;gap:10px;margin-bottom:8px;">
-      <div style="flex:1;min-width:0;">
-        <input type="text" id="eligSearchCode" class="form-control" placeholder="代號"
-               autocomplete="off" style="padding:9px 10px;font-size:13px;"
-               oninput="onSearchCodeInput(this.value)">
-      </div>
-      <div style="flex:2.5;min-width:0;position:relative;">
-        <input type="text" id="eligSearchName" class="form-control" placeholder="中文通訊處"
-               autocomplete="off" style="padding:9px 10px;font-size:13px;"
-               oninput="onSearchNameInput(this.value)">
-        <div id="eligSearchSuggestions" class="unit-suggestions" style="display:none;"></div>
-      </div>
-      <button class="btn-primary" style="flex-shrink:0;padding:9px 14px;font-size:13px;font-weight:700;border-radius:var(--radius-sm);"
-              onclick="searchEligibility()">搜尋</button>
-    </div>
-    <!-- 快查結果（初始提示，有搜尋才顯示） -->
-    <div id="eligSearchList" class="elig-list elig-search-list">
-      <p style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">輸入代號或名稱後按搜尋</p>
-    </div>
-
-    <!-- ② 第二區塊：資格清單（有效/失效切換） -->
-    <div class="elig-section-label" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">資格清單</div>
-    <div id="eligQueryList" class="elig-list">
-      <p style="text-align:center;color:var(--muted);padding:24px;">載入中...</p>
-    </div>
-
-    <!-- 底部按鈕：關閉(1) 失效(1) 有效(2)，1:1:2 比例 -->
-    <div class="elig-query-btns">
-      <button class="btn-secondary elig-tab-btn" style="flex:1;"
-              onclick="closeEligibilityQuery()">關閉</button>
-      <button id="eligBtnExpired" class="btn-secondary elig-tab-btn" style="flex:1;"
-              onclick="loadEligibilityData('失效')">失效</button>
-      <button id="eligBtnValid" class="btn-secondary elig-tab-btn active" style="flex:2;"
-              onclick="loadEligibilityData('有效')">有效</button>
-    </div>
-  </div>
-</div>
+<div id="eligibilityQueryOverlay" style="display:none;"></div>
 
 <!-- ════════════════════════════════
      ✅ 作廢確認彈窗
@@ -2095,8 +2125,8 @@
     <h3>⚠️ 確認清空？</h3>
     <p>訊息內容將全部清除，<br>此動作無法還原。</p>
     <div class="confirm-btns">
-      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="document.getElementById('msgClearConfirmOverlay').style.display='none'">取消</button>
-      <button class="btn-danger"    style="flex:1;padding:14px;" onclick="doMsgClear()">確認清空</button>
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="document.getElementById('msgClearConfirmOverlay').style.display='none'">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="doMsgClear()">確認清空</button>
     </div>
   </div>
 </div>
@@ -2104,8 +2134,7 @@
 <!-- ════════════════════════════════
      👥 人力計算 Overlay
      ════════════════════════════════ -->
-<div class="overlay-backdrop" id="manpowerOverlay" style="display:none;"
-     onclick="if(event.target===this)closeManpowerCalc()">
+<div class="overlay-backdrop" id="manpowerOverlay" style="display:none;">
   <div class="elig-box" style="max-height:80vh;display:flex;flex-direction:column;gap:0;">
     <h3 style="margin-bottom:14px;">👥 人力計算</h3>
 
@@ -2125,9 +2154,9 @@
 
     <!-- 底部按鈕 -->
     <div style="display:flex;gap:8px;margin-top:14px;">
-      <button class="btn-secondary" style="flex:1;padding:14px;"
+      <button class="btn-secondary" style="flex:1;padding:13px;"
               onclick="closeManpowerCalc()">關閉</button>
-      <button class="btn-danger" style="flex:1;padding:14px;"
+      <button class="btn-danger" style="flex:1;padding:13px;"
               onclick="clearMpList()">清空</button>
     </div>
   </div>
@@ -2136,8 +2165,7 @@
 <!-- ════════════════════════════════
      🎙️ 早會結團 Overlay
      ════════════════════════════════ -->
-<div class="overlay-backdrop" id="visitPlannerOverlay" style="display:none;"
-     onclick="if(event.target===this)closeVisitPlanner()">
+<div class="overlay-backdrop" id="visitPlannerOverlay" style="display:none;">
   <div class="elig-box" style="max-height:85vh;display:flex;flex-direction:column;gap:0;">
     <h3 style="margin-bottom:12px;">🎙️ 早會結團</h3>
 
@@ -2340,9 +2368,12 @@
 window.alert   = function(msg) { showGlobalToast(msg); };
 // window.confirm 已由自訂 overlay 取代，不需覆蓋
 
+let _toastTimer = null;
 function showGlobalToast(msg, position) {
   const t = document.getElementById('toast');
   if (!t) return;
+  // ✅ 清除舊的 timer，防止快速連發時舊計時器提早關掉新 toast
+  if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
   t.innerText = msg;
   if (position === 'top') {
     t.classList.add('toast-top');
@@ -2350,7 +2381,11 @@ function showGlobalToast(msg, position) {
     t.classList.remove('toast-top');
   }
   t.classList.add('show');
-  setTimeout(() => { t.classList.remove('show'); t.classList.remove('toast-top'); }, 2500);
+  _toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    t.classList.remove('toast-top');
+    _toastTimer = null;
+  }, 2500);
 }
 
 // ─── 通用剪貼簿函數（async）─────────────────────────────────
@@ -2503,8 +2538,9 @@ function handleMenuAction(type) {
   else if (type === 'clearSales')       openClearSalesConfirm();
   else if (type === 'todayPerformance') showSalesPersonPicker();
   else if (type === 'weeklyReport')     openWeeklyReport();
-  else if (type === 'eligibilityRegister') openEligibilityRegister();
-  else if (type === 'eligibilityQuery')    openEligibilityQuery();
+  else if (type === 'eligibilityManage')    openEligibilityRegister();
+  else if (type === 'eligibilityRegister')  openEligibilityRegister();
+  else if (type === 'eligibilityQuery')     openEligibilityQuery();
   else if (type === 'lineReport')            openLineReport();
   else if (type === 'fileDownload')          openFileDownload();
   else if (type === 'msgParser')             openMsgParser();
@@ -2651,21 +2687,57 @@ let eligSelectedProducts = []; // ✅ 已選達標品項陣列
 let eligSwipeTouchStartX = 0;
 let eligSwipeActiveItem  = null;
 
+// ✅ 優惠管理：Tab 切換
+function switchEligTab(tab) {
+  const isRegister = tab === 'register';
+  document.getElementById('eligRegisterContent').style.display  = isRegister ? 'block' : 'none';
+  document.getElementById('eligQueryContent').style.display     = isRegister ? 'none'  : 'block';
+  document.getElementById('eligBottomRegister').style.display   = isRegister ? 'flex'  : 'none';
+  document.getElementById('eligBottomQuery').style.display      = isRegister ? 'none'  : 'flex';
+  const btnR = document.getElementById('eligTabBtnRegister');
+  const btnQ = document.getElementById('eligTabBtnQuery');
+  if (btnR) { btnR.classList.toggle('active', isRegister);  }
+  if (btnQ) { btnQ.classList.toggle('active', !isRegister); }
+  // 切到查詢 Tab 時自動載入資格清單
+  if (!isRegister) {
+    document.getElementById('eligSearchCode').value = '';
+    document.getElementById('eligSearchName').value = '';
+    document.getElementById('eligSearchSuggestions').style.display = 'none';
+    currentEligFilter = '有效';
+    const btnValid   = document.getElementById('eligBtnValid');
+    const btnExpired = document.getElementById('eligBtnExpired');
+    if (btnValid)   btnValid.classList.add('active');
+    if (btnExpired) btnExpired.classList.remove('active');
+    loadEligibilityData('有效');
+  }
+}
+
+// ✅ 統一關閉函數（取消/關閉 都呼叫這個）
+function closeEligibilityPanel() {
+  document.getElementById('eligibilityRegisterOverlay').style.display = 'none';
+  pendingVoidRowIndex = null;
+}
+
 async function openEligibilityRegister() {
   document.getElementById('eligibilityRegisterOverlay').style.display = 'flex';
+  switchEligTab('register');
   eligSelectedUnits = [];
   document.getElementById('eligUnitSearch').value = '';
   document.getElementById('eligUnitDropdown').style.display = 'none';
   document.getElementById('eligStartDatePicker').value = '';
   renderEligSelectedList();
   await loadEligibleProducts();
-  // ✅ 有未完成草稿時自動恢復
   loadEligDraft();
 }
 
-function closeEligibilityRegister() {
-  document.getElementById('eligibilityRegisterOverlay').style.display = 'none';
+function closeEligibilityRegister() { closeEligibilityPanel(); }
+
+async function openEligibilityQuery() {
+  document.getElementById('eligibilityRegisterOverlay').style.display = 'flex';
+  switchEligTab('query');
 }
+
+function closeEligibilityQuery() { closeEligibilityPanel(); }
 
 async function loadEligibleProducts() {
   const sel = document.getElementById('eligProduct');
@@ -2888,23 +2960,6 @@ let eligCache          = { valid: null, expired: null }; // 快取資料
 // ✅ 分頁
 let eligAllRecords     = [];   // 目前篩選的完整資料
 let eligDisplayCount   = 5;    // 初始顯示 5 筆
-
-async function openEligibilityQuery() {
-  document.getElementById('eligibilityQueryOverlay').style.display = 'flex';
-  // 清空搜尋欄及建議清單
-  document.getElementById('eligSearchCode').value = '';
-  document.getElementById('eligSearchName').value = '';
-  document.getElementById('eligSearchSuggestions').style.display = 'none';
-  currentEligFilter = '有效';
-  document.getElementById('eligBtnValid').classList.add('active');
-  document.getElementById('eligBtnExpired').classList.remove('active');
-  await loadEligibilityData('有效');
-}
-
-function closeEligibilityQuery() {
-  document.getElementById('eligibilityQueryOverlay').style.display = 'none';
-  pendingVoidRowIndex = null; // ✅ 清除殘留的作廢索引
-}
 
 // ════════════════════════════════════════════════════════
 // 🔍 優惠資格快查
@@ -3556,7 +3611,7 @@ async function executeSyncWithPayload(payload) {
   const tr = document.getElementById('syncTrigger');
   tr.innerHTML = '<span>同步中...</span>';
   try {
-    const res = await cloudPost(payload);
+    const res = await cloudPost(payload, 90000); // ✅ 90秒：PDF 產生最多需要 40 秒
     const r = await res.json();
     if (r.success) {
       hideSyncMask(); // ✅ 成功：解除遮罩
@@ -3583,7 +3638,11 @@ async function executeSyncWithPayload(payload) {
   } catch(e) {
     hideSyncMask(); // ✅ 異常：解除遮罩，再顯示重試彈窗
     tr.innerHTML = '<span>快樂上班</span><span>效率出單</span>';
-    showSyncFailDialog('⚠️ 網路連線異常，請確認後重試');
+    // ✅ AbortError = timeout，顯示更準確的提示
+    const msg = (e.name === 'AbortError')
+      ? '⏱️ 連線逾時（超過 90 秒），請確認網路後重試'
+      : '⚠️ 網路連線異常，請確認後重試';
+    showSyncFailDialog(msg);
   } finally {
     isSyncing = false;
   }
@@ -3733,12 +3792,16 @@ const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwxT-I2err4twsbrLDVQp
 const CLOUD_TOKEN = '*8p#H$o@dr%#Xu*^_^$7#8p#ro&26me@_@99@20%*'; // ✅ 請修改成你自己的秘密字串，GAS 端要一致
 
 // ✅ 統一的 POST helper，自動帶入 token
-function cloudPost(data) {
+// timeoutMs：一般讀取 20秒，syncOrderToSheet 最多 90秒（PDF 產生耗時）
+function cloudPost(data, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(CLOUD_URL, {
     method: 'POST',
     body: JSON.stringify({ ...data, token: CLOUD_TOKEN }),
-    headers: { 'Content-Type': 'text/plain' }
-  });
+    headers: { 'Content-Type': 'text/plain' },
+    signal: controller.signal
+  }).finally(() => clearTimeout(timer));
 }
 let allUnits = [];
 let mode = 'standard', orderItems = [], idCounter = 0;
@@ -4381,12 +4444,8 @@ function switchPreorderTab(tab) {
   const btnPaid   = document.getElementById('tabBtnPaid');
   const btnUnpaid = document.getElementById('tabBtnUnpaid');
   if (btnPaid && btnUnpaid) {
-    btnPaid.style.borderBottomColor   = tab === 'paid'   ? 'var(--primary)' : 'transparent';
-    btnPaid.style.color               = tab === 'paid'   ? 'var(--primary)' : 'var(--muted)';
-    btnPaid.style.fontWeight          = tab === 'paid'   ? '700' : '400';
-    btnUnpaid.style.borderBottomColor = tab === 'unpaid' ? 'var(--primary)' : 'transparent';
-    btnUnpaid.style.color             = tab === 'unpaid' ? 'var(--primary)' : 'var(--muted)';
-    btnUnpaid.style.fontWeight        = tab === 'unpaid' ? '700' : '400';
+    btnPaid.classList.toggle('active',   tab === 'paid');
+    btnUnpaid.classList.toggle('active', tab === 'unpaid');
   }
   renderPreorderPanel();
 }
@@ -4423,11 +4482,11 @@ function openPreorderPanel() {
   _activePreorderTab = 'paid';
   _showDone = false;
   document.getElementById('preorderOverlay').style.display = 'flex';
-  // ✅ 只更新 Tab 樣式，不呼叫 renderPreorderPanel（資料未載入，避免閃現「無記錄」）
+  // ✅ 初始化 Tab 樣式（不呼叫 renderPreorderPanel，資料未載入前避免顯示空白）
   const btnPaid   = document.getElementById('tabBtnPaid');
   const btnUnpaid = document.getElementById('tabBtnUnpaid');
-  if (btnPaid)   { btnPaid.style.borderBottomColor   = 'var(--primary)'; btnPaid.style.color   = 'var(--primary)'; btnPaid.style.fontWeight   = '700'; }
-  if (btnUnpaid) { btnUnpaid.style.borderBottomColor = 'transparent';    btnUnpaid.style.color = 'var(--muted)';   btnUnpaid.style.fontWeight = '400'; }
+  if (btnPaid)   { btnPaid.classList.add('active');    }
+  if (btnUnpaid) { btnUnpaid.classList.remove('active'); }
   loadPreorders();
 }
 function closePreorderPanel() {
@@ -4472,8 +4531,13 @@ function buildPreorderGroups(rows) {
       });
     }
     map.get(key).items.push({
-      itemName: row.itemName, qty: row.qty,
-      status:   row.status,  doneDate: row.doneDate, uid: row.uid
+      itemName:  row.itemName,
+      qty:       row.qty,
+      priceMode: row.priceMode || '',  // ✅ 計價方式
+      amount:    row.amount    || 0,   // ✅ 金額小計
+      status:    row.status,
+      doneDate:  row.doneDate,
+      uid:       row.uid
     });
   });
   return Array.from(map.values());
@@ -4538,7 +4602,9 @@ function renderPreorderGroup(g, isDoneGroup, idx) {
                   ' onchange="onPGCheck(\'' + pgId + '\')">' +
                 '<span class="' + (done ? 'pg-done-label' : '') + '">' +
                   it.itemName + ' × ' + it.qty +
-                  (done ? ' ✅' : '') +
+                  (it.priceMode ? '　' + it.priceMode : '') +
+                  (it.amount    ? '　$' + it.amount   : '') +
+                  (done ? '　✅' : '') +
                 '</span>' +
               '</label>' +
             '</div>'
@@ -4732,6 +4798,30 @@ function doClrAll(){
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('field-error');});
   const sn=document.getElementById('salesName');if(sn)sn.value='王惠宣'; // ✅ 清空後回到預設
   closeConfirm();showGlobalToast('✨ 清單已清空');renderAll();
+
+  // ✅ 早會結團：清空已選通訊處、輸入框、草稿
+  vpNewUnits = [];
+  const vpInput = document.getElementById('vpSearchInput'); // ✅ 正確 ID
+  if (vpInput) vpInput.value = '';
+  clearVpDraft();
+  renderVpNewUnits();
+
+  // ✅ 優惠登記：清空已選通訊處、品項、輸入框、日期、草稿
+  eligSelectedUnits    = [];
+  eligSelectedProducts = [];
+  const eligInput = document.getElementById('eligUnitSearch'); // ✅ 正確 ID
+  if (eligInput) eligInput.value = '';
+  const eligDropdown = document.getElementById('eligUnitDropdown');
+  if (eligDropdown) eligDropdown.style.display = 'none';
+  const eligDate = document.getElementById('eligStartDatePicker');
+  if (eligDate) eligDate.value = '';
+  const eligDateDisplay = document.getElementById('eligStartDate');
+  if (eligDateDisplay) eligDateDisplay.value = '';
+  const eligEndDate = document.getElementById('eligEndDate');
+  if (eligEndDate) eligEndDate.value = '';
+  clearEligDraft();
+  if (typeof renderEligSelectedList  === 'function') renderEligSelectedList();  // 清空通訊處列表
+  if (typeof renderEligProductTags   === 'function') renderEligProductTags();   // ✅ 清空達標品項標籤
 }
 
 function renderQuickButtons(){
@@ -4818,18 +4908,19 @@ async function handleSync() {
     if (!sender)   { showGlobalToast('⚠️ 請填入訂購人/寄件人'); return; }
     if (orderItems.length === 0) { showGlobalToast('❌ 清單內無產品品項'); return; }
     lastSyncPayload = {
-      action:      'syncOrderToSheet',
-      unpaidPreorder: true,
-      unitCode:    unitCode,
-      unitName:    document.getElementById('unitName').value.trim(),
-      sender:      sender,
-      customer:    document.getElementById('customerName').value.trim() || '一般客戶(未指名)',
-      address:     document.getElementById('shippingAddress').value.trim(),
-      phone:       document.getElementById('contactPhone').value.trim(),
-      orderType:   document.getElementById('orderType').value,
-      salesName:   document.getElementById('salesName').value,
-      issuerName:  document.getElementById('issuerName').value,
-      items: orderItems.map(it=>({code:it.param.code, name:it.param.name, qty:it.qty, price:0})),
+      action:          'syncOrderToSheet',
+      unpaidPreorder:  true,
+      unitCode:        unitCode,
+      unitName:        document.getElementById('unitName').value.trim(),
+      sender:          sender,
+      customer:        document.getElementById('customerName').value.trim() || '一般客戶(未指名)',
+      address:         document.getElementById('shippingAddress').value.trim(),
+      phone:           document.getElementById('contactPhone').value.trim(),
+      orderType:       document.getElementById('orderType').value,
+      salesName:       document.getElementById('salesName').value,
+      issuerName:      document.getElementById('issuerName').value,
+      platformOrderNo: document.getElementById('platformOrderNo').value.trim(),
+      items: orderItems.map(it=>({code:it.param.code, name:it.param.name, qty:it.qty, price:calcPrice(it), manualMode:it.manualMode||''})),
     };
     document.getElementById('unpaidPreorderConfirmOverlay').style.display = 'flex';
     return;
@@ -4878,7 +4969,7 @@ async function handleSync() {
     // ✅ 不計入業績旗標：true 時 GAS 跳過業績雙軌寫入，PDF/DO 照常產出
     skipSales: document.getElementById('skipSalesToggle').checked,
     // ✅ 預購旗標隨品項帶入
-    items: orderItems.map(it=>({code:it.param.code,name:it.param.name,qty:it.qty,price:calcPrice(it),preorder:it.preorder===true})),
+    items: orderItems.map(it=>({code:it.param.code,name:it.param.name,qty:it.qty,price:calcPrice(it),preorder:it.preorder===true,manualMode:it.manualMode||''})),
     totalQty: orderItems.reduce((s,x)=>s+x.qty,0),
     totalAmount: document.getElementById('totalAmount').textContent,
     // ✅ 全部預購旗標（前端預計算，GAS 同步確認）
@@ -5595,22 +5686,26 @@ async function saveVisitPlan() {
   var est = calcVisitEstimate(totalPower);
   var unitsStr = vpNewUnits.map(function(u){ return u.name; }).join(',');
 
-  var res = await cloudPost({
-    action: 'saveVisitPlan',
-    year: y, month: m, day: d,
-    units: unitsStr, manpower: totalPower, estimate: est
-  });
-  var r = await res.json();
-  if (r.success) {
-    showGlobalToast('✅ 已儲存');
-    clearVpDraft();
-    vpNewUnits = [];
-    renderVpNewUnits();
-    document.getElementById('vpYear').value  = new Date().getFullYear();
-    document.getElementById('vpMonth').value = '';
-    document.getElementById('vpDay').value   = '';
-  } else {
-    showGlobalToast('❌ 儲存失敗：' + (r.message||''));
+  try {
+    var res = await cloudPost({
+      action: 'saveVisitPlan',
+      year: y, month: m, day: d,
+      units: unitsStr, manpower: totalPower, estimate: est
+    });
+    var r = await res.json();
+    if (r.success) {
+      showGlobalToast('✅ 已儲存');
+      clearVpDraft();
+      vpNewUnits = [];
+      renderVpNewUnits();
+      document.getElementById('vpYear').value  = new Date().getFullYear();
+      document.getElementById('vpMonth').value = '';
+      document.getElementById('vpDay').value   = '';
+    } else {
+      showGlobalToast('❌ 儲存失敗：' + (r.message||''));
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
   }
 }
 
@@ -5799,18 +5894,22 @@ async function saveEditVisitPlan(rowIndex) {
   var est = calcVisitEstimate(totalPower);
   var unitsStr = vpEditUnits.map(function(u){ return u.name; }).join(',');
 
-  var res = await cloudPost({
-    action: 'updateVisitPlan',
-    rowIndex: rowIndex,
-    year: y, month: m, day: d,
-    units: unitsStr, manpower: totalPower, estimate: est
-  });
-  var r = await res.json();
-  if (r.success) {
-    showGlobalToast('✅ 已更新');
-    loadVisitPlans();
-  } else {
-    showGlobalToast('❌ 更新失敗：' + (r.message||''));
+  try {
+    var res = await cloudPost({
+      action: 'updateVisitPlan',
+      rowIndex: rowIndex,
+      year: y, month: m, day: d,
+      units: unitsStr, manpower: totalPower, estimate: est
+    });
+    var r = await res.json();
+    if (r.success) {
+      showGlobalToast('✅ 已更新');
+      loadVisitPlans();
+    } else {
+      showGlobalToast('❌ 更新失敗：' + (r.message||''));
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
   }
 }
 
@@ -5858,15 +5957,19 @@ function initVpSwipe(wrapperEl) {
 }
 
 async function deleteVisitPlanDirect(rowIndex, rowId) {
-  var res = await cloudPost({ action: 'deleteVisitPlan', rowIndex: rowIndex });
-  var r   = await res.json();
-  if (r.success) {
-    showGlobalToast('✅ 已刪除');
-    var el = document.getElementById(rowId);
-    if (el) el.remove();
-    if (_vpSwipeActive) { _vpSwipeActive = null; }
-  } else {
-    showGlobalToast('❌ 刪除失敗：' + (r.message||''));
+  try {
+    var res = await cloudPost({ action: 'deleteVisitPlan', rowIndex: rowIndex });
+    var r   = await res.json();
+    if (r.success) {
+      showGlobalToast('✅ 已刪除');
+      var el = document.getElementById(rowId);
+      if (el) el.remove();
+      if (_vpSwipeActive) { _vpSwipeActive = null; }
+    } else {
+      showGlobalToast('❌ 刪除失敗：' + (r.message||''));
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
   }
 }
 
@@ -6566,6 +6669,8 @@ function _renderAnalytics(data) {
 }
  
 // ── 子函數：業績達成率 HTML 區塊 ──
+let _achievementPlans = []; // ✅ 全域暫存，供複製按鈕使用
+
 function _buildVisitAchievementHTML(plans, periodLabel) {
   var emptyState =
     '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
@@ -6575,6 +6680,8 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
     '</div>';
 
   if (!plans || !plans.length) return emptyState;
+
+  _achievementPlans = plans; // ✅ 暫存供複製用
 
   var rows = plans.map(function(p, idx) {
     var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
@@ -6603,7 +6710,10 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
 
   return (
     '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
-      '<div class="analysis-chart-title">📋 業績達成率</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">' +
+        '<div class="analysis-chart-title" style="margin-bottom:0;">📋 業績達成率</div>' +
+        '<button onclick="copyAchievementRate()" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:transparent;color:var(--muted);cursor:pointer;flex-shrink:0;">複製</button>' +
+      '</div>' +
       '<div class="analysis-chart-sub">' + periodLabel + ' · 單位人力 · 預估 · 實際 · 達成率</div>' +
       '<div style="padding-top:4px;">' + rows + '</div>' +
       '<div style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">' +
@@ -6615,6 +6725,35 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
       '</div>' +
     '</div>'
   );
+}
+
+// ✅ 業績達成率一鍵複製（tab 分隔，直接貼入 Google 試算表）
+function copyAchievementRate() {
+  if (!_achievementPlans || !_achievementPlans.length) {
+    showGlobalToast('⚠️ 尚無資料可複製');
+    return;
+  }
+  const header = ['約訪單位','人力','預估業績','實際','達成率','原因'].join('\t');
+  const rows = _achievementPlans.map(function(p) {
+    var unitDisplay = p.units.split(',').map(function(s){ return s.trim().replace(/通訊處$/,''); }).join('＋');
+    var estStr      = p.estimate >= 10000
+      ? (p.estimate/10000).toFixed(1).replace('.0','') + '萬'
+      : p.estimate.toLocaleString() + '元';
+    return [
+      unitDisplay,
+      p.manpower,         // 純數字，去掉「人」
+      estStr,             // 保留萬（4.5萬）
+      p.actual,           // 純數字，去掉「元」和逗號
+      p.rate + '%',       // 保留 %
+      ''                  // 原因欄留空
+    ].join('\t');
+  });
+  const text = header + '\n' + rows.join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    showGlobalToast('✅ 已複製，可直接貼入試算表');
+  }).catch(function() {
+    showGlobalToast('⚠️ 複製失敗，請確認瀏覽器權限');
+  });
 }
 
 // ── 子函數：月份趨勢圖 Chart.js 初始化 ──
