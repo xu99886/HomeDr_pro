@@ -1471,6 +1471,10 @@
       <a onclick="handleMenuAction('manpowerCalc')" data-tooltip="通訊處人力加總計算機"><span>👥</span> 人力計算</a>
     </div>
     <div class="side-menu-group" style="margin-top:4px;">
+      <a onclick="handleMenuAction('teamBuyUpload')" data-tooltip="上傳團購 Excel 至雲端待合併資料夾"><span>📤</span> 團購上傳</a>
+      <a onclick="handleMenuAction('teamBuyMerge')" data-tooltip="合併待合併資料夾的團購報表"><span>🔀</span> 團購合併</a>
+    </div>
+    <div class="side-menu-group" style="margin-top:4px;">
       <a onclick="handleMenuAction('deleteOrder')" data-tooltip="刪除今日誤植的出單記錄" style="color:#ff6b6b;"><span>🗑️</span> 誤植刪單</a>
     </div>
   </div>
@@ -2050,6 +2054,24 @@
   </div>
 </div>
 <!-- ════════════════════════════════
+     📤 團購上傳面板
+     ════════════════════════════════ -->
+<input type="file" id="teamBuyFileInput" accept=".xlsx,.xls" multiple style="display:none;" onchange="onTeamBuyFileSelected(this)">
+<div class="overlay-backdrop" id="teamBuyUploadOverlay" style="display:none;">
+  <div class="elig-box">
+    <h3>📤 團購上傳</h3>
+    <p class="elig-sub" style="margin-bottom:16px;">選擇團購原始 Excel 檔案，自動上傳至雲端待合併資料夾。</p>
+    <div id="teamBuyUploadStatus" style="min-height:48px;display:flex;align-items:center;justify-content:center;">
+      <p style="color:var(--muted);font-size:13px;text-align:center;">尚未選擇檔案</p>
+    </div>
+    <div class="confirm-btns" style="margin-top:16px;gap:10px;">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeTeamBuyUpload()">關閉</button>
+      <button class="btn-primary" style="flex:1;padding:13px;" onclick="document.getElementById('teamBuyFileInput').click()">選擇檔案</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
      ✅ 作廢確認彈窗
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="voidConfirmOverlay" style="display:none;z-index:900;">
@@ -2568,6 +2590,8 @@ function handleMenuAction(type) {
   else if (type === 'todayPerformance') showSalesPersonPicker();
   else if (type === 'weeklyReport')     openWeeklyReport();
   else if (type === 'deleteOrder')          openDeleteOrderPanel();
+  else if (type === 'teamBuyUpload')        openTeamBuyUpload();
+  else if (type === 'teamBuyMerge')         doTeamBuyMerge();
   else if (type === 'eligibilityRegister')  openEligibilityRegister();
   else if (type === 'eligibilityQuery')     openEligibilityQuery();
   else if (type === 'lineReport')            openLineReport();
@@ -2991,7 +3015,125 @@ let eligAllRecords     = [];   // 目前篩選的完整資料
 let eligDisplayCount   = 5;    // 初始顯示 5 筆
 
 // ════════════════════════════════════════════════════════
-// 🗑️ 誤植刪單
+// 📤 團購上傳 / 🔀 團購合併
+// ════════════════════════════════════════════════════════
+
+function openTeamBuyUpload() {
+  document.getElementById('teamBuyUploadOverlay').style.display = 'flex';
+  document.getElementById('teamBuyUploadStatus').innerHTML =
+    '<p style="color:var(--muted);font-size:13px;text-align:center;">尚未選擇檔案</p>';
+  forceCloseOverlay();
+}
+
+function closeTeamBuyUpload() {
+  document.getElementById('teamBuyUploadOverlay').style.display = 'none';
+  document.getElementById('teamBuyFileInput').value = '';
+}
+
+let _teamBuyUploading = false;
+
+async function onTeamBuyFileSelected(input) {
+  if (!input.files || !input.files.length) return;
+  if (_teamBuyUploading) return; // 防止重複觸發
+  const files = Array.from(input.files);
+
+  // 檢查所有檔案大小
+  const oversize = files.find(function(f) { return f.size > 5 * 1024 * 1024; });
+  if (oversize) {
+    document.getElementById('teamBuyUploadStatus').innerHTML =
+      '<p style="color:var(--danger);font-size:13px;text-align:center;">⚠️ 檔案「' + oversize.name + '」過大（上限 5MB）</p>';
+    input.value = '';
+    return;
+  }
+
+  const total = files.length;
+  let success = 0;
+  let failed  = 0;
+
+  _teamBuyUploading = true;
+  // 上傳期間停用選擇按鈕
+  const btn = document.querySelector('#teamBuyUploadOverlay .btn-primary');
+  if (btn) btn.disabled = true;
+
+  try {
+    for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    document.getElementById('teamBuyUploadStatus').innerHTML =
+      '<p style="color:var(--muted);font-size:13px;text-align:center;">上傳中 (' + (i + 1) + '/' + total + ')：' + file.name + '</p>';
+
+    try {
+      const base64 = await new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onload  = function(e) { resolve(e.target.result.split(',')[1]); };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await cloudPost({
+        action:   'uploadTeamBuyFile',
+        fileData: base64,
+        fileName: file.name
+      }, 60000);
+
+      const r = await res.json();
+      if (r.success) { success++; } else { failed++; }
+    } catch(e) {
+      failed++;
+    }
+    }
+  } finally {
+    _teamBuyUploading = false;
+    if (btn) btn.disabled = false;
+  }
+
+  // 顯示結果
+  if (failed === 0) {
+    document.getElementById('teamBuyUploadStatus').innerHTML =
+      '<p style="color:var(--success,#4caf50);font-size:13px;text-align:center;">✅ 全部上傳完成（共 ' + success + ' 個檔案）</p>';
+    showGlobalToast('團購報表已上傳完成，可進行團購合併，匯入業績');
+  } else {
+    document.getElementById('teamBuyUploadStatus').innerHTML =
+      '<p style="color:var(--danger);font-size:13px;text-align:center;">⚠️ 上傳完成：成功 ' + success + ' 個，失敗 ' + failed + ' 個</p>';
+  }
+
+  input.value = '';
+}
+
+async function doTeamBuyMerge() {
+  forceCloseOverlay();
+
+  // 輪播文字：每隔幾秒換一句，讓用戶知道系統還在跑
+  const messages = [
+    '🔀 合併中，請稍候...',
+    '⏳ 仍在處理，請勿關閉...',
+    '📊 正在寫入資料...',
+    '🔄 即將完成...',
+  ];
+  const delays = [0, 8000, 16000, 24000]; // 每隔 8 秒換一句
+  const timers = [];
+  delays.forEach(function(d, i) {
+    timers.push(setTimeout(function() {
+      showSyncMask(messages[i]);
+    }, d));
+  });
+
+  showSyncMask(messages[0]);
+
+  try {
+    const res = await cloudPost({ action: 'mergeTeamBuyFromApp' }, 120000);
+    const r   = await res.json();
+    if (r.success) {
+      showGlobalToast('✅ 合併完成：新增 ' + (r.addCount || 0) + ' 筆，略過重複 ' + (r.skipCount || 0) + ' 筆');
+    } else {
+      showGlobalToast('❌ 合併失敗：' + (r.message || ''));
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
+  } finally {
+    timers.forEach(function(t) { clearTimeout(t); }); // 清除所有計時器
+    hideSyncMask();
+  }
+}
 // ════════════════════════════════════════════════════════
 
 let _pendingDeleteTimeLog = null;
