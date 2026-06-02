@@ -691,6 +691,20 @@
     .elig-row-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
     .elig-row-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .elig-row-date  { font-size: 13px; color: var(--color-reply); font-weight: 700; white-space: nowrap; }
+    /* ✅ 優惠資格作廢：手機左滑容器 */
+    .elig-row-swipe-wrapper {
+      position: relative; overflow: hidden;
+    }
+    .elig-row-swipe-bg {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 72px;
+      background: var(--danger); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .elig-row-swipe-content {
+      position: relative; background: var(--card);
+      transition: transform 0.2s ease;
+    }
     .elig-void-btn  {
       flex-shrink: 0;
       width: 28px; height: 28px;
@@ -699,11 +713,11 @@
       font-size: 18px; font-weight: 300; line-height: 1;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; padding: 0;
-      visibility: visible;               /* 手機：始終可見（無左滑替代）*/
+      visibility: visible;              /* 手機：始終可見 */
       transition: color 0.15s ease;
     }
     @media (hover: hover) and (pointer: fine) {
-      .elig-void-btn { visibility: hidden; }    /* 桌機：保留空間但隱藏 */
+      .elig-void-btn { visibility: hidden; }    /* 桌機：hover 才顯示 */
       .elig-item-row:hover .elig-void-btn { visibility: visible; }
       .elig-void-btn:hover { color: var(--danger); }
     }
@@ -755,7 +769,7 @@
       max-width: 0; padding: 0; opacity: 0;
     }
     /* ✅ 桌機 hover 顯示刪除 */
-    @media (hover: hover) {
+    @media (hover: hover) and (pointer: fine) {
       .elig-product-tag:hover .elig-tag-delete {
         max-width: 60px; padding: 5px 12px; opacity: 1;
       }
@@ -764,7 +778,7 @@
     .elig-product-tag.swiped .elig-tag-label { transform: translateX(-60px); }
     .elig-product-tag.swiped .elig-tag-delete { max-width: 60px; padding: 5px 12px; opacity: 1; }
     /* ✅ 桌機（Mac/PC）：直接顯示 date input */
-    @media (hover: hover) {
+    @media (hover: hover) and (pointer: fine) {
       #eligStartDatePicker, #scheduleDatePicker {
         opacity: 1 !important;
         position: relative !important;
@@ -811,7 +825,7 @@
       flex-shrink: 0;
       transition: color 0.15s ease;
     }
-    @media (hover: hover) {
+    @media (hover: hover) and (pointer: fine) {
       .mp-row:hover .mp-hover-delete { visibility: visible; }
       .mp-hover-delete:hover { color: var(--danger); }
     }
@@ -862,7 +876,7 @@
       flex-shrink: 0;
       transition: color 0.15s ease;
     }
-    @media (hover: hover) {
+    @media (hover: hover) and (pointer: fine) {
       .vp-swipe-wrapper:hover .vp-plan-hover-del { visibility: visible; }
       .vp-plan-hover-del:hover { color: var(--danger); }
     }
@@ -955,20 +969,47 @@
 
     /* ✅ 預購待出面板 */
     .preorder-group-header {
-      display: flex; align-items: center; gap: 8px;
-      padding: 11px 14px; cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 14px 14px;
+      cursor: pointer;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
     .preorder-group-header:hover  { background: rgba(255,255,255,0.03); }
     .preorder-group-header:active { background: transparent; }
-    .pg-date  { font-weight: 700; color: var(--color-reply); flex-shrink: 0; }
-    .pg-unit  { color: var(--muted); font-size: 12px; flex-shrink: 0; }
-    .pg-cust  { flex: 1; font-weight: 600; }
-    .pg-arrow { font-size: 11px; color: var(--muted); flex-shrink: 0; transition: transform 0.2s; }
+    /* 三欄各 flex:1 平均分配，全部靠左對齊，自然撐開整列 */
+    .pg-date  { flex: 1; font-weight: 700; color: var(--color-reply); font-size: 14px;
+                white-space: nowrap; overflow: hidden; }
+    .pg-unit  { flex: 1; color: var(--muted); font-size: 14px;
+                white-space: nowrap; overflow: hidden; }
+    .pg-cust  { flex: 1; font-weight: 700; font-size: 15px;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pg-arrow { flex-shrink: 0; font-size: 11px; color: var(--muted);
+                transition: transform 0.2s; }
     .pg-arrow.open { transform: rotate(90deg); }
+
+    /* ✅ 預購未付款：hover ✕ 刪整張單
+       手機：display:none，完全不佔空間，不影響排版
+       桌機：hover 時才顯示 */
+    .pg-unpaid-hover-del { display: none; }
+    @media (hover: hover) and (pointer: fine) {
+      /* 桌機：hover-del 加入排版（flex 末尾）*/
+      .pg-unpaid-hover-del {
+        display: flex; width: 28px; height: 28px;
+        background: transparent; border: none; color: var(--muted);
+        font-size: 18px; font-weight: 300; line-height: 1;
+        align-items: center; justify-content: center;
+        cursor: pointer; padding: 0;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.15s ease, color 0.15s ease;
+      }
+      .pg-unpaid-swipe-wrapper:hover .pg-unpaid-hover-del {
+        opacity: 1; pointer-events: auto;
+      }
+      .pg-unpaid-hover-del:hover { color: var(--danger); }
+    }
     .preorder-group-body { padding: 10px 14px 12px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.06); }
     .pg-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; }
     .pg-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; }
@@ -1433,10 +1474,10 @@
   </div>
   <div class="mode-toggle">
     <!-- ✅ UI：emoji 圖示 + 全圓角膠囊 -->
-    <button class="mode-btn inactive"  id="btnCust"   onclick="setMode('customer')">👤 客戶</button>
+    <button class="mode-btn inactive"  id="btnCust"   onclick="showCust()">👤 客戶</button>
     <button class="mode-btn active-std" id="btnStd"   onclick="setMode('standard')">📋 標準</button>
     <button class="mode-btn inactive"  id="btnManual" onclick="setMode('manual')">✏️ 手動</button>
-    <button class="mode-btn inactive"  id="btnQuick"  onclick="setMode('quick')">💬 回覆</button>
+    <button class="mode-btn inactive"  id="btnQuick"  onclick="showQuick()">💬 回覆</button>
   </div>
 </div>
 
@@ -2023,11 +2064,6 @@
 </div>
 
 <!-- ════════════════════════════════
-     🔍 優惠資格查詢 Overlay（已合併至優惠管理，保留空殼供舊引用）
-     ════════════════════════════════ -->
-<div id="eligibilityQueryOverlay" style="display:none;"></div>
-
-<!-- ════════════════════════════════
      🗑️ 誤植刪單面板
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="deleteOrderOverlay" style="display:none;">
@@ -2081,6 +2117,34 @@
     <div class="confirm-btns">
       <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeVoidConfirm()">取消</button>
       <button class="btn-danger"    style="flex:1;padding:13px;" onclick="executeMarkVoid()">確認作廢</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     🗑️ 早會結團刪除確認彈窗
+     ════════════════════════════════ -->
+<div class="confirm-overlay" id="vpDeleteConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3 style="color:var(--danger);">⚠️ 確認刪除此場次？</h3>
+    <p>此操作無法還原，登記資料將永久刪除。</p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeVpDeleteConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="executeDeleteVisitPlan()">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     🗑️ 預購未付款刪除確認彈窗
+     ════════════════════════════════ -->
+<div class="confirm-overlay" id="unpaidDeleteConfirmOverlay" style="display:none;">
+  <div class="confirm-box">
+    <h3 style="color:var(--danger);">⚠️ 確認刪除？</h3>
+    <p id="unpaidDeleteConfirmMsg" style="font-size:13px;color:var(--muted);line-height:1.8;"></p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" style="flex:1;padding:13px;" onclick="closeUnpaidDeleteConfirm()">取消</button>
+      <button class="btn-danger"    style="flex:1;padding:13px;" onclick="executeDeleteUnpaid()">確認刪除</button>
     </div>
   </div>
 </div>
@@ -2592,8 +2656,6 @@ function handleMenuAction(type) {
   else if (type === 'deleteOrder')          openDeleteOrderPanel();
   else if (type === 'teamBuyUpload')        openTeamBuyUpload();
   else if (type === 'teamBuyMerge')         doTeamBuyMerge();
-  else if (type === 'eligibilityRegister')  openEligibilityRegister();
-  else if (type === 'eligibilityQuery')     openEligibilityQuery();
   else if (type === 'lineReport')            openLineReport();
   else if (type === 'fileDownload')          openFileDownload();
   else if (type === 'msgParser')             openMsgParser();
@@ -2601,6 +2663,7 @@ function handleMenuAction(type) {
   else if (type === 'visitPlanner')          openVisitPlanner();
   else if (type === 'salesAnalysis')    openSalesAnalysis();
   else if (type === 'preorderPanel')    openPreorderPanel();
+  else if (type === 'eligibilityManage') openEligibilityRegister();
 }
 
 
@@ -2784,13 +2847,6 @@ async function openEligibilityRegister() {
 }
 
 function closeEligibilityRegister() { closeEligibilityPanel(); }
-
-async function openEligibilityQuery() {
-  document.getElementById('eligibilityRegisterOverlay').style.display = 'flex';
-  switchEligTab('query');
-}
-
-function closeEligibilityQuery() { closeEligibilityPanel(); }
 
 async function loadEligibleProducts() {
   const sel = document.getElementById('eligProduct');
@@ -3545,11 +3601,67 @@ function renderEligibilityList(records, statusFilter) {
       </div>`;
     }).join('');
 
-    return `<div class="elig-row">
+    // ✅ 手機：有效資格的每一列加左滑作廢容器；失效/作廢不需要
+    const rowHtml = `<div class="elig-row">
       <div class="elig-unit-tags">${collapsedHtml}</div>
       ${itemsHtml}
     </div>`;
+    if (isValid) {
+      return `<div class="elig-row-swipe-wrapper" data-gi="${gi}">
+        <div class="elig-row-swipe-bg">作廢</div>
+        <div class="elig-row-swipe-content">${rowHtml}</div>
+      </div>`;
+    }
+    return rowHtml;
   }).join('');
+
+  // ✅ 手機左滑：為每個有效資格列掛載手勢（桌機跳過）
+  if (isValid && !window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    list.querySelectorAll('.elig-row-swipe-wrapper').forEach(function(wrapper) {
+      const content = wrapper.querySelector('.elig-row-swipe-content');
+      const gi = parseInt(wrapper.dataset.gi);
+      const group = groups[gi];
+      if (!group) return;
+      let startX = 0;
+      wrapper.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        // 收起其他已展開的
+        list.querySelectorAll('.elig-row-swipe-content').forEach(function(el) {
+          if (el !== content) el.style.transform = '';
+        });
+      }, { passive: true });
+      wrapper.addEventListener('touchend', function(e) {
+        const delta = e.changedTouches[0].clientX - startX;
+        if (delta < -50) {
+          content.style.transform = 'translateX(-72px)';
+        } else if (delta > 20) {
+          content.style.transform = '';
+        }
+      }, { passive: true });
+      // 點擊紅色背景 → 觸發作廢確認（取第一個品項的 rowIndex 和整組資訊）
+      wrapper.querySelector('.elig-row-swipe-bg').addEventListener('click', function() {
+        if (group.items.length === 1) {
+          // 只有一個品項：直接帶入
+          confirmMarkVoid(
+            group.items[0].rowIndex,
+            encodeURIComponent(group.unitName),
+            encodeURIComponent(group.items[0].product)
+          );
+        } else {
+          // 多品項：一次作廢整組（依序呼叫，帶入所有 rowIndex）
+          _pendingVoidGroup = group.items.map(function(it) { return it.rowIndex; });
+          _pendingVoidGroupName = group.unitName;
+          const productList = group.items.map(function(it) { return it.product; }).join('、');
+          const namesDisplay = group.unitName.split(/[+,]/).join('<br>');
+          document.getElementById('voidConfirmMsg').innerHTML =
+            '確定要將以下資格全部標記為作廢？<br><br>' +
+            '<span style="color:var(--color-reply);font-weight:700;font-size:16px;line-height:2;">' + namesDisplay + '</span><br>' +
+            '<span style="color:var(--text);font-size:13px;">' + productList + '</span>';
+          document.getElementById('voidConfirmOverlay').style.display = 'flex';
+        }
+      });
+    });
+  }
 }
 
 // 折疊/展開單一群組（收合=顯示第一個+... / 展開=顯示全部）
@@ -3564,7 +3676,9 @@ function toggleEligGroup(gi) {
 
 
 // 作廢確認流程（自訂 overlay，取代 window.confirm）
-let pendingVoidRowIndex = null;
+let pendingVoidRowIndex  = null;
+let _pendingVoidGroup    = null;  // 左滑整組作廢時，存放所有 rowIndex 陣列
+let _pendingVoidGroupName = '';   // 左滑整組作廢時，存放通訊處名稱
 
 function confirmMarkVoid(rowIndex, encodedName, encodedProduct) {
   const name    = decodeURIComponent(encodedName);
@@ -3580,10 +3694,33 @@ function confirmMarkVoid(rowIndex, encodedName, encodedProduct) {
 
 function closeVoidConfirm() {
   document.getElementById('voidConfirmOverlay').style.display = 'none';
-  pendingVoidRowIndex = null;
+  pendingVoidRowIndex  = null;
+  _pendingVoidGroup    = null;
+  _pendingVoidGroupName = '';
 }
 
 async function executeMarkVoid() {
+  // ✅ 整組作廢（手機左滑多品項路徑）
+  if (_pendingVoidGroup && _pendingVoidGroup.length > 0) {
+    const indices = [..._pendingVoidGroup];
+    closeVoidConfirm();
+    showSyncMask('處理中...');
+    try {
+      for (const idx of indices) {
+        const res = await cloudPost({ action: 'markEligibilityVoid', rowIndex: idx });
+        await res.json();
+      }
+      eligCache = { valid: null, expired: null };
+      showGlobalToast('✅ 已全部標記作廢');
+      await loadEligibilityData(currentEligFilter);
+    } catch(e) {
+      showGlobalToast('⚠️ 網路異常');
+    } finally {
+      hideSyncMask();
+    }
+    return;
+  }
+  // ✅ 單品項作廢（原有路徑）
   if (pendingVoidRowIndex === null) return;
   const rowIndex = pendingVoidRowIndex;
   closeVoidConfirm();
@@ -3762,18 +3899,22 @@ function syncManualFromRange() {
 
 // ✅ UI新增：MM/DD 自動格式化（輸入 4 位數字自動插入斜線，並跳轉至結束欄位）
 function autoFormatDate(el, which) {
-  let raw = el.value.replace(/\D/g,''); // 濾除所有非數字
-  if (raw.length > 4) raw = raw.slice(0,4);
-  // 超過 2 位時自動插入 /
-  let formatted = raw.length > 2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
-  el.value = formatted;
-  // 開始日期填滿 (MM/DD) 自動跳轉到結束日期欄位
-  if (which==='start' && formatted.length===5) {
-    const endEl = document.getElementById('manualEnd');
-    endEl.focus();
-    endEl.setSelectionRange(0,0);
-  }
-  syncManualInput(); // 同步到行事曆
+  // 用 setTimeout(0) 推遲到瀏覽器處理完按鍵後再格式化
+  // 修正桌面端：oninput 裡直接改 el.value 會讓瀏覽器重複插入最後一個字元
+  setTimeout(function() {
+    let raw = el.value.replace(/\D/g,''); // 濾除所有非數字
+    if (raw.length > 4) raw = raw.slice(0,4);
+    // 超過 2 位時自動插入 /
+    let formatted = raw.length > 2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
+    el.value = formatted;
+    // 開始日期填滿 (MM/DD) 自動跳轉到結束日期欄位
+    if (which==='start' && formatted.length===5) {
+      const endEl = document.getElementById('manualEnd');
+      endEl.focus();
+      endEl.setSelectionRange(0,0);
+    }
+    syncManualInput(); // 同步到行事曆
+  }, 0);
 }
 
 function syncManualInput() {
@@ -4343,20 +4484,51 @@ document.addEventListener('click', (e) => {
 });
 
 function setMode(m) {
-  mode=m;
-  document.getElementById('btnCust').className   = m==='customer' ?'mode-btn active-cust'  :'mode-btn inactive';
-  document.getElementById('btnStd').className    = m==='standard' ?'mode-btn active-std'   :'mode-btn inactive';
-  document.getElementById('btnManual').className = m==='manual'   ?'mode-btn active-manual':'mode-btn inactive';
-  document.getElementById('btnQuick').className  = m==='quick'    ?'mode-btn active-quick' :'mode-btn inactive';
-  document.getElementById('customerSection').style.display   = m==='customer'               ?'block':'none';
-  document.getElementById('pricingSection').style.display    = (m==='standard'||m==='manual')?'block':'none';
-  document.getElementById('quickReplySection').style.display = m==='quick'                  ?'block':'none';
-  document.getElementById('summaryBar').style.display        = m==='quick'                  ?'none' :'block';
-  if(m==='quick') renderQuickButtons(); else renderAll();
-  // ✅ 防呆修正（選A）：切換模式時保留紅框，讓用戶回到客戶頁面時仍看得到未填欄位
+  mode = m;
+
+  // ✅ 計價模式只有 standard / manual 兩種
+  // 客戶(customer) 和 回覆(quick) 不改計價模式，只切換顯示區塊
+  const isPricingMode = (m === 'standard' || m === 'manual');
+
+  // 計價 tab（標準/手動）：只在點了計價模式時才更新亮燈
+  if (isPricingMode) {
+    document.getElementById('btnStd').className    = m === 'standard' ? 'mode-btn active-std'    : 'mode-btn inactive';
+    document.getElementById('btnManual').className = m === 'manual'   ? 'mode-btn active-manual' : 'mode-btn inactive';
+  }
+  // 客戶/回覆 tab：只更新自己的亮燈，不動標準/手動
+  document.getElementById('btnCust').className  = m === 'customer' ? 'mode-btn active-cust'  : (m === 'quick' ? 'mode-btn inactive' : document.getElementById('btnCust').className);
+  document.getElementById('btnQuick').className = m === 'quick'    ? 'mode-btn active-quick' : (m === 'customer' ? 'mode-btn inactive' : document.getElementById('btnQuick').className);
+
+  // 顯示區塊切換
+  document.getElementById('customerSection').style.display   = m === 'customer'                        ? 'block' : 'none';
+  document.getElementById('pricingSection').style.display    = (m === 'standard' || m === 'manual')    ? 'block' : 'none';
+  document.getElementById('quickReplySection').style.display = m === 'quick'                           ? 'block' : 'none';
+  document.getElementById('summaryBar').style.display        = m === 'quick'                           ? 'none'  : 'block';
+
+  if (m === 'quick') renderQuickButtons(); else renderAll();
 }
 
-// ✅ 性質變更時自動帶入人力
+// ✅ 客戶/回覆 tab 切換：只切換顯示區塊，完全不改計價模式（standard/manual 恆亮）
+function showCust() {
+  // 客戶 tab 亮，回覆 tab 暗，標準/手動保持原狀
+  document.getElementById('btnCust').className  = 'mode-btn active-cust';
+  document.getElementById('btnQuick').className = 'mode-btn inactive';
+  document.getElementById('customerSection').style.display   = 'block';
+  document.getElementById('pricingSection').style.display    = 'none';
+  document.getElementById('quickReplySection').style.display = 'none';
+  document.getElementById('summaryBar').style.display        = 'block';
+  renderAll();
+}
+function showQuick() {
+  // 回覆 tab 亮，客戶 tab 暗，標準/手動保持原狀
+  document.getElementById('btnCust').className  = 'mode-btn inactive';
+  document.getElementById('btnQuick').className = 'mode-btn active-quick';
+  document.getElementById('customerSection').style.display   = 'none';
+  document.getElementById('pricingSection').style.display    = 'none';
+  document.getElementById('quickReplySection').style.display = 'block';
+  document.getElementById('summaryBar').style.display        = 'none';
+  renderQuickButtons();
+}
 // ✅ 自取勾選：自動填入「自取」或清空送貨地址
 function onSelfPickupToggle() {
   const cb   = document.getElementById('selfPickupToggle');
@@ -4850,49 +5022,109 @@ function renderPreorderPanel() {
   body.innerHTML = html;
   doneBtn.textContent = _showDone ? '返回預購' : '顯示已完成';
   doneBtn.style.display = done.length > 0 || _showDone ? 'block' : 'none';
+
+  // ✅ 未付款 Tab 渲染後掛載左滑手勢
+  if (_activePreorderTab === 'unpaid' && !_showDone) {
+    setTimeout(_mountUnpaidSwipe, 0);
+  }
 }
 
 function renderPreorderGroup(g, isDoneGroup, idx) {
   // ✅ 依 Tab 精確過濾 pendingItems，避免跨狀態誤判
   const activeStatus = _activePreorderTab === 'paid' ? '待出' : '未付款';
+  const isUnpaidTab  = _activePreorderTab === 'unpaid';
   const pendingItems = isDoneGroup
     ? []
     : g.items.filter(it => it.status === activeStatus);
-  const pgId = 'pg' + idx;   // ✅ 純數字 index，不再用 safeKey，徹底避免 ID 衝突
-  return (
-    '<div class="preorder-group' + (isDoneGroup ? ' done-group' : '') + '">' +
-      '<div class="preorder-group-header" onclick="togglePGExpand(\'' + pgId + '\')">' +
+  const pgId = 'pg' + idx;
+
+  // ── Header ──
+  const groupUids = pendingItems.map(function(it) { return it.uid; });
+  const encodedUids  = encodeURIComponent(JSON.stringify(groupUids));
+  const encodedLabel = encodeURIComponent((g.sender || g.customer) + '　' + g.date);
+  const canDelete    = !isDoneGroup && isUnpaidTab && groupUids.length > 0;
+
+  // 未付款 Tab 可刪除：用獨立 wrapper 包住，支援手機左滑 + 桌機 hover ✕
+  // 不套用 vp-plan-content，改用語義更清晰的結構避免 flex/block 衝突
+  // ✅ data-* 存 uid/label，onclick 只用 pgId 查找，完全避免引號/編碼衝突
+  const swpId = 'pgswp_' + pgId;
+  const headerHtml = canDelete
+    ? '<div class="pg-unpaid-swipe-wrapper" id="' + swpId + '" ' +
+        'data-euids="' + encodedUids + '" data-elabel="' + encodedLabel + '" ' +
+        'style="position:relative;overflow:hidden;">' +
+        // 左滑紅色背景（手機用）—— onclick 由 _mountUnpaidSwipe 的 dataset 處理
+        '<div class="pg-unpaid-delete-bg" ' +
+          'style="position:absolute;right:0;top:0;bottom:1px;width:64px;' +
+                 'background:var(--danger);color:#fff;display:flex;align-items:center;' +
+                 'justify-content:center;font-size:13px;font-weight:700;cursor:pointer;z-index:0;">' +
+          '刪除</div>' +
+        // 前景內容
+        '<div class="preorder-group-header pg-unpaid-front" id="pgh_' + pgId + '" ' +
+             'style="position:relative;z-index:1;background:var(--card);will-change:transform;" ' +
+             'onclick="togglePGExpand(\'' + pgId + '\')">' +
+          '<span class="pg-date">' + g.date + '</span>' +
+          '<span class="pg-unit">' + (g.unitName || g.unitCode) + '</span>' +
+          '<span class="pg-cust">' + (g.sender || g.customer) + '</span>' +
+          '<span class="pg-arrow" id="pga_' + pgId + '">▶</span>' +
+          // ✅ onclick 透過 closest 找 wrapper，再讀 dataset，不傳任何參數
+          '<button class="pg-unpaid-hover-del" ' +
+            'onclick="event.stopPropagation();_triggerUnpaidGroupDelete(this)">' +
+            '✕</button>' +
+        '</div>' +
+      '</div>'
+    // 已完成 or 非未付款 Tab：純 header，無刪除功能
+    : '<div class="preorder-group-header" id="pgh_' + pgId + '" onclick="togglePGExpand(\'' + pgId + '\')">' +
         '<span class="pg-date">' + g.date + '</span>' +
         '<span class="pg-unit">' + (g.unitName || g.unitCode) + '</span>' +
         '<span class="pg-cust">' + (g.sender || g.customer) + '</span>' +
         '<span class="pg-arrow" id="pga_' + pgId + '">▶</span>' +
-      '</div>' +
-      '<div class="preorder-group-body" id="pgb_' + pgId + '" style="display:none;">' +
-        g.items.map(function(it) {
-          const done = it.status === '已完成';
-          return (
-            '<div class="pg-item">' +
-              '<label>' +
-                '<input type="checkbox" value="' + it.uid + '"' +
-                  (done ? ' disabled' : ' data-pending="1"') +
-                  ' onchange="onPGCheck(\'' + pgId + '\')">' +
-                '<span class="' + (done ? 'pg-done-label' : '') + '">' +
-                  it.itemName + ' × ' + it.qty +
-                  (it.priceMode ? '　' + it.priceMode : '') +
-                  (it.amount    ? '　$' + it.amount   : '') +
-                  (done ? '　✅' : '') +
-                '</span>' +
-              '</label>' +
-            '</div>'
-          );
-        }).join('') +
-        (!isDoneGroup && pendingItems.length > 0 ?
-          '<div style="margin-top:10px;">' +
-            '<button id="pgbtn_' + pgId + '" class="btn-primary" ' +
-              'style="width:100%;padding:10px;font-size:14px;" disabled ' +
-              'onclick="handlePreorderShip(\'' + pgId + '\',\'' + encodeURIComponent(JSON.stringify(g)) + '\')">出貨</button>' +
-          '</div>' : '') +
-      '</div>' +
+      '</div>';
+
+  // ── 品項列表（未付款 Tab：每項加 ✕ 刪單一品項）──
+  const itemsHtml = g.items.map(function(it) {
+    const done = it.status === '已完成';
+    const deleteBtn = (!isDoneGroup && isUnpaidTab && !done)
+      ? '<button style="flex-shrink:0;width:24px;height:24px;border:none;background:transparent;' +
+          'color:var(--muted);font-size:16px;font-weight:300;line-height:1;cursor:pointer;padding:0;' +
+          'display:flex;align-items:center;justify-content:center;" ' +
+          'onclick="event.stopPropagation();confirmDeleteUnpaidItem(\'' + it.uid + '\',\'' +
+          encodeURIComponent(it.itemName + ' × ' + it.qty) + '\')">' +
+          '✕</button>'
+      : '';
+    return (
+      '<div class="pg-item">' +
+        '<label style="flex:1;">' +
+          '<input type="checkbox" value="' + it.uid + '"' +
+            (done ? ' disabled' : ' data-pending="1"') +
+            ' onchange="onPGCheck(\'' + pgId + '\')">' +
+          '<span class="' + (done ? 'pg-done-label' : '') + '">' +
+            it.itemName + ' × ' + it.qty +
+            (it.priceMode ? '　' + it.priceMode : '') +
+            (it.amount    ? '　$' + it.amount   : '') +
+            (done ? '　✅' : '') +
+          '</span>' +
+        '</label>' +
+        deleteBtn +
+      '</div>'
+    );
+  }).join('');
+
+  const bodyHtml = (
+    '<div class="preorder-group-body" id="pgb_' + pgId + '" style="display:none;">' +
+      itemsHtml +
+      (!isDoneGroup && pendingItems.length > 0 && !isUnpaidTab ?
+        '<div style="margin-top:10px;">' +
+          '<button id="pgbtn_' + pgId + '" class="btn-primary" ' +
+            'style="width:100%;padding:10px;font-size:14px;" disabled ' +
+            'onclick="handlePreorderShip(\'' + pgId + '\',\'' + encodeURIComponent(JSON.stringify(g)) + '\')">出貨</button>' +
+        '</div>' : '') +
+    '</div>'
+  );
+
+  return (
+    '<div class="preorder-group' + (isDoneGroup ? ' done-group' : '') + '">' +
+      headerHtml +
+      bodyHtml +
     '</div>'
   );
 }
@@ -4996,12 +5228,21 @@ function doPreorderFill() {
   onOrderTypeChange();
 
   // 帶入品項（依名稱比對品項庫）
+  // ✅ priceMode 文字 → manualMode emoji 反向轉換
+  function toManualMode(priceMode) {
+    if (priceMode === '大組價') return '🔴大組價';
+    if (priceMode === '宣導價') return '🔵宣導價';
+    if (priceMode === '不計價') return '🟡不計價';
+    if (priceMode === '混合價') return '🟢混合價';
+    return ''; // 標準價
+  }
+
   selectedItems.forEach(function(preItem) {
     const param = allParams.find(function(p) { return p.name === preItem.itemName; });
+    const manualMode = toManualMode(preItem.priceMode || '');
     if (param) {
-      orderItems.push({ id: idCounter++, param: param, qty: preItem.qty, manualMode: '', preorder: false });
+      orderItems.push({ id: idCounter++, param: param, qty: preItem.qty, manualMode: manualMode, preorder: false });
     } else {
-      // 品項已下架：建立最小替代物件，讓資料仍可帶入
       orderItems.push({ id: idCounter++,
         param: { code: '', name: preItem.itemName, price: 0, groupPrice: 0, promo: 0,
                  group: '', groupQty: 0, buy6: false, combo: 0 },
@@ -5009,6 +5250,12 @@ function doPreorderFill() {
       showGlobalToast('⚠️ 品項「' + preItem.itemName + '」已從品項庫中移除，請確認');
     }
   });
+
+  // ✅ 有任何非標準價品項 → 自動切到手動模式，否則維持當前模式
+  const hasManualItem = orderItems.some(function(it) { return it.manualMode !== ''; });
+  if (hasManualItem) {
+    setMode('manual');
+  }
 
   // ✅ 已付款補貨：自動勾「出貨文件（不計業績）」
   // ✅ 未付款出貨：不勾，走正常出單計業績
@@ -5024,9 +5271,9 @@ function doPreorderFill() {
   ['unitCode','senderName','customerName','platformOrderNo']
     .forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('field-error'); });
 
-  // 關閉面板、切到客戶模式、重新渲染
+  // 關閉面板、切到客戶頁面顯示、重新渲染
   closePreorderPanel();
-  setMode('standard');
+  showCust();   // 只切換到客戶顯示區塊，不改計價模式
   renderAll();
   showGlobalToast('📦 已帶入 ' + selectedItems.length + ' 件補貨品項，請填入新訂單號碼');
 
@@ -5050,6 +5297,120 @@ async function markPreorderDone(uids) {
   } catch(e) {
     showGlobalToast('⚠️ 網路異常，請重試');
   }
+}
+
+// ════════════════════════════════════════════════════════
+// 🗑️ 預購未付款刪除功能
+// ════════════════════════════════════════════════════════
+let _pendingUnpaidDeleteUids = []; // 待刪除的 uid 陣列
+
+// ✅ 輔助函數：從按鈕往上找 wrapper，讀 dataset，完全避免 onclick 引號/編碼衝突
+function _triggerUnpaidGroupDelete(btn) {
+  const wrapper = btn.closest('.pg-unpaid-swipe-wrapper');
+  if (!wrapper) return;
+  confirmDeleteUnpaidGroup(wrapper.dataset.euids, wrapper.dataset.elabel);
+}
+
+// 刪整張單（header 左滑 or hover ✕）
+function confirmDeleteUnpaidGroup(encodedUids, encodedLabel) {
+  _pendingUnpaidDeleteUids = JSON.parse(decodeURIComponent(encodedUids));
+  const label = decodeURIComponent(encodedLabel);
+  document.getElementById('unpaidDeleteConfirmMsg').textContent =
+    '客戶「' + label + '」的整筆預購未付款記錄將全部刪除。';
+  document.getElementById('unpaidDeleteConfirmOverlay').style.display = 'flex';
+}
+
+// 刪單一品項（品項旁 ✕）
+function confirmDeleteUnpaidItem(uid, encodedItem) {
+  _pendingUnpaidDeleteUids = [uid];
+  const item = decodeURIComponent(encodedItem);
+  document.getElementById('unpaidDeleteConfirmMsg').textContent =
+    '品項「' + item + '」的預購未付款記錄將刪除。';
+  document.getElementById('unpaidDeleteConfirmOverlay').style.display = 'flex';
+}
+
+function closeUnpaidDeleteConfirm() {
+  document.getElementById('unpaidDeleteConfirmOverlay').style.display = 'none';
+  _pendingUnpaidDeleteUids = [];
+}
+
+async function executeDeleteUnpaid() {
+  if (_pendingUnpaidDeleteUids.length === 0) return;
+  const uids = [..._pendingUnpaidDeleteUids];
+  closeUnpaidDeleteConfirm();
+  showSyncMask('刪除中...');
+  try {
+    const res = await cloudPost({ action: 'deletePreorderRows', uids: uids });
+    const r   = await res.json();
+    if (r.success) {
+      showGlobalToast('✅ 已刪除');
+      loadPreorders(); // 重新載入清單
+    } else {
+      showGlobalToast('⚠️ 刪除失敗：' + (r.message||''));
+    }
+  } catch(e) {
+    showGlobalToast('⚠️ 網路異常，請重試');
+  } finally {
+    hideSyncMask();
+  }
+}
+
+// 預購未付款列表渲染完成後，掛載手機左滑手勢（整張單刪除）
+function _mountUnpaidSwipe() {
+  if (isHoverDevice) return; // 桌機不需要左滑
+  const body = document.getElementById('preorderPanelBody');
+  if (!body) return;
+  body.querySelectorAll('.pg-unpaid-swipe-wrapper').forEach(function(wrapper) {
+    const front = wrapper.querySelector('.pg-unpaid-front');
+    if (!front) return;
+    let startX = 0, startY = 0, dirLocked = null, tracking = false;
+    wrapper.addEventListener('touchstart', function(e) {
+      startX    = e.touches[0].clientX;
+      startY    = e.touches[0].clientY;
+      dirLocked = null;
+      tracking  = true;
+      front.style.transition = 'none';
+      // 收起其他已展開的
+      body.querySelectorAll('.pg-unpaid-front').forEach(function(el) {
+        if (el !== front) {
+          el.style.transition = 'transform 0.2s ease';
+          el.style.transform  = '';
+        }
+      });
+    }, { passive: true });
+    wrapper.addEventListener('touchmove', function(e) {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (dirLocked === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        dirLocked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      }
+      if (dirLocked !== 'h') return;
+      front.style.transform = 'translateX(' + Math.max(dx < 0 ? dx : 0, -64) + 'px)';
+    }, { passive: true });
+    wrapper.addEventListener('touchend', function(e) {
+      if (!tracking) return;
+      tracking = false;
+      front.style.transition = 'transform 0.2s ease';
+      const delta = e.changedTouches[0].clientX - startX;
+      if (dirLocked === 'h') {
+        if (delta < -40)     front.style.transform = 'translateX(-64px)';
+        else if (delta > 20) front.style.transform = '';
+        else                 front.style.transform = '';
+      }
+    }, { passive: true });
+    // 點紅色背景觸發刪除確認（只有已展開才觸發）
+    wrapper.querySelector('.pg-unpaid-delete-bg').addEventListener('click', function() {
+      const tx = parseFloat(front.style.transform.replace('translateX(', '').replace('px)', '') || '0');
+      if (tx < -20) {
+        front.style.transition = 'transform 0.2s ease';
+        front.style.transform  = '';
+        const eu = wrapper.dataset.euids;
+        const el = wrapper.dataset.elabel;
+        if (eu && el) confirmDeleteUnpaidGroup(eu, el);
+      }
+    });
+  });
 }
 function doClrAll(){
   orderItems=[];
@@ -6048,9 +6409,9 @@ function renderVpPlans(plans) {
             '<div style="font-size:11px;color:var(--muted);flex-shrink:0;width:40px;text-align:right;white-space:nowrap;">' + p.manpower + '人</div>' +
             '<div style="font-size:12px;font-weight:700;flex-shrink:0;width:44px;text-align:right;white-space:nowrap;margin-right:4px;">' + fmtEst(p.estimate) + '</div>' +
             '<button class="unit-sort-btn" style="flex-shrink:0;" onclick="startEditVisitPlan(' + p.rowIndex + ')">修改</button>' +
-            '<span class="vp-plan-hover-del" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">✕</span>' +
+            '<span class="vp-plan-hover-del" onclick="confirmDeleteVisitPlan(' + p.rowIndex + ',\'' + rowId + '\')">✕</span>' +
           '</div>' +
-          '<div class="vp-plan-delete-btn" onclick="deleteVisitPlanDirect(' + p.rowIndex + ',\'' + rowId + '\')">刪除</div>' +
+          '<div class="vp-plan-delete-btn" onclick="confirmDeleteVisitPlan(' + p.rowIndex + ',\'' + rowId + '\')">刪除</div>' +
         '</div>' +
         '<div id="vpEdit' + p.rowIndex + '" style="display:none;"></div>' +
       '</div>'
@@ -6232,7 +6593,23 @@ function initVpSwipe(wrapperEl) {
   }, { passive: true });
 }
 
-async function deleteVisitPlanDirect(rowIndex, rowId) {
+// ✅ 早會結團刪除：先彈確認，確認後才真正呼叫 GAS
+let _pendingVpDelete = null; // { rowIndex, rowId }
+
+function confirmDeleteVisitPlan(rowIndex, rowId) {
+  _pendingVpDelete = { rowIndex: rowIndex, rowId: rowId };
+  document.getElementById('vpDeleteConfirmOverlay').style.display = 'flex';
+}
+
+function closeVpDeleteConfirm() {
+  document.getElementById('vpDeleteConfirmOverlay').style.display = 'none';
+  _pendingVpDelete = null;
+}
+
+async function executeDeleteVisitPlan() {
+  if (!_pendingVpDelete) return;
+  const { rowIndex, rowId } = _pendingVpDelete;
+  closeVpDeleteConfirm();
   try {
     var res = await cloudPost({ action: 'deleteVisitPlan', rowIndex: rowIndex });
     var r   = await res.json();
