@@ -1017,7 +1017,7 @@
     .pg-done-label { color: var(--muted); text-decoration: line-through; font-size: 12px; }
     .preorder-group.done-group .preorder-group-header { opacity: 0.45; }
 
-    /* ✅ 通用左滑刪除結構（手機端：早會開團 / 優惠登記 共用）*/
+    /* ✅ 通用左滑刪除結構（手機端：早會結團 / 優惠登記 共用）*/
     .swipe-del-wrapper {
       overflow: hidden; position: relative;
       border-bottom: 1px solid var(--border);
@@ -1433,7 +1433,7 @@
          均不在此 query 內，維持窄版設計
        ════════════════════════════════════════════════════════════ */
     @media (min-width: 768px) {
-      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會開團 等）*/
+      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會結團 等）*/
       .elig-box              { max-width: 640px; }
       /* 文案編輯 / 訊息拆解（原 inline 已改為 class，此處統一覆蓋）*/
       .line-report-text-box  { max-width: 640px; }
@@ -1503,7 +1503,7 @@
     </div>
     <div class="side-menu-group">
       <a onclick="handleMenuAction('eligibilityManage')" data-tooltip="優惠登記與資格查詢"><span>🏷️</span> 優惠管理</a>
-      <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會開團時間&業績預估"><span>🎙️</span> 團購管理</a>
+      <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會結團時間&業績預估"><span>🎙️</span> 團購管理</a>
       <a onclick="handleMenuAction('preorderPanel')" data-tooltip="預購已付款&口頭預購未付款"><span>🛒</span> 預購管理</a>
     </div>
     <div class="side-menu-group">
@@ -2160,7 +2160,7 @@
 </div>
 
 <!-- ════════════════════════════════
-     🗑️ 早會開團刪除確認彈窗
+     🗑️ 早會結團刪除確認彈窗
      ════════════════════════════════ -->
 <div class="confirm-overlay" id="vpDeleteConfirmOverlay" style="display:none;">
   <div class="confirm-box">
@@ -2316,11 +2316,11 @@
 </div>
 
 <!-- ════════════════════════════════
-     🎙️ 早會開團 Overlay
+     🎙️ 早會結團 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="visitPlannerOverlay" style="display:none;">
   <div class="elig-box" style="max-height:85vh;display:flex;flex-direction:column;gap:0;">
-    <h3 style="margin-bottom:12px;">🎙️ 早會開團</h3>
+    <h3 style="margin-bottom:12px;">🎙️ 早會結團</h3>
 
     <!-- 新增模式 -->
     <div id="vpNewMode" class="vp-mode active">
@@ -4233,7 +4233,7 @@ setInterval(saveDraft, 30000);
 window.addEventListener('beforeunload', function() { saveDraft(); });
 
 // ════════════════════════════════════════════════════════════
-// 草稿系統擴展：優惠登記 / 早會開團
+// 草稿系統擴展：優惠登記 / 早會結團
 // ════════════════════════════════════════════════════════════
 const ELIG_DRAFT_KEY = 'homedr_elig_draft';
 const VP_DRAFT_KEY   = 'homedr_vp_draft';
@@ -4270,7 +4270,7 @@ function loadEligDraft() {
 }
 function clearEligDraft() { try { localStorage.removeItem(ELIG_DRAFT_KEY); } catch(e) {} }
 
-// ── 早會開團草稿 ──
+// ── 早會結團草稿 ──
 function saveVpDraft() {
   try {
     const yearEl  = document.getElementById('vpYear');
@@ -4587,18 +4587,26 @@ document.addEventListener('click', (e) => {
 function setMode(m) {
   mode = m;
 
-  // ✅ 計價模式只有 standard / manual 兩種
-  // 客戶(customer) 和 回覆(quick) 不改計價模式，只切換顯示區塊
   const isPricingMode = (m === 'standard' || m === 'manual');
 
-  // 計價 tab（標準/手動）：只在點了計價模式時才更新亮燈
+  // 標準/手動 tab：互斥，只亮當前選中的
   if (isPricingMode) {
     document.getElementById('btnStd').className    = m === 'standard' ? 'mode-btn active-std'    : 'mode-btn inactive';
     document.getElementById('btnManual').className = m === 'manual'   ? 'mode-btn active-manual' : 'mode-btn inactive';
+    // ✅ 切回計價模式時，客戶和回覆一律暗掉
+    document.getElementById('btnCust').className  = 'mode-btn inactive';
+    document.getElementById('btnQuick').className = 'mode-btn inactive';
   }
-  // 客戶/回覆 tab：只更新自己的亮燈，不動標準/手動
-  document.getElementById('btnCust').className  = m === 'customer' ? 'mode-btn active-cust'  : (m === 'quick' ? 'mode-btn inactive' : document.getElementById('btnCust').className);
-  document.getElementById('btnQuick').className = m === 'quick'    ? 'mode-btn active-quick' : (m === 'customer' ? 'mode-btn inactive' : document.getElementById('btnQuick').className);
+  // 客戶 tab：亮自己，回覆暗掉，標準/手動不動
+  if (m === 'customer') {
+    document.getElementById('btnCust').className  = 'mode-btn active-cust';
+    document.getElementById('btnQuick').className = 'mode-btn inactive';
+  }
+  // 回覆 tab：亮自己，客戶暗掉，標準/手動不動
+  if (m === 'quick') {
+    document.getElementById('btnCust').className  = 'mode-btn inactive';
+    document.getElementById('btnQuick').className = 'mode-btn active-quick';
+  }
 
   // 顯示區塊切換
   document.getElementById('customerSection').style.display   = m === 'customer'                        ? 'block' : 'none';
@@ -5537,7 +5545,7 @@ function doClrAll(){
   const sn=document.getElementById('salesName');if(sn)sn.value='王惠宣'; // ✅ 清空後回到預設
   closeConfirm();showGlobalToast('✨ 清單已清空');renderAll();
 
-  // ✅ 早會開團：清空已選通訊處、輸入框、草稿
+  // ✅ 早會結團：清空已選通訊處、輸入框、草稿
   vpNewUnits = [];
   const vpInput = document.getElementById('vpSearchInput'); // ✅ 正確 ID
   if (vpInput) vpInput.value = '';
@@ -6694,7 +6702,7 @@ function initVpSwipe(wrapperEl) {
   }, { passive: true });
 }
 
-// ✅ 早會開團刪除：先彈確認，確認後才真正呼叫 GAS
+// ✅ 早會結團刪除：先彈確認，確認後才真正呼叫 GAS
 let _pendingVpDelete = null; // { rowIndex, rowId }
 
 function confirmDeleteVisitPlan(rowIndex, rowId) {
@@ -7430,7 +7438,7 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
     '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
       '<div class="analysis-chart-title">📋 業績達成率</div>' +
       '<div class="analysis-chart-sub">' + periodLabel + '</div>' +
-      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會開團登記</div>' +
+      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會結團登記</div>' +
     '</div>';
 
   if (!plans || !plans.length) return emptyState;
