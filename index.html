@@ -1017,7 +1017,7 @@
     .pg-done-label { color: var(--muted); text-decoration: line-through; font-size: 12px; }
     .preorder-group.done-group .preorder-group-header { opacity: 0.45; }
 
-    /* ✅ 通用左滑刪除結構（手機端：早會結團 / 優惠登記 共用）*/
+    /* ✅ 通用左滑刪除結構（手機端：早會開團 / 優惠登記 共用）*/
     .swipe-del-wrapper {
       overflow: hidden; position: relative;
       border-bottom: 1px solid var(--border);
@@ -1433,7 +1433,7 @@
          均不在此 query 內，維持窄版設計
        ════════════════════════════════════════════════════════════ */
     @media (min-width: 768px) {
-      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會結團 等）*/
+      /* 通用功能面板（優惠登記、資格查詢、LINE回報、人力計算、早會開團 等）*/
       .elig-box              { max-width: 640px; }
       /* 文案編輯 / 訊息拆解（原 inline 已改為 class，此處統一覆蓋）*/
       .line-report-text-box  { max-width: 640px; }
@@ -1503,7 +1503,7 @@
     </div>
     <div class="side-menu-group">
       <a onclick="handleMenuAction('eligibilityManage')" data-tooltip="優惠登記與資格查詢"><span>🏷️</span> 優惠管理</a>
-      <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會結團時間&業績預估"><span>🎙️</span> 團購管理</a>
+      <a onclick="handleMenuAction('visitPlanner')" data-tooltip="登記早會開團時間&業績預估"><span>🎙️</span> 團購管理</a>
       <a onclick="handleMenuAction('preorderPanel')" data-tooltip="預購已付款&口頭預購未付款"><span>🛒</span> 預購管理</a>
     </div>
     <div class="side-menu-group">
@@ -1586,6 +1586,44 @@
 </div>
 
 <!-- 業績週報 Step1：查詢條件 -->
+<!-- 團購合併 Overlay -->
+<div id="teamBuyMergeOverlay" class="weekly-overlay">
+  <div class="weekly-box">
+    <h3>🔀 團購合併</h3>
+    <div class="sub">選擇要合併的檔案與日期</div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:1px;">待合併檔案</div>
+    <div id="teamBuyFileList" style="margin-bottom:16px;max-height:200px;overflow-y:auto;"></div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:1px;">團購業績計入日期</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <input type="text" id="tbMergeYear" inputmode="numeric" maxlength="4"
+        style="width:58px;padding:6px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;text-align:center;"
+        onfocus="this.select()" oninput="validateTbYear(this)">
+      <span style="font-size:13px;">年</span>
+      <input type="text" id="tbMergeMonth" inputmode="numeric" placeholder="月" maxlength="2"
+        style="width:48px;padding:6px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;text-align:center;"
+        onfocus="this.select()" oninput="validateTbMonth(this)">
+      <span style="font-size:13px;">月</span>
+      <input type="text" id="tbMergeDay" inputmode="numeric" placeholder="日" maxlength="2"
+        style="width:48px;padding:6px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;text-align:center;"
+        onfocus="this.select()" oninput="validateTbDay(this)">
+      <span style="font-size:13px;">日</span>
+      <button onclick="setTbMergeToday()" style="padding:6px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">今天</button>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:20px;cursor:pointer;">
+      <input type="checkbox" id="tbDeleteAfter" style="width:16px;height:16px;cursor:pointer;">
+      合併後刪除已勾選檔案
+    </label>
+
+    <div class="weekly-action-row">
+      <button class="btn-cancel-report" onclick="closeTeamBuyMergeOverlay()">取消</button>
+      <button class="btn-gen-report"    onclick="confirmTeamBuyMerge()">確認合併</button>
+    </div>
+  </div>
+</div>
+
 <div id="weeklyOverlay" class="weekly-overlay">
   <div class="weekly-box">
     <h3>📊 業績週報產出</h3>
@@ -2122,7 +2160,7 @@
 </div>
 
 <!-- ════════════════════════════════
-     🗑️ 早會結團刪除確認彈窗
+     🗑️ 早會開團刪除確認彈窗
      ════════════════════════════════ -->
 <div class="confirm-overlay" id="vpDeleteConfirmOverlay" style="display:none;">
   <div class="confirm-box">
@@ -2278,11 +2316,11 @@
 </div>
 
 <!-- ════════════════════════════════
-     🎙️ 早會結團 Overlay
+     🎙️ 早會開團 Overlay
      ════════════════════════════════ -->
 <div class="overlay-backdrop" id="visitPlannerOverlay" style="display:none;">
   <div class="elig-box" style="max-height:85vh;display:flex;flex-direction:column;gap:0;">
-    <h3 style="margin-bottom:12px;">🎙️ 早會結團</h3>
+    <h3 style="margin-bottom:12px;">🎙️ 早會開團</h3>
 
     <!-- 新增模式 -->
     <div id="vpNewMode" class="vp-mode active">
@@ -2655,7 +2693,7 @@ function handleMenuAction(type) {
   else if (type === 'weeklyReport')     openWeeklyReport();
   else if (type === 'deleteOrder')          openDeleteOrderPanel();
   else if (type === 'teamBuyUpload')        openTeamBuyUpload();
-  else if (type === 'teamBuyMerge')         doTeamBuyMerge();
+  else if (type === 'teamBuyMerge')         openTeamBuyMergeOverlay();
   else if (type === 'lineReport')            openLineReport();
   else if (type === 'fileDownload')          openFileDownload();
   else if (type === 'msgParser')             openMsgParser();
@@ -3155,29 +3193,92 @@ async function onTeamBuyFileSelected(input) {
   input.value = '';
 }
 
-async function doTeamBuyMerge() {
+// ── 開啟團購合併 Overlay，先載入檔案清單 ──
+async function openTeamBuyMergeOverlay() {
   forceCloseOverlay();
+  const listEl = document.getElementById('teamBuyFileList');
+  listEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">載入中...</div>';
+  document.getElementById('teamBuyMergeOverlay').style.display = 'flex';
+  document.getElementById('tbDeleteAfter').checked = false;
+  document.getElementById('tbMergeYear').value  = new Date().getFullYear();
+  document.getElementById('tbMergeMonth').value = '';
+  document.getElementById('tbMergeDay').value   = '';
 
-  // 輪播文字：每隔幾秒換一句，讓用戶知道系統還在跑
-  const messages = [
-    '🔀 合併中，請稍候...',
-    '⏳ 仍在處理，請勿關閉...',
-    '📊 正在寫入資料...',
-    '🔄 即將完成...',
-  ];
-  const delays = [0, 8000, 16000, 24000]; // 每隔 8 秒換一句
-  const timers = [];
-  delays.forEach(function(d, i) {
-    timers.push(setTimeout(function() {
-      showSyncMask(messages[i]);
-    }, d));
+  try {
+    const res  = await cloudPost({ action: 'getTeamBuyFiles' }, 15000);
+    const data = await res.json();
+    if (!data.success) {
+      listEl.innerHTML = '<div style="color:var(--danger);font-size:13px;">❌ 載入失敗：' + (data.message || '') + '</div>';
+      return;
+    }
+    if (!data.files || data.files.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">目前無團購待合併檔案，請先上傳團購原始檔</div>';
+      return;
+    }
+    listEl.innerHTML = data.files.map(function(f) {
+      return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;">' +
+             '<input type="checkbox" class="tb-file-check" data-id="' + f.id + '" style="width:16px;height:16px;cursor:pointer;">' +
+             '<span style="word-break:break-all;">' + f.name + '</span></label>';
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:var(--danger);font-size:13px;">⚠️ 網路異常，請重試</div>';
+  }
+}
+
+function closeTeamBuyMergeOverlay() {
+  document.getElementById('teamBuyMergeOverlay').style.display = 'none';
+}
+
+function validateTbYear(el) {
+  const v = parseInt(el.value);
+  if (el.value.length === 4 && (isNaN(v) || v < 2000 || v > 2099)) el.value = '';
+}
+function validateTbMonth(el) {
+  const v = parseInt(el.value);
+  if (el.value.length >= 2 && (isNaN(v) || v < 1 || v > 12)) el.value = '';
+}
+function validateTbDay(el) {
+  const v = parseInt(el.value);
+  if (el.value.length >= 2 && (isNaN(v) || v < 1 || v > 31)) el.value = '';
+}
+
+function setTbMergeToday() {
+  const now = new Date();
+  document.getElementById('tbMergeYear').value  = now.getFullYear();
+  document.getElementById('tbMergeMonth').value = now.getMonth() + 1;
+  document.getElementById('tbMergeDay').value   = now.getDate();
+}
+
+async function confirmTeamBuyMerge() {
+  const checked = Array.from(document.querySelectorAll('.tb-file-check:checked'));
+  if (checked.length === 0) { showGlobalToast('❌ 請至少勾選一個檔案'); return; }
+
+  const fileIds    = checked.map(function(el) { return el.dataset.id; });
+  const mergeMonth = parseInt(document.getElementById('tbMergeMonth').value) || 0;
+  const mergeDay   = parseInt(document.getElementById('tbMergeDay').value)   || 0;
+  if (!mergeMonth || !mergeDay) { showGlobalToast('❌ 請輸入合併日期'); return; }
+
+  const mergeYear   = parseInt(document.getElementById('tbMergeYear').value) || new Date().getFullYear();
+  const deleteAfter = document.getElementById('tbDeleteAfter').checked;
+
+  closeTeamBuyMergeOverlay();
+
+  const messages = ['🔀 合併中，請稍候...', '⏳ 仍在處理，請勿關閉...', '📊 正在寫入資料...', '🔄 即將完成...'];
+  const timers = [0, 8000, 16000, 24000].map(function(d, i) {
+    return setTimeout(function() { showSyncMask(messages[i]); }, d);
   });
-
   showSyncMask(messages[0]);
 
   try {
-    const res = await cloudPost({ action: 'mergeTeamBuyFromApp' }, 120000);
-    const r   = await res.json();
+    const res = await cloudPost({
+      action:      'mergeTeamBuyFromApp',
+      fileIds:     fileIds,
+      mergeYear:   mergeYear,
+      mergeMonth:  mergeMonth,
+      mergeDay:    mergeDay,
+      deleteAfter: deleteAfter
+    }, 120000);
+    const r = await res.json();
     if (r.success) {
       showGlobalToast('✅ 合併完成：新增 ' + (r.addCount || 0) + ' 筆，略過重複 ' + (r.skipCount || 0) + ' 筆');
     } else {
@@ -3186,7 +3287,7 @@ async function doTeamBuyMerge() {
   } catch(e) {
     showGlobalToast('⚠️ 網路異常，請重試');
   } finally {
-    timers.forEach(function(t) { clearTimeout(t); }); // 清除所有計時器
+    timers.forEach(function(t) { clearTimeout(t); });
     hideSyncMask();
   }
 }
@@ -4132,7 +4233,7 @@ setInterval(saveDraft, 30000);
 window.addEventListener('beforeunload', function() { saveDraft(); });
 
 // ════════════════════════════════════════════════════════════
-// 草稿系統擴展：優惠登記 / 早會結團
+// 草稿系統擴展：優惠登記 / 早會開團
 // ════════════════════════════════════════════════════════════
 const ELIG_DRAFT_KEY = 'homedr_elig_draft';
 const VP_DRAFT_KEY   = 'homedr_vp_draft';
@@ -4169,7 +4270,7 @@ function loadEligDraft() {
 }
 function clearEligDraft() { try { localStorage.removeItem(ELIG_DRAFT_KEY); } catch(e) {} }
 
-// ── 早會結團草稿 ──
+// ── 早會開團草稿 ──
 function saveVpDraft() {
   try {
     const yearEl  = document.getElementById('vpYear');
@@ -5436,7 +5537,7 @@ function doClrAll(){
   const sn=document.getElementById('salesName');if(sn)sn.value='王惠宣'; // ✅ 清空後回到預設
   closeConfirm();showGlobalToast('✨ 清單已清空');renderAll();
 
-  // ✅ 早會結團：清空已選通訊處、輸入框、草稿
+  // ✅ 早會開團：清空已選通訊處、輸入框、草稿
   vpNewUnits = [];
   const vpInput = document.getElementById('vpSearchInput'); // ✅ 正確 ID
   if (vpInput) vpInput.value = '';
@@ -6593,7 +6694,7 @@ function initVpSwipe(wrapperEl) {
   }, { passive: true });
 }
 
-// ✅ 早會結團刪除：先彈確認，確認後才真正呼叫 GAS
+// ✅ 早會開團刪除：先彈確認，確認後才真正呼叫 GAS
 let _pendingVpDelete = null; // { rowIndex, rowId }
 
 function confirmDeleteVisitPlan(rowIndex, rowId) {
@@ -7329,7 +7430,7 @@ function _buildVisitAchievementHTML(plans, periodLabel) {
     '<div class="analysis-chart-card" style="margin-bottom:10px;">' +
       '<div class="analysis-chart-title">📋 業績達成率</div>' +
       '<div class="analysis-chart-sub">' + periodLabel + '</div>' +
-      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會結團登記</div>' +
+      '<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">本期無早會開團登記</div>' +
     '</div>';
 
   if (!plans || !plans.length) return emptyState;
