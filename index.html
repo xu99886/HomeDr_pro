@@ -1774,7 +1774,7 @@
       </div>
       <input type="text" id="shippingAddress" class="form-control allow-select" placeholder="送貨地址" autocomplete="off" oninput="clearFieldError(this)">
     </div>
-    <div class="form-group"><label class="form-label">連絡電話<span class="required-mark">*</span></label><input type="tel" id="contactPhone" class="form-control allow-select" placeholder="聯絡電話" maxlength="10" inputmode="numeric" oninput="clearFieldError(this)"></div>
+    <div class="form-group"><label class="form-label">連絡電話<span class="required-mark">*</span></label><input type="tel" id="contactPhone" class="form-control allow-select" placeholder="聯絡電話" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10);clearFieldError(this)"></div>
     <div class="form-group"><label class="form-label">營管</label><input type="text" id="managerUnit" class="form-control allow-select" placeholder="營管名稱" autocomplete="off"></div>
     <div class="form-group"><label class="form-label">區部</label><input type="text" id="districtUnit" class="form-control allow-select" placeholder="區部名稱" autocomplete="off"></div>
     <div style="display:flex;gap:12px;margin-top:15px;">
